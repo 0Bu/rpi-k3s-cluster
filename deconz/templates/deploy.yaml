@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }} 
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      nodeSelector:
+        usb: conbee
+      containers:
+      - name: {{ .Chart.Name }}
+        image: marthoc/deconz:stable
+        imagePullPolicy: Always
+        env:
+          - name: DECONZ_WEB_PORT
+            value: "80"
+          - name: DECONZ_WS_PORT 
+            value: "1443"
+          - name: DECONZ_DEVICE
+            value: "/dev/ttyACM0"
+          - name: TZ
+            value: "Europe/Berlin"
+          - name: DEBUG_INFO
+            value: "1"
+          - name: DEBUG_APS
+            value: "0"
+          - name: DEBUG_ZCL
+            value: "0"
+          - name: DEBUG_ZDP
+            value: "0"
+          - name: DEBUG_OTAU
+            value: "0"
+          - name: DECONZ_UPNP
+            value: "0"
+          - name: DECONZ_VNC_MODE
+            value: "1"
+          - name: DECONZ_VNC_PORT
+            value: "5900"
+          - name: DECONZ_VNC_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: deconz-secret
+                key: vnc-password
+          - name: UDEV
+            value: "1"
+        securityContext:
+            privileged: true
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        startupProbe:
+          initialDelaySeconds: 10
+          httpGet:
+            path: /
+            port: 80
+          failureThreshold: 18
+        resources:
+          requests:
+            memory: 128M
+          limits:
+            memory: 256M
+        volumeMounts:
+          - name: conbee
+            mountPath: "/dev/ttyACM0"
+          - name: deconz
+            mountPath: /root/.local/share/dresden-elektronik/deCONZ
+      volumes:
+        - name: conbee
+          hostPath:
+            path: "/dev/ttyACM0"
+        - name: deconz
+          persistentVolumeClaim:
+            claimName: {{ .Chart.Name }}-{{ .Release.Namespace }}
+

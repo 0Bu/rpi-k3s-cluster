@@ -1,0 +1,7 @@
+apiVersion: v2
+name: adguard
+description: https://github.com/AdguardTeam/AdGuardHome
+type: application
+version: 1.0.0
+appVersion: 0.0.0
+
