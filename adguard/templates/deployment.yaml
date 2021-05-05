@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment 
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: adguard/adguardhome
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+            - containerPort: 80
+            - containerPort: 53
+            - containerPort: 53
+              protocol: UDP
+          resources:
+            requests:
+              memory: 64M
+            limits:
+              memory: 128M
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+          startupProbe:
+            initialDelaySeconds: 5
+            httpGet:
+              path: /
+              port: 80
+            failureThreshold: 10
+          volumeMounts:
+            - name: adguard
+              mountPath: /opt/adguardhome/conf
+              subPath: conf
+            - name: adguard
+              mountPath: /opt/adguardhome/work
+              subPath: work
+      volumes:
+      - name: adguard
+        persistentVolumeClaim:
+          claimName: {{ .Chart.Name }}-{{ .Release.Namespace }}
+

@@ -1,0 +1,7 @@
+apiVersion: v2
+name: homebridge 
+description: https://github.com/homebridge/homebridge
+type: application
+version: 1.0.0
+appVersion: 0.0.0
+
