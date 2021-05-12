@@ -1,6 +1,4 @@
-# k3s cluster
-- [ubuntu configuration](#ubuntu-configuration)
-- [k3s configuration](#k3s)
+# pi cluster
 
 ## Ubuntu configuration
 
