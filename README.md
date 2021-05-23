@@ -87,7 +87,10 @@ curl -sfL https://get.k3s.io | sh -
 `curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash`
 
 #### Helm configuration
-`kubectl config view --raw >~/.kube/config`
+```
+kubectl config view --raw >~/.kube/config
+sudo chown -R $USER ~/.kube
+```
 
 ### [Sealed-secrets](https://github.com/bitnami-labs/sealed-secrets) controller installation
 ```
