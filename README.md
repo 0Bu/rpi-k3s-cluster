@@ -64,7 +64,7 @@ sudo mount <HOST_IP>:/nfs /mnt/nfs
 - [K3S on Raspberry Pi](https://www.puzzle.ch/de/blog/articles/2020/10/13/k3s-on-raspberry-pi)
 
 ### [Enabling cgroups](https://rancher.com/docs/k3s/latest/en/advanced/#enabling-cgroups-for-raspbian-buster)
-`sudo echo "cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory" >> /boot/firmware/cmdline.txt`
+`sudo sh -c 'echo "cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory" >> /boot/firmware/cmdline.txt'`
 
 ### Master installation/upgrade
 `ctrl+x ctrl+e`
