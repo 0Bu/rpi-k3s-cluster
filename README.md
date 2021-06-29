@@ -6,7 +6,7 @@
 `ssh ubuntu:ubuntu@<IP>`
 
 ### Set default editor
-`update-alternatives --set editor /usr/bin/vim.basic`
+`sudo update-alternatives --set editor /usr/bin/vim.basic`
 
 ### Create a new user
 `sudo adduser oleg`
