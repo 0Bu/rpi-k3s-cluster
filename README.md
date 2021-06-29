@@ -92,7 +92,7 @@ curl -sfL https://get.k3s.io | sh -
 #### Helm configuration
 ```
 kubectl config view --raw >~/.kube/config
-sudo chown -R $USER ~/.kube
+sudo chmod go-r ~/.kube/config
 ```
 
 ### [Sealed-secrets](https://github.com/bitnami-labs/sealed-secrets) controller installation
