@@ -5,13 +5,16 @@
 ### ssh
 `ssh ubuntu:ubuntu@<IP>`
 
+### Set default editor
+`update-alternatives --set editor /usr/bin/vim.basic`
+
 ### Create a new user
 `sudo adduser oleg`
 
 ### Sudoers
 ```
 sudo adduser oleg sudo
-sudo visudo /etc/sudoers.d/010_oleg-nopasswd
+sudo visudo /etc/sudoers.d/90-cloud-init-users
 	=> oleg ALL=(ALL) NOPASSWD: ALL
 ```
 ### Delete ubuntu user
