@@ -67,7 +67,7 @@ sudo mount <HOST_IP>:/nfs /mnt/nfs
 - [K3S on Raspberry Pi](https://www.puzzle.ch/de/blog/articles/2020/10/13/k3s-on-raspberry-pi)
 
 ### [Enabling cgroups](https://rancher.com/docs/k3s/latest/en/advanced/#enabling-cgroups-for-raspbian-buster)
-`sudo sh -c 'echo "cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory" >> /boot/firmware/cmdline.txt'`
+Append `cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory` to `/boot/firmware/cmdline.txt`
 
 ### Master installation/upgrade
 `ctrl+x ctrl+e`
@@ -103,10 +103,12 @@ $ kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/downl
 ```
 wget https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.16.0/kubeseal-arm -O kubeseal
 sudo install -m 755 kubeseal /usr/local/bin/kubeseal
+rm kubeseal
 ```
 
 ### [k9s](https://github.com/derailed/k9s) installation
 ```
-curl -sL# https://github.com/derailed/k9s/releases/download/v0.24.13/k9s_Linux_arm.tar.gz | tar xzv k9s
+curl -sL https://github.com/derailed/k9s/releases/download/v0.24.13/k9s_Linux_arm.tar.gz | tar xz k9s
 sudo install -m 755 k9s /usr/local/bin/k9s
+rm k9s
 ```
