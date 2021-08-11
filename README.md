@@ -108,7 +108,7 @@ rm kubeseal
 
 ### [k9s](https://github.com/derailed/k9s) installation
 ```
-curl -sL https://github.com/derailed/k9s/releases/download/v0.24.13/k9s_Linux_arm.tar.gz | tar xz k9s
+curl -sL https://github.com/derailed/k9s/releases/download/v0.24.15/k9s_Linux_arm.tar.gz | tar xz k9s
 sudo install -m 755 k9s /usr/local/bin/k9s
 rm k9s
 ```
