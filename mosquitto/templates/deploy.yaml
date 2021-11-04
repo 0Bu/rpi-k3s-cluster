@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+      - name: {{ .Chart.Name }}
+        image: eclipse-mosquitto
+        imagePullPolicy: Always
+        livenessProbe:
+          tcpSocket:
+            port: 1883
+        readinessProbe:
+          tcpSocket:
+            port: 1883
+        resources:
+          requests:
+            memory: 20Mi
+          limits:
+            memory: 128Mi
+        volumeMounts:
+        - name: mosquitto
+          mountPath: /mosquitto/config
+      volumes:
+      - name: mosquitto
+        configMap:
+          name: mosquitto
+
