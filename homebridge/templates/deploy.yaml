@@ -21,7 +21,7 @@ spec:
       hostNetwork: true
       containers:
       - name: {{ .Chart.Name }}
-        image: oznu/homebridge:ubuntu-no-avahi
+        image: oznu/homebridge
         imagePullPolicy: Always
         env:
           - name: TZ
