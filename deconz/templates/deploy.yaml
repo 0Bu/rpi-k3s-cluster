@@ -21,8 +21,11 @@ spec:
         usb: conbee
       containers:
       - name: {{ .Chart.Name }}
-        image: marthoc/deconz:stable
-        imagePullPolicy: Always
+        image: deconzcommunity/deconz:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          runAsUser: 65534
+          runAsGroup: 65534
         env:
           - name: DECONZ_WEB_PORT
             value: "80"
@@ -55,6 +58,10 @@ spec:
                 key: vnc-password
           - name: UDEV
             value: "1"
+          - name: DECONZ_UID
+            value: "65534"
+          - name: DECONZ_GID
+            value: "65534"
         securityContext:
           privileged: true
         readinessProbe:
@@ -80,7 +87,7 @@ spec:
           - name: conbee
             mountPath: "/dev/ttyACM0"
           - name: deconz
-            mountPath: /root/.local/share/dresden-elektronik/deCONZ
+            mountPath: /opt/deCONZ
       volumes:
         - name: conbee
           hostPath:
