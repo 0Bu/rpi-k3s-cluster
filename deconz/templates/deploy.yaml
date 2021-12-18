@@ -35,16 +35,6 @@ spec:
             value: "/dev/ttyACM0"
           - name: TZ
             value: "Europe/Berlin"
-          - name: DEBUG_INFO
-            value: "1"
-          - name: DEBUG_APS
-            value: "0"
-          - name: DEBUG_ZCL
-            value: "0"
-          - name: DEBUG_ZDP
-            value: "0"
-          - name: DEBUG_OTAU
-            value: "0"
           - name: DECONZ_UPNP
             value: "0"
           - name: DECONZ_VNC_MODE
@@ -56,8 +46,6 @@ spec:
               secretKeyRef:
                 name: deconz-secret
                 key: vnc-password
-          - name: UDEV
-            value: "1"
           - name: DECONZ_UID
             value: "65534"
           - name: DECONZ_GID
