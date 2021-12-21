@@ -1,3 +1,5 @@
+image:
+  tag: v0.107.0
 service:
   loadBalancerIP: 192.168.1.20
 nfs:

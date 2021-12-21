@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          image: adguard/adguardhome
+          image: adguard/adguardhome:{{ .Values.image.tag }}
           imagePullPolicy: IfNotPresent 
           ports:
             - containerPort: 3000
