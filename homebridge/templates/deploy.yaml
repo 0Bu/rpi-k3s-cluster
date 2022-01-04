@@ -21,8 +21,8 @@ spec:
       hostNetwork: true
       containers:
       - name: {{ .Chart.Name }}
-        image: oznu/homebridge
-        imagePullPolicy: Always
+        image: oznu/homebridge:{{ default "latest" .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
         env:
           - name: TZ
             value: "Europe/Berlin"

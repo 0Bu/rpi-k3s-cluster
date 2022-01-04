@@ -20,8 +20,8 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
       - name: {{ .Chart.Name }}
-        image: eclipse-mosquitto
-        imagePullPolicy: Always
+        image: eclipse-mosquitto:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
         livenessProbe:
           tcpSocket:
             port: 1883
