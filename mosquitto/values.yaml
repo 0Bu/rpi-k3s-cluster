@@ -1,3 +1,6 @@
+image:
+  tag: 2.0
+  pullPolicy: IfNotPresent
 service:
   loadBalancerIP: 192.168.1.27
 nfs:
