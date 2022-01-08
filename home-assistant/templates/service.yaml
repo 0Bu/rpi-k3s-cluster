@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-tcp
+  labels:
+    app: {{ .Release.Name }}
+  annotations:
+    metallb.universe.tf/allow-shared-ip: {{ .Chart.Name }}
+spec:
+  selector:
+    app: {{ .Release.Name }}
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8123
+  - name: homekit
+    port: 51827
+    targetPort: 51827
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-udp
+  labels:
+    app: {{ .Release.Name }}
+  annotations:
+    metallb.universe.tf/allow-shared-ip: {{ .Chart.Name }}
+spec:
+  selector:
+    app: {{ .Release.Name }}
+  ports:
+  - name: mdns
+    port: 5353
+    targetPort: 5353
+    protocol: UDP
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
+
