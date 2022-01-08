@@ -1,0 +1,6 @@
+apiVersion: v2
+name: home-assistant
+version: 1.0.0
+home: https://www.home-assistant.io/
+type: application
+appVersion: "2021.12.8"

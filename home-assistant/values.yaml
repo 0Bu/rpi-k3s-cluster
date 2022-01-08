@@ -1,0 +1,8 @@
+image:
+  tag: 2021.12.8 
+  pullPolicy: IfNotPresent
+service:
+  loadBalancerIP: 192.168.1.24
+nfs:
+  server: 192.168.1.4
+  path: "/nfs/home-assistant"

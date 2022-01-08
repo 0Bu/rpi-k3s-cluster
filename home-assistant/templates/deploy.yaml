@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }} 
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      nodeSelector:
+        usb: conbee
+      containers:
+      - name: {{ .Chart.Name }}
+        image: ghcr.io/home-assistant/home-assistant:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        readinessProbe:
+          tcpSocket:
+            port: 8123
+        livenessProbe:
+          tcpSocket:
+            port: 8123
+        startupProbe:
+          tcpSocket:
+            port: 8123
+        resources:
+          requests:
+            memory: 128M
+          limits:
+            memory: 512M
+        volumeMounts:
+          - name: homeassistant
+            mountPath: /config
+      volumes:
+        - name: homeassistant
+          persistentVolumeClaim:
+            claimName: {{ .Chart.Name }}-{{ .Release.Namespace }}
+
