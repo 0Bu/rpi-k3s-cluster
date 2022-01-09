@@ -3,7 +3,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ .Chart.Name }}-{{ .Release.Namespace }}
 spec:
-  storageClassName: ""
+  storageClassName: nfs
   accessModes:
     - ReadWriteMany
   resources:
