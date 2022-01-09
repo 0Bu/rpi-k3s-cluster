@@ -3,7 +3,6 @@ kind: PersistentVolume
 metadata:
   name: {{ .Chart.Name }}-{{ .Release.Namespace }}
 spec:
-  storageClassName: nfs
   capacity:
     storage: 5Gi
   accessModes:
