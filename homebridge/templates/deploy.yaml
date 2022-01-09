@@ -42,13 +42,13 @@ spec:
           httpGet:
             path: /api/auth/settings
             port: 80
-          failureThreshold: 6
+          failureThreshold: 30
         startupProbe:
-          initialDelaySeconds: 30
+          initialDelaySeconds: 10
           httpGet:
             path: /api/auth/settings
             port: 80
-          failureThreshold: 60 
+          failureThreshold: 60
         resources:
           requests:
             memory: 256M
