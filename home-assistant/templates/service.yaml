@@ -14,8 +14,8 @@ spec:
     port: 80
     targetPort: 8123
   - name: homekit
-    port: 51827
-    targetPort: 51827
+    port: 21063
+    targetPort: 21063
   type: LoadBalancer
   externalTrafficPolicy: Local
   loadBalancerIP: {{ .Values.service.loadBalancerIP }}
