@@ -17,8 +17,8 @@ spec:
       labels:
         app: {{ .Release.Name }}
     spec:
-      nodeSelector:
-        usb: conbee
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
       containers:
       - name: {{ .Chart.Name }}
         image: ghcr.io/home-assistant/home-assistant:{{ .Values.image.tag }}
