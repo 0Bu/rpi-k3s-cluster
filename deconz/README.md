@@ -6,20 +6,11 @@
 `kubectl label nodes Pi4a usb=conbee`
 
 ## Helm install
-`helm install --create-namespace -n deconz deconz .`
+`helm install --create-namespace -n deconz deconz --set vnc.password='<PASSWORD>' .`
 
 ## Helm upgrade
 `helm upgrade -n deconz deconz .`
 
 ## Helm unintall
 `helm uninstall -n deconz deconz`
-
-## Generate sealed secret
-`ctrl+x ctrl+e`
-```
-kubectl create secret generic deconz-secret \
-  --from-literal='vnc-password=<PASSWORD>' \
-  --dry-run=client -o yaml \
-  | kubeseal -o yaml -n deconz > templates/sealed-secret.yaml
-```
 

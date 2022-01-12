@@ -112,19 +112,6 @@ kubectl config view --raw >~/.kube/config
 sudo chmod go-r ~/.kube/config
 ```
 
-### [Sealed-secrets](https://github.com/bitnami-labs/sealed-secrets) controller installation
-```
-helm repo add sealed-secrets https://bitnami-labs.github.io/sealed-secrets
-helm install --namespace kube-system sealed-secrets sealed-secrets/sealed-secrets
-```
-#### kubeseal instalation
-```
-SEALED_SECRETS_VERSION=$(curl -sL https://api.github.com/repos/bitnami-labs/sealed-secrets/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
-curl "https://github.com/bitnami-labs/sealed-secrets/releases/download/$SEALED_SECRETS_VERSION/kubeseal-arm" -o kubeseal
-sudo install -m 755 kubeseal /usr/local/bin/kubeseal
-rm kubeseal
-```
-
 ### [k9s](https://github.com/derailed/k9s) installation
 ```
 K9S_VERSION=$(curl -sL https://api.github.com/repos/derailed/k9s/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')

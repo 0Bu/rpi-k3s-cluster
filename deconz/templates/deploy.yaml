@@ -42,10 +42,7 @@ spec:
           - name: DECONZ_VNC_PORT
             value: "5900"
           - name: DECONZ_VNC_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: deconz-secret
-                key: vnc-password
+            value: {{ default "geheim" .Values.vnc.password | quote }}
           - name: DECONZ_UID
             value: "65534"
           - name: DECONZ_GID
@@ -53,17 +50,13 @@ spec:
         securityContext:
           privileged: true
         readinessProbe:
-          httpGet:
-            path: /
+          tcpSocket:
             port: 80
         livenessProbe:
-          httpGet:
-            path: /
+          tcpSocket:
             port: 80
         startupProbe:
-          initialDelaySeconds: 10
-          httpGet:
-            path: /
+          tcpSocket:
             port: 80
           failureThreshold: 18
         resources:
