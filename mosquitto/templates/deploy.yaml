@@ -34,10 +34,14 @@ spec:
           limits:
             memory: 128Mi
         volumeMounts:
-        - name: mosquitto
+        - name: config
           mountPath: /mosquitto/config
+        - name: data
+          mountPath: /mosquitto/data
       volumes:
-      - name: mosquitto
+      - name: config
         configMap:
           name: mosquitto
-
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Chart.Name }}-{{ .Release.Namespace }}

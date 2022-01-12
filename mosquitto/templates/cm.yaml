@@ -8,3 +8,5 @@ data:
   mosquitto.conf: |
     allow_anonymous true
     listener 1883
+    persistence true
+    persistence_location /mosquitto/data/
