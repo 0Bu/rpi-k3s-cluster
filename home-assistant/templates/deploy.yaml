@@ -23,6 +23,8 @@ spec:
       - name: {{ .Chart.Name }}
         image: ghcr.io/home-assistant/home-assistant:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          privileged: true
         readinessProbe:
           tcpSocket:
             port: 8123
@@ -40,7 +42,12 @@ spec:
         volumeMounts:
           - name: homeassistant
             mountPath: /config
+          - name: conbee
+            mountPath: "/dev/ttyACM0"
       volumes:
+        - name: conbee
+          hostPath:
+            path: "/dev/ttyACM0"
         - name: homeassistant
           persistentVolumeClaim:
             claimName: {{ .Chart.Name }}-{{ .Release.Namespace }}
