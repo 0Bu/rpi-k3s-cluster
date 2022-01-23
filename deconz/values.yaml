@@ -1,5 +1,5 @@
 image:
-  tag: 2.13.04
+  tag: stable
   pullPolicy: IfNotPresent
 vnc:
   mode: 0
