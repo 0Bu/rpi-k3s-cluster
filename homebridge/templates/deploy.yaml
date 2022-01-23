@@ -35,23 +35,19 @@ spec:
           - name: PUID
             value: "65534"
         readinessProbe:
-          httpGet:
-            path: /api/auth/settings
+          tcpSocket:
             port: 80
         livenessProbe:
-          httpGet:
-            path: /api/auth/settings
+          tcpSocket:
             port: 80
           failureThreshold: 30
         startupProbe:
-          initialDelaySeconds: 10
-          httpGet:
-            path: /api/auth/settings
+          tcpSocket:
             port: 80
           failureThreshold: 60
         resources:
           requests:
-            memory: 128M
+            memory: 64M
           limits:
             memory: 512M
         volumeMounts:
@@ -61,4 +57,3 @@ spec:
       - name: homebridge
         persistentVolumeClaim:
           claimName: {{ .Chart.Name }}-{{ .Release.Namespace }}
-
