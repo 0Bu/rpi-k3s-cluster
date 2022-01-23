@@ -1,6 +1,6 @@
 image:
   tag: latest
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 service:
   loadBalancerIP: 192.168.1.25
 nfs:
