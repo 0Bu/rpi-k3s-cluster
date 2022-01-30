@@ -32,19 +32,14 @@ spec:
             limits:
               memory: 128M
           readinessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 80
           livenessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 80
           startupProbe:
-            initialDelaySeconds: 5
-            httpGet:
-              path: /
+            tcpSocket:
               port: 80
-            failureThreshold: 10
           volumeMounts:
             - name: adguard
               mountPath: /opt/adguardhome/conf
