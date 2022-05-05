@@ -1,6 +1,3 @@
-image:
-  tag: 2.15.03
-  pullPolicy: IfNotPresent
 vnc:
   mode: 0
 service:

@@ -21,7 +21,7 @@ spec:
       hostNetwork: true
       containers:
       - name: {{ .Chart.Name }}
-        image: oznu/homebridge:{{ default "latest" .Values.image.tag }}
+        image: oznu/homebridge:{{ .Values.image.tag | default .Chart.AppVersion }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         env:
           - name: TZ
