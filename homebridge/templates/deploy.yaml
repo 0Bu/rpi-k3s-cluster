@@ -21,7 +21,7 @@ spec:
       hostNetwork: true
       containers:
       - name: {{ .Chart.Name }}
-        image: oznu/homebridge:{{ .Values.image.tag | default .Chart.AppVersion }}
+        image: oznu/homebridge:{{ default .Chart.AppVersion .Values.tag }}
         env:
           - name: TZ
             value: "Europe/Berlin"
