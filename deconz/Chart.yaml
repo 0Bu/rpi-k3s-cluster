@@ -3,4 +3,4 @@ name: deconz
 version: 1.0.0
 home: https://github.com/marthoc/docker-deconz
 type: application
-appVersion: "2.15.03"
+appVersion: "2.16.1"
