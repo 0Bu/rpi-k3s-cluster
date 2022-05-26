@@ -6,11 +6,11 @@
 `kubectl label nodes Pi4a usb=conbee`
 
 ## Helm install
-`helm install --create-namespace -n deconz deconz --set vnc.password='<PASSWORD>' .`
+`helm install deconz --set vnc.mode=1 --set vnc.password='<PASSWORD>' .`
 
 ## Helm upgrade
-`helm upgrade -n deconz deconz .`
+`helm upgrade deconz .`
 
 ## Helm unintall
-`helm uninstall -n deconz deconz`
+`helm uninstall deconz`
 
