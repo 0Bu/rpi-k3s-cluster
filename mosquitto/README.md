@@ -3,10 +3,10 @@
 
 ## Helm install
 ```
-helm install --create-namespace -n mosquitto mosquitto .
+helm install mosquitto .
 ```
 
 ## Helm unintall
 ```
-helm uninstall -n mosquitto mosquitto
+helm uninstall mosquitto
 ``` 

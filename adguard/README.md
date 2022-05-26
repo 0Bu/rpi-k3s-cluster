@@ -4,12 +4,12 @@
 
 ## Helm install
 ```
-helm install --create-namespace -n adguard adguard .
+helm install adguard .
 helm install --create-namespace -n adguard-iot -f values-iot.yaml adguard .
 ```
 
 ## Helm unintall
 ```
-helm uninstall -n adguard adguard
+helm uninstall adguard
 helm uninstall -n adguard-iot adguard
 ``` 
