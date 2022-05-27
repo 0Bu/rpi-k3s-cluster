@@ -21,8 +21,7 @@ spec:
       hostNetwork: true
       containers:
       - name: {{ .Chart.Name }}
-        image: ghcr.io/home-assistant/home-assistant:{{ .Values.image.tag }}
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        image: ghcr.io/home-assistant/home-assistant:{{ .Values.tag | default .Chart.AppVersion }}
         securityContext:
           privileged: true
         readinessProbe:

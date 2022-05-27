@@ -3,11 +3,11 @@
 - [HA Docker](https://hub.docker.com/r/homeassistant/home-assistant)
 
 ## Helm install
-`helm install --create-namespace -n home-assistant home-assistant .`
+`helm install home-assistant .`
 
 ## Helm upgrade
-`helm upgrade -n home-assistant home-assistant .`
+`helm upgrade home-assistant .`
 
 ## Helm unintall
-`helm uninstall -n home-assistant home-assistant`
+`helm uninstall home-assistant`
 
