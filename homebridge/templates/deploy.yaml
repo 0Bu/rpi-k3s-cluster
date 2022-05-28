@@ -55,4 +55,4 @@ spec:
       volumes:
       - name: homebridge
         persistentVolumeClaim:
-          claimName: {{ .Chart.Name }}-{{ .Release.Namespace }}
+          claimName: {{ .Release.Name }}

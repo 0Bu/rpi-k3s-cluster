@@ -74,5 +74,5 @@ spec:
             path: "/dev/ttyACM0"
         - name: deconz
           persistentVolumeClaim:
-            claimName: {{ .Chart.Name }}-{{ .Release.Namespace }}
+            claimName: {{ .Release.Name }}
 

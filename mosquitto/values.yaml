@@ -1,5 +1,5 @@
 service:
   loadBalancerIP: 192.168.1.27
 nfs:
-    server: 192.168.1.2
-    path: "/volume1/nfs/mosquitto"
+  server: 192.168.1.2
+  path: "/volume1/nfs/mosquitto"
