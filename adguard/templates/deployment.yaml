@@ -49,5 +49,5 @@ spec:
       volumes:
       - name: adguard
         persistentVolumeClaim:
-          claimName: {{ .Chart.Name }}-{{ .Release.Namespace }}
+          claimName: {{ .Release.Name }}
 

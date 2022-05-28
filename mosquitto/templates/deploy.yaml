@@ -44,4 +44,4 @@ spec:
           name: mosquitto
       - name: data
         persistentVolumeClaim:
-          claimName: {{ .Chart.Name }}-{{ .Release.Namespace }}
+          claimName: {{ .Release.Name }}
