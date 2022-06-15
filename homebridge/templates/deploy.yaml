@@ -25,10 +25,6 @@ spec:
         env:
           - name: TZ
             value: "Europe/Berlin"
-          - name: HOMEBRIDGE_CONFIG_UI 
-            value: "1"
-          - name: HOMEBRIDGE_CONFIG_UI_PORT 
-            value: "80"
           - name: PGID
             value: "65534"
           - name: PUID
