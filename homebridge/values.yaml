@@ -1,5 +1,5 @@
 service:
   loadBalancerIP: 192.168.1.25
 nfs:
-  server: 192.168.1.2
-  path: "/volume1/nfs/homebridge"
+  server: 192.168.1.4
+  path: "/nfs/homebridge"
