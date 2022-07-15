@@ -3,7 +3,7 @@
 - [deCONZ Docker](https://github.com/deconz-community/deconz-docker)
 
 ## [Add a label to a node](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/)
-`kubectl label nodes Pi4a usb=conbee`
+`kubectl label nodes pi4a usb=conbee`
 
 ## Helm install
 `helm install deconz --set vnc.mode=1 --set vnc.password='<PASSWORD>' .`
