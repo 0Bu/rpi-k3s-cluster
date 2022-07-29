@@ -3,10 +3,7 @@
 - [Homebridge Github](https://github.com/homebridge/homebridge)
 
 ## Helm install
-`helm install homebridge .`
-
-## Helm upgrade
-`helm upgrade homebridge .`
+`helm upgrade -i homebridge .`
 
 ## Helm unintall
 `helm uninstall homebridge`
