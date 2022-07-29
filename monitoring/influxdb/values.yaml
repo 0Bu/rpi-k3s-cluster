@@ -1,0 +1,13 @@
+pv:
+  - name: influxdb
+    path: "/nfs/influxdb"
+
+influxdb:
+  persistence:
+    enabled: true
+    useExisting: true
+    name: influxdb
+  service:
+   type: LoadBalancer
+   loadBalancerIP: 192.168.1.31
+
