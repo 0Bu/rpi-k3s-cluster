@@ -9,7 +9,7 @@
 `helm install deconz --set vnc.mode=1 --set vnc.password='<PASSWORD>' .`
 
 ## Helm upgrade
-`helm upgrade deconz .`
+`helm upgrade -i deconz . --reuse-values`
 
 ## Helm unintall
 `helm uninstall deconz`

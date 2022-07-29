@@ -44,7 +44,7 @@ spec:
           requests:
             memory: 64M
           limits:
-            memory: 512M
+            memory: 1024M
         volumeMounts:
         - name: homebridge
           mountPath: /homebridge
