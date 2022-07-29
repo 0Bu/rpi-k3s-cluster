@@ -1,0 +1,108 @@
+telegraf:
+  image:
+    tag: "latest"
+  service:
+    type: LoadBalancer
+  envFromSecret: telegraf-influxdb-token
+  env:
+    - name: INFLUXDB_URL
+      value: "http://influxdb"
+  config: # https://github.com/influxdata/telegraf/blob/master/docs/CONFIGURATION.md
+    agent:
+      interval: "10s"
+      round_interval: true
+      metric_batch_size: 1000
+      metric_buffer_limit: 10000
+      collection_jitter: "0s"
+      flush_interval: "10s"
+      flush_jitter: "0s"
+      precision: ""
+      debug: false
+      quiet: false
+      logfile: ""
+      hostname: "$HOSTNAME"
+      omit_hostname: true
+    processors:
+      - regex: # https://github.com/influxdata/telegraf/tree/release-1.23/plugins/processors/regex
+          fields:
+            key: "message"
+            pattern: ".*Mode=([a-zA-Z0-9]+).*"
+            replacement: "${1}"
+            result_key: "Mode"
+      - regex:
+          fields:
+            key: "message"
+            pattern: ".*States=([a-zA-Z0-9]+).*"
+            replacement: "${1}"
+            result_key: "States"
+      - regex:
+          fields:
+            key: "message"
+            pattern: ".*UpSpeed=(\\d+).*"
+            replacement: ${1}
+            result_key: "UpSpeed"
+      - regex:
+          fields:
+            key: "message"
+            pattern: ".*DownSpeed=(\\d+).*"
+            replacement: ${1}
+            result_key: "DownSpeed"
+      - regex:
+          fields:
+            key: "message"
+            pattern: ".*SNR=(\\d+).*"
+            replacement: ${1}
+            result_key: "SNR"
+      - regex:
+          fields:
+            key: "message"
+            pattern: ".*Atten=(\\d+).*"
+            replacement: ${1}
+            result_key: "Atten"
+      - converter: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/processors/converter/README.md
+          order: 1000
+          fields:
+            integer: ["UpSpeed", "DownSpeed", "SNR", "Atten"]
+    outputs:
+      - influxdb_v2:
+          urls:
+            - "${INFLUXDB_URL}"
+          token: "${INFLUXDB_TOKEN}"
+          organization: "influxdata"
+          bucket: "dsl"
+          namepass: ["vigor","internet_speed"]
+      - influxdb_v2:
+          urls:
+            - "${INFLUXDB_URL}"
+          token: "${INFLUXDB_TOKEN}"
+          organization: "influxdata"
+          bucket: "power"
+          namepass: ["shelly*"]
+      - file:
+          files: ["stdout"]
+          namepass: ["vigor"]
+    inputs:
+      - internet_speed:
+          interval: "5m"
+      - syslog: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/syslog/README.md
+          name_override: "vigor"
+          server: "udp://:6514"
+          syslog_standard: "RFC3164"
+          fielddrop: ["severity_code", "facility_code"]
+      - mqtt_consumer: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/mqtt_consumer/README.md
+          name_override: "shelly_3em"
+          servers: ["tcp://192.168.1.27:1883"]
+          topics: ["shellies/shellyem3-C45BBE5FD547/emeter/#"]
+          data_format: "value"
+          data_type: "float"
+      - mqtt_consumer: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/mqtt_consumer/README.md
+          name_override: "shelly_rack"
+          servers: ["tcp://192.168.1.27:1883"]
+          topics: ["shellyplus1pm-a8032ab9b91c/status/switch:0"]
+          data_format: "json"
+      - mqtt_consumer: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/mqtt_consumer/README.md
+          name_override: "shelly_underfloor_heating"
+          servers: ["tcp://192.168.1.27:1883"]
+          topics: ["shellyplus1pm-a8032ab9d8e4/status/switch:0"]
+          data_format: "json"
+
