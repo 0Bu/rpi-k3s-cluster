@@ -1,0 +1,669 @@
+{
+  "meta": {
+    "version": "1",
+    "type": "dashboard",
+    "name": "Rack-Template",
+    "description": "template created from dashboard: Rack"
+  },
+  "content": {
+    "data": {
+      "type": "dashboard",
+      "attributes": {
+        "name": "Rack",
+        "description": ""
+      },
+      "relationships": {
+        "label": {
+          "data": []
+        },
+        "cell": {
+          "data": [
+            {
+              "type": "cell",
+              "id": "09b6a0ab95478000"
+            },
+            {
+              "type": "cell",
+              "id": "09b6a0ab97478000"
+            },
+            {
+              "type": "cell",
+              "id": "09b6a0ab99478000"
+            },
+            {
+              "type": "cell",
+              "id": "09b6a0ab9b478000"
+            },
+            {
+              "type": "cell",
+              "id": "09b6a12b64478000"
+            }
+          ]
+        },
+        "variable": {
+          "data": []
+        }
+      }
+    },
+    "included": [
+      {
+        "id": "09b6a0ab95478000",
+        "type": "cell",
+        "attributes": {
+          "x": 5,
+          "y": 0,
+          "w": 7,
+          "h": 2
+        },
+        "relationships": {
+          "view": {
+            "data": {
+              "type": "view",
+              "id": "09b6a0ab95478000"
+            }
+          }
+        }
+      },
+      {
+        "id": "09b6a0ab97478000",
+        "type": "cell",
+        "attributes": {
+          "x": 0,
+          "y": 3,
+          "w": 5,
+          "h": 3
+        },
+        "relationships": {
+          "view": {
+            "data": {
+              "type": "view",
+              "id": "09b6a0ab97478000"
+            }
+          }
+        }
+      },
+      {
+        "id": "09b6a0ab99478000",
+        "type": "cell",
+        "attributes": {
+          "x": 5,
+          "y": 2,
+          "w": 7,
+          "h": 2
+        },
+        "relationships": {
+          "view": {
+            "data": {
+              "type": "view",
+              "id": "09b6a0ab99478000"
+            }
+          }
+        }
+      },
+      {
+        "id": "09b6a0ab9b478000",
+        "type": "cell",
+        "attributes": {
+          "x": 0,
+          "y": 0,
+          "w": 5,
+          "h": 3
+        },
+        "relationships": {
+          "view": {
+            "data": {
+              "type": "view",
+              "id": "09b6a0ab9b478000"
+            }
+          }
+        }
+      },
+      {
+        "id": "09b6a12b64478000",
+        "type": "cell",
+        "attributes": {
+          "x": 5,
+          "y": 4,
+          "w": 7,
+          "h": 2
+        },
+        "relationships": {
+          "view": {
+            "data": {
+              "type": "view",
+              "id": "09b6a12b64478000"
+            }
+          }
+        }
+      },
+      {
+        "type": "view",
+        "id": "09b6a0ab95478000",
+        "attributes": {
+          "name": "Verbrauch",
+          "properties": {
+            "shape": "chronograf-v2",
+            "queries": [
+              {
+                "text": "from(bucket: \"power\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"shelly_rack\")\n  |> filter(fn: (r) => r[\"_field\"] == \"apower\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
+                "editMode": "advanced",
+                "name": "",
+                "builderConfig": {
+                  "buckets": [],
+                  "tags": [
+                    {
+                      "key": "_measurement",
+                      "values": [],
+                      "aggregateFunctionType": "filter"
+                    }
+                  ],
+                  "functions": [
+                    {
+                      "name": "mean"
+                    }
+                  ],
+                  "aggregateWindow": {
+                    "period": "auto",
+                    "fillValues": false
+                  }
+                }
+              }
+            ],
+            "axes": {
+              "x": {
+                "bounds": [
+                  "",
+                  ""
+                ],
+                "label": "",
+                "prefix": "",
+                "suffix": "",
+                "base": "10",
+                "scale": "linear"
+              },
+              "y": {
+                "bounds": [
+                  "",
+                  ""
+                ],
+                "label": "",
+                "prefix": "",
+                "suffix": "",
+                "base": "10",
+                "scale": "linear"
+              }
+            },
+            "type": "line-plus-single-stat",
+            "staticLegend": {
+              "colorizeRows": true,
+              "opacity": 1,
+              "orientationThreshold": 100000000,
+              "widthRatio": 1
+            },
+            "colors": [
+              {
+                "id": "99578c53-e61c-411c-986f-8917d60bb2b5",
+                "type": "scale",
+                "hex": "#8F8AF4",
+                "name": "Do Androids Dream of Electric Sheep?",
+                "value": 0
+              },
+              {
+                "id": "cf7a2d98-59a6-441b-bc8c-ce6296546cbf",
+                "type": "scale",
+                "hex": "#A51414",
+                "name": "Do Androids Dream of Electric Sheep?",
+                "value": 0
+              },
+              {
+                "id": "cf618994-3bfe-4095-a88f-b8721ae5ff01",
+                "type": "scale",
+                "hex": "#F4CF31",
+                "name": "Do Androids Dream of Electric Sheep?",
+                "value": 0
+              },
+              {
+                "id": "base",
+                "type": "text",
+                "hex": "#7A65F2",
+                "name": "star",
+                "value": 0
+              }
+            ],
+            "prefix": "",
+            "suffix": "W",
+            "decimalPlaces": {
+              "isEnforced": true,
+              "digits": 0
+            },
+            "note": "",
+            "showNoteWhenEmpty": false,
+            "xColumn": "_time",
+            "generateXAxisTicks": [],
+            "xTotalTicks": 0,
+            "xTickStart": 0,
+            "xTickStep": 0,
+            "yColumn": "_value",
+            "generateYAxisTicks": [],
+            "yTotalTicks": 0,
+            "yTickStart": 0,
+            "yTickStep": 0,
+            "shadeBelow": true,
+            "position": "overlaid",
+            "timeFormat": "HH:mm",
+            "hoverDimension": "auto",
+            "legendColorizeRows": true,
+            "legendHide": true,
+            "legendOpacity": 1,
+            "legendOrientationThreshold": 100000000
+          }
+        }
+      },
+      {
+        "type": "view",
+        "id": "09b6a0ab97478000",
+        "attributes": {
+          "name": "Temperatur",
+          "properties": {
+            "shape": "chronograf-v2",
+            "queries": [
+              {
+                "text": "from(bucket: \"power\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"shelly_rack\")\n  |> filter(fn: (r) => r[\"_field\"] == \"temperature_tC\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
+                "editMode": "advanced",
+                "name": "",
+                "builderConfig": {
+                  "buckets": [],
+                  "tags": [
+                    {
+                      "key": "_measurement",
+                      "values": [],
+                      "aggregateFunctionType": "filter"
+                    }
+                  ],
+                  "functions": [
+                    {
+                      "name": "mean"
+                    }
+                  ],
+                  "aggregateWindow": {
+                    "period": "auto",
+                    "fillValues": false
+                  }
+                }
+              }
+            ],
+            "axes": {
+              "x": {
+                "bounds": [
+                  "",
+                  ""
+                ],
+                "label": "",
+                "prefix": "",
+                "suffix": "",
+                "base": "10",
+                "scale": "linear"
+              },
+              "y": {
+                "bounds": [
+                  "",
+                  ""
+                ],
+                "label": "",
+                "prefix": "",
+                "suffix": "",
+                "base": "10",
+                "scale": "linear"
+              }
+            },
+            "type": "line-plus-single-stat",
+            "staticLegend": {
+              "colorizeRows": true,
+              "opacity": 1,
+              "orientationThreshold": 100000000,
+              "widthRatio": 1
+            },
+            "colors": [
+              {
+                "id": "243b4721-e5a3-42dd-bfcb-20322c796b43",
+                "type": "scale",
+                "hex": "#DA6FF1",
+                "name": "Ectoplasm",
+                "value": 0
+              },
+              {
+                "id": "72e9624c-ef5d-49da-80db-e52979d498d4",
+                "type": "scale",
+                "hex": "#00717A",
+                "name": "Ectoplasm",
+                "value": 0
+              },
+              {
+                "id": "9483714f-8f11-40fd-a4b8-e8aa3ad65ec8",
+                "type": "scale",
+                "hex": "#ACFF76",
+                "name": "Ectoplasm",
+                "value": 0
+              },
+              {
+                "id": "base",
+                "type": "text",
+                "hex": "#F48D38",
+                "name": "tiger",
+                "value": 0
+              }
+            ],
+            "prefix": "",
+            "suffix": "°",
+            "decimalPlaces": {
+              "isEnforced": true,
+              "digits": 0
+            },
+            "note": "",
+            "showNoteWhenEmpty": false,
+            "xColumn": "_time",
+            "generateXAxisTicks": [],
+            "xTotalTicks": 0,
+            "xTickStart": 0,
+            "xTickStep": 0,
+            "yColumn": "_value",
+            "generateYAxisTicks": [],
+            "yTotalTicks": 0,
+            "yTickStart": 0,
+            "yTickStep": 0,
+            "shadeBelow": true,
+            "position": "overlaid",
+            "timeFormat": "HH:mm",
+            "hoverDimension": "auto",
+            "legendColorizeRows": true,
+            "legendHide": false,
+            "legendOpacity": 1,
+            "legendOrientationThreshold": 100000000
+          }
+        }
+      },
+      {
+        "type": "view",
+        "id": "09b6a0ab99478000",
+        "attributes": {
+          "name": "Strom",
+          "properties": {
+            "shape": "chronograf-v2",
+            "queries": [
+              {
+                "text": "from(bucket: \"power\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"shelly_rack\")\n  |> filter(fn: (r) => r[\"_field\"] == \"current\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
+                "editMode": "advanced",
+                "name": "",
+                "builderConfig": {
+                  "buckets": [],
+                  "tags": [
+                    {
+                      "key": "_measurement",
+                      "values": [],
+                      "aggregateFunctionType": "filter"
+                    }
+                  ],
+                  "functions": [
+                    {
+                      "name": "mean"
+                    }
+                  ],
+                  "aggregateWindow": {
+                    "period": "auto",
+                    "fillValues": false
+                  }
+                }
+              }
+            ],
+            "axes": {
+              "x": {
+                "bounds": [
+                  "",
+                  ""
+                ],
+                "label": "",
+                "prefix": "",
+                "suffix": "",
+                "base": "10",
+                "scale": "linear"
+              },
+              "y": {
+                "bounds": [
+                  "",
+                  ""
+                ],
+                "label": "",
+                "prefix": "",
+                "suffix": "",
+                "base": "10",
+                "scale": "linear"
+              }
+            },
+            "type": "line-plus-single-stat",
+            "staticLegend": {
+              "colorizeRows": true,
+              "opacity": 1,
+              "orientationThreshold": 100000000,
+              "widthRatio": 1
+            },
+            "colors": [
+              {
+                "id": "b4e94606-88bd-465c-ba7f-f90eb8d42927",
+                "type": "scale",
+                "hex": "#74D495",
+                "name": "Atlantis",
+                "value": 0
+              },
+              {
+                "id": "a70bedb7-03c1-4ff5-b3d1-7d3c7f1f2e92",
+                "type": "scale",
+                "hex": "#3F3FBA",
+                "name": "Atlantis",
+                "value": 0
+              },
+              {
+                "id": "e205270b-095a-47a6-80a7-467636f4ece2",
+                "type": "scale",
+                "hex": "#FF4D9E",
+                "name": "Atlantis",
+                "value": 0
+              },
+              {
+                "id": "base",
+                "type": "text",
+                "hex": "#32B08C",
+                "name": "viridian",
+                "value": 0
+              }
+            ],
+            "prefix": "",
+            "suffix": "A",
+            "decimalPlaces": {
+              "isEnforced": true,
+              "digits": 2
+            },
+            "note": "",
+            "showNoteWhenEmpty": false,
+            "xColumn": "_time",
+            "generateXAxisTicks": [],
+            "xTotalTicks": 0,
+            "xTickStart": 0,
+            "xTickStep": 0,
+            "yColumn": "_value",
+            "generateYAxisTicks": [],
+            "yTotalTicks": 0,
+            "yTickStart": 0,
+            "yTickStep": 0,
+            "shadeBelow": true,
+            "position": "overlaid",
+            "timeFormat": "HH:mm",
+            "hoverDimension": "auto",
+            "legendColorizeRows": true,
+            "legendHide": false,
+            "legendOpacity": 1,
+            "legendOrientationThreshold": 100000000
+          }
+        }
+      },
+      {
+        "type": "view",
+        "id": "09b6a0ab9b478000",
+        "attributes": {
+          "name": "Gesamtverbrauch",
+          "properties": {
+            "shape": "chronograf-v2",
+            "type": "single-stat",
+            "queries": [
+              {
+                "text": "from(bucket: \"power\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"shelly_rack\")\n  |> filter(fn: (r) => r[\"_field\"] == \"aenergy_total\")\n  |> map(fn: (r) => ({ r with _value: r._value / 1000.0 }))\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
+                "editMode": "advanced",
+                "name": "",
+                "builderConfig": {
+                  "buckets": [],
+                  "tags": [
+                    {
+                      "key": "_measurement",
+                      "values": [],
+                      "aggregateFunctionType": "filter"
+                    }
+                  ],
+                  "functions": [
+                    {
+                      "name": "mean"
+                    }
+                  ],
+                  "aggregateWindow": {
+                    "period": "auto",
+                    "fillValues": false
+                  }
+                }
+              }
+            ],
+            "prefix": "",
+            "tickPrefix": "",
+            "suffix": "kWh",
+            "tickSuffix": "",
+            "colors": [
+              {
+                "id": "base",
+                "type": "text",
+                "hex": "#ffffff",
+                "name": "white",
+                "value": 0
+              }
+            ],
+            "decimalPlaces": {
+              "isEnforced": true,
+              "digits": 2
+            },
+            "note": "",
+            "showNoteWhenEmpty": false
+          }
+        }
+      },
+      {
+        "type": "view",
+        "id": "09b6a12b64478000",
+        "attributes": {
+          "name": "Spannung",
+          "properties": {
+            "shape": "chronograf-v2",
+            "queries": [
+              {
+                "text": "from(bucket: \"power\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"shelly_rack\")\n  |> filter(fn: (r) => r[\"_field\"] == \"voltage\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
+                "editMode": "advanced",
+                "name": "",
+                "builderConfig": {
+                  "buckets": [],
+                  "tags": [
+                    {
+                      "key": "_measurement",
+                      "values": [],
+                      "aggregateFunctionType": "filter"
+                    }
+                  ],
+                  "functions": [
+                    {
+                      "name": "mean"
+                    }
+                  ],
+                  "aggregateWindow": {
+                    "period": "auto",
+                    "fillValues": false
+                  }
+                }
+              }
+            ],
+            "axes": {
+              "x": {
+                "bounds": [
+                  "",
+                  ""
+                ],
+                "label": "",
+                "prefix": "",
+                "suffix": "",
+                "base": "10",
+                "scale": "linear"
+              },
+              "y": {
+                "bounds": [
+                  "",
+                  ""
+                ],
+                "label": "",
+                "prefix": "",
+                "suffix": "",
+                "base": "10",
+                "scale": "linear"
+              }
+            },
+            "type": "line-plus-single-stat",
+            "staticLegend": {
+              "colorizeRows": true,
+              "opacity": 1,
+              "orientationThreshold": 100000000,
+              "widthRatio": 1
+            },
+            "colors": [
+              {
+                "id": "base",
+                "type": "text",
+                "hex": "#4591ED",
+                "name": "ocean",
+                "value": 0
+              }
+            ],
+            "prefix": "",
+            "suffix": "V",
+            "decimalPlaces": {
+              "isEnforced": true,
+              "digits": 2
+            },
+            "note": "",
+            "showNoteWhenEmpty": false,
+            "xColumn": "",
+            "generateXAxisTicks": [],
+            "xTotalTicks": 0,
+            "xTickStart": 0,
+            "xTickStep": 0,
+            "yColumn": "",
+            "generateYAxisTicks": [],
+            "yTotalTicks": 0,
+            "yTickStart": 0,
+            "yTickStep": 0,
+            "shadeBelow": true,
+            "position": "overlaid",
+            "timeFormat": "HH:mm",
+            "hoverDimension": "auto",
+            "legendColorizeRows": true,
+            "legendHide": false,
+            "legendOpacity": 1,
+            "legendOrientationThreshold": 100000000
+          }
+        }
+      }
+    ]
+  },
+  "labels": []
+}
