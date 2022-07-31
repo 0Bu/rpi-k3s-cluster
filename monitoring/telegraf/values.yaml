@@ -1,9 +1,9 @@
 telegraf:
   image:
     tag: "latest"
+  envFromSecret: telegraf-influxdb-token
   service:
     type: LoadBalancer
-  envFromSecret: telegraf-influxdb-token
   env:
     - name: INFLUXDB_URL
       value: "http://influxdb"
@@ -69,6 +69,13 @@ telegraf:
             - "${INFLUXDB_URL}"
           token: "${INFLUXDB_TOKEN}"
           organization: "influxdata"
+          bucket: "default"
+          namedrop: ["vigor","internet_speed","shelly*"]
+      - influxdb_v2:
+          urls:
+            - "${INFLUXDB_URL}"
+          token: "${INFLUXDB_TOKEN}"
+          organization: "influxdata"
           bucket: "dsl"
           namepass: ["vigor","internet_speed"]
       - influxdb_v2:
@@ -82,6 +89,19 @@ telegraf:
           files: ["stdout"]
           namepass: ["vigor"]
     inputs:
+      - cpu:
+          percpu: true
+          totalcpu: true
+          collect_cpu_time: false
+          report_active: false
+      - disk:
+          ignore_fs: ["tmpfs", "devtmpfs", "devfs", "iso9660", "overlay", "aufs", "squashfs"]
+      - diskio: {}
+      - mem: {}
+      - net: {}
+      - processes: {}
+      - swap: {}
+      - system: {}
       - internet_speed:
           interval: "5m"
       - syslog: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/syslog/README.md
