@@ -3,5 +3,4 @@ name: homebridge
 description: https://github.com/homebridge/homebridge
 type: application
 version: 1.0.0
-appVersion: "2022-07-08"
-
+appVersion: "2022-08-09"
