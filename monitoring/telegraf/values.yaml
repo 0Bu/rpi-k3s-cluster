@@ -70,7 +70,7 @@ telegraf:
           token: "${INFLUXDB_TOKEN}"
           organization: "influxdata"
           bucket: "default"
-          namedrop: ["vigor","internet_speed","shelly*"]
+          namedrop: ["vigor","internet_speed","shelly*","ems-esp"]
       - influxdb_v2:
           urls:
             - "${INFLUXDB_URL}"
@@ -85,9 +85,16 @@ telegraf:
           organization: "influxdata"
           bucket: "power"
           namepass: ["shelly*"]
+      - influxdb_v2:
+          urls:
+            - "${INFLUXDB_URL}"
+          token: "${INFLUXDB_TOKEN}"
+          organization: "influxdata"
+          bucket: "ems-esp"
+          namepass: ["ems-esp"]
       - file:
           files: ["stdout"]
-          namepass: ["vigor"]
+          namepass: ["shelly_boiler"]
     inputs:
       - cpu:
           percpu: true
@@ -115,14 +122,25 @@ telegraf:
           topics: ["shellies/shellyem3-C45BBE5FD547/emeter/#"]
           data_format: "value"
           data_type: "float"
-      - mqtt_consumer: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/mqtt_consumer/README.md
+      - mqtt_consumer:
           name_override: "shelly_rack"
           servers: ["tcp://192.168.1.27:1883"]
           topics: ["shellyplus1pm-a8032ab9b91c/status/switch:0"]
           data_format: "json"
-      - mqtt_consumer: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/mqtt_consumer/README.md
+      - mqtt_consumer:
           name_override: "shelly_underfloor_heating"
           servers: ["tcp://192.168.1.27:1883"]
           topics: ["shellyplus1pm-a8032ab9d8e4/status/switch:0"]
+          data_format: "json"
+      - mqtt_consumer:
+          name_override: "shelly_boiler"
+          servers: ["tcp://192.168.1.27:1883"]
+          topics: ["shellies/shelly1pm-F4CFA2E50172/relay/0/power","shellies/shelly1pm-F4CFA2E50172/relay/0/energy"]
+          data_format: "value"
+          data_type: "float"
+      - mqtt_consumer: 
+          name_override: "ems-esp"
+          servers: ["tcp://192.168.1.27:1883"]
+          topics: ["ems-esp/boiler_data","ems-esp/boiler_data_ww","ems-esp/thermostat_data","ems-esp/heartbeat"]
           data_format: "json"
 
