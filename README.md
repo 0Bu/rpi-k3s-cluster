@@ -46,6 +46,14 @@ dtparam=eth_led0=4
 dtparam=eth_led1=4
 ```
 
+### NTP Server
+```
+sudo apt update
+sudo apt install ntp
+echo "restrict 192.168.1.0 mask 255.255.255.0 nomodify notrap" >> /etc/ntp.conf
+sudo /etc/init.d/ntp restart
+```
+
 ### [NFS](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nfs-mount-on-ubuntu-20-04-de)
 #### Client
 ```
