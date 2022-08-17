@@ -92,9 +92,9 @@ telegraf:
           organization: "influxdata"
           bucket: "ems-esp"
           namepass: ["ems-esp"]
-      - file:
-          files: ["stdout"]
-          namepass: ["shelly_boiler"]
+#      - file:
+#          files: ["stdout"]
+#          namepass: ["vigor"]
     inputs:
       - cpu:
           percpu: true
