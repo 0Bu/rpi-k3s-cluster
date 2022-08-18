@@ -41,12 +41,12 @@ spec:
         volumeMounts:
           - name: homeassistant
             mountPath: /config
-          - name: conbee
-            mountPath: "/dev/ttyACM0"
+#          - name: conbee
+#            mountPath: "/dev/ttyACM0"
       volumes:
-        - name: conbee
-          hostPath:
-            path: "/dev/ttyACM0"
+#        - name: conbee
+#          hostPath:
+#            path: "/dev/ttyACM0"
         - name: homeassistant
           persistentVolumeClaim:
             claimName: {{ .Chart.Name }}-{{ .Release.Namespace }}
