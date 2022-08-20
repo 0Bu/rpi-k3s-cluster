@@ -7,6 +7,14 @@ telegraf:
   env:
     - name: INFLUXDB_URL
       value: "http://influxdb"
+  volumes:
+    - name: cputemp
+      hostPath:
+        path: "/sys/class/thermal/thermal_zone0/"
+  mountPoints:
+    - name: cputemp
+      mountPath: "/sys/class/thermal/thermal_zone0/temp"
+      subPath: "temp"
   config: # https://github.com/influxdata/telegraf/blob/master/docs/CONFIGURATION.md
     agent:
       interval: "10s"
@@ -96,6 +104,11 @@ telegraf:
 #          files: ["stdout"]
 #          namepass: ["vigor"]
     inputs:
+      - file:
+          name_override: "cpu_temperature"
+          files: ["/sys/class/thermal/thermal_zone0/temp"]
+          data_format: "value"
+          data_type: "integer"
       - cpu:
           percpu: true
           totalcpu: true
