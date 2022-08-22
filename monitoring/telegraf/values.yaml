@@ -156,4 +156,4 @@ telegraf:
           servers: ["tcp://192.168.1.27:1883"]
           topics: ["ems-esp/boiler_data","ems-esp/boiler_data_ww","ems-esp/thermostat_data","ems-esp/heartbeat"]
           data_format: "json"
-
+          json_string_fields: ["heatingactive","tapwateractive","burngas","burngas2","heatingpump","fanwork","ignwork","oilpreheat","heatingactivated","ww3wayvalve","wwactivated","wwactive","wwcharging","wwcirc","wwcircpump","wwdisinfecting","wwonetime","wwrecharging","wwtempok"] 
