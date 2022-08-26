@@ -123,7 +123,7 @@ telegraf:
       - swap: {}
       - system: {}
       - internet_speed:
-          interval: "5m"
+          interval: "15m"
       - syslog: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/syslog/README.md
           name_override: "vigor"
           server: "udp://:6514"
