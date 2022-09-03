@@ -1,6 +1,0 @@
-apiVersion: v2
-name: google-ddns-client
-description: https://support.google.com/domains/answer/6147083
-type: application
-version: 1.0.0
-appVersion: "1.0.0"
