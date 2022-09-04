@@ -43,8 +43,10 @@ spec:
         resources:
           requests:
             memory: 64M
+            cpu: 250m
           limits:
             memory: 1024M
+            cpu: 1.0
         volumeMounts:
         - name: homebridge
           mountPath: /homebridge
