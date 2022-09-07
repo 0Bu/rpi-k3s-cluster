@@ -32,41 +32,17 @@ telegraf:
       omit_hostname: true
     processors:
       - regex: # https://github.com/influxdata/telegraf/tree/release-1.23/plugins/processors/regex
-          fields:
-            key: "message"
-            pattern: ".*Mode=([a-zA-Z0-9]+).*"
-            replacement: "${1}"
-            result_key: "Mode"
+          fields: {key: "message", pattern: ".*Mode=([a-zA-Z0-9]+).*", replacement: "${1}", result_key: "Mode"}
       - regex:
-          fields:
-            key: "message"
-            pattern: ".*States=([a-zA-Z0-9]+).*"
-            replacement: "${1}"
-            result_key: "States"
+          fields: {key: "message", pattern: ".*States=([a-zA-Z0-9]+).*", replacement: "${1}", result_key: "States"}
       - regex:
-          fields:
-            key: "message"
-            pattern: ".*UpSpeed=(\\d+).*"
-            replacement: ${1}
-            result_key: "UpSpeed"
+          fields: {key: "message", pattern: ".*UpSpeed=(\\d+).*", replacement: "${1}", result_key: "UpSpeed"}
       - regex:
-          fields:
-            key: "message"
-            pattern: ".*DownSpeed=(\\d+).*"
-            replacement: ${1}
-            result_key: "DownSpeed"
+          fields: {key: "message", pattern: ".*DownSpeed=(\\d+).*", replacement: "${1}", result_key: "DownSpeed"}
       - regex:
-          fields:
-            key: "message"
-            pattern: ".*SNR=(\\d+).*"
-            replacement: ${1}
-            result_key: "SNR"
+          fields: {key: "message", pattern: ".*SNR=(\\d+).*", replacement: "${1}", result_key: "SNR"}
       - regex:
-          fields:
-            key: "message"
-            pattern: ".*Atten=(\\d+).*"
-            replacement: ${1}
-            result_key: "Atten"
+          fields: {key: "message", pattern: ".*Atten=(\\d+).*", replacement: "${1}", result_key: "Atten"}
       - converter: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/processors/converter/README.md
           order: 1000
           fields:
@@ -132,28 +108,56 @@ telegraf:
       - mqtt_consumer: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/mqtt_consumer/README.md
           name_override: "shelly_3em"
           servers: ["tcp://mosquitto:1883"]
-          topics: ["shellies/shellyem3-C45BBE5FD547/emeter/#"]
+          topics: 
+            - "shellies/shellyem3-C45BBE5FD547/emeter/#"
           data_format: "value"
           data_type: "float"
       - mqtt_consumer:
           name_override: "shelly_rack"
           servers: ["tcp://mosquitto:1883"]
-          topics: ["shellyplus1pm-a8032ab9b91c/status/switch:0"]
+          topics: 
+            - "shellyplus1pm-a8032ab9b91c/status/switch:0"
           data_format: "json"
       - mqtt_consumer:
           name_override: "shelly_underfloor_heating"
           servers: ["tcp://mosquitto:1883"]
-          topics: ["shellyplus1pm-a8032ab9d8e4/status/switch:0"]
+          topics: 
+            - "shellyplus1pm-a8032ab9d8e4/status/switch:0"
           data_format: "json"
       - mqtt_consumer:
           name_override: "shelly_boiler"
           servers: ["tcp://mosquitto:1883"]
-          topics: ["shellies/shelly1pm-F4CFA2E50172/relay/0/power","shellies/shelly1pm-F4CFA2E50172/relay/0/energy"]
+          topics: 
+            - "shellies/shelly1pm-F4CFA2E50172/relay/0/power"
+            - "shellies/shelly1pm-F4CFA2E50172/relay/0/energy"
           data_format: "value"
           data_type: "float"
-      - mqtt_consumer: 
+      - mqtt_consumer: # https://emsesp.github.io/docs/#/MQTT?id=boiler
           name_override: "ems-esp"
           servers: ["tcp://mosquitto:1883"]
-          topics: ["ems-esp/boiler_data","ems-esp/boiler_data_ww","ems-esp/thermostat_data","ems-esp/heartbeat"]
+          topics: 
+            - "ems-esp/boiler_data"
+            - "ems-esp/boiler_data_ww"
+            - "ems-esp/thermostat_data"
+            - "ems-esp/heartbeat"
           data_format: "json"
-          json_string_fields: ["heatingactive","tapwateractive","burngas","burngas2","heatingpump","fanwork","ignwork","oilpreheat","heatingactivated","ww3wayvalve","wwactivated","wwactive","wwcharging","wwcirc","wwcircpump","wwdisinfecting","wwonetime","wwrecharging","wwtempok"] 
+          json_string_fields:
+            - "heatingactive"
+            - "tapwateractive"
+            - "burngas"
+            - "burngas2"
+            - "heatingpump"
+            - "fanwork"
+            - "ignwork"
+            - "oilpreheat"
+            - "heatingactivated"
+            - "ww3wayvalve"
+            - "wwactivated"
+            - "wwactive"
+            - "wwcharging"
+            - "wwcirc"
+            - "wwcircpump"
+            - "wwdisinfecting"
+            - "wwonetime"
+            - "wwrecharging"
+            - "wwtempok"
