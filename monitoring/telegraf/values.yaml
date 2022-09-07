@@ -100,9 +100,9 @@ telegraf:
           organization: "influxdata"
           bucket: "ems-esp"
           namepass: ["ems-esp"]
-#      - file:
-#          files: ["stdout"]
-#          namepass: ["vigor"]
+      - file:
+          files: ["stdout"]
+          namepass: ["vigor"]
     inputs:
       - file:
           name_override: "cpu_temperature"
@@ -131,29 +131,29 @@ telegraf:
           fielddrop: ["severity_code", "facility_code"]
       - mqtt_consumer: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/mqtt_consumer/README.md
           name_override: "shelly_3em"
-          servers: ["tcp://192.168.1.27:1883"]
+          servers: ["tcp://mosquitto:1883"]
           topics: ["shellies/shellyem3-C45BBE5FD547/emeter/#"]
           data_format: "value"
           data_type: "float"
       - mqtt_consumer:
           name_override: "shelly_rack"
-          servers: ["tcp://192.168.1.27:1883"]
+          servers: ["tcp://mosquitto:1883"]
           topics: ["shellyplus1pm-a8032ab9b91c/status/switch:0"]
           data_format: "json"
       - mqtt_consumer:
           name_override: "shelly_underfloor_heating"
-          servers: ["tcp://192.168.1.27:1883"]
+          servers: ["tcp://mosquitto:1883"]
           topics: ["shellyplus1pm-a8032ab9d8e4/status/switch:0"]
           data_format: "json"
       - mqtt_consumer:
           name_override: "shelly_boiler"
-          servers: ["tcp://192.168.1.27:1883"]
+          servers: ["tcp://mosquitto:1883"]
           topics: ["shellies/shelly1pm-F4CFA2E50172/relay/0/power","shellies/shelly1pm-F4CFA2E50172/relay/0/energy"]
           data_format: "value"
           data_type: "float"
       - mqtt_consumer: 
           name_override: "ems-esp"
-          servers: ["tcp://192.168.1.27:1883"]
+          servers: ["tcp://mosquitto:1883"]
           topics: ["ems-esp/boiler_data","ems-esp/boiler_data_ww","ems-esp/thermostat_data","ems-esp/heartbeat"]
           data_format: "json"
           json_string_fields: ["heatingactive","tapwateractive","burngas","burngas2","heatingpump","fanwork","ignwork","oilpreheat","heatingactivated","ww3wayvalve","wwactivated","wwactive","wwcharging","wwcirc","wwcircpump","wwdisinfecting","wwonetime","wwrecharging","wwtempok"] 
