@@ -1,6 +1,6 @@
-# Homebridge
-- [Homebridge.io](https://homebridge.io)
-- [Homebridge Github](https://github.com/homebridge/homebridge)
+# [Homebridge](https://homebridge.io)
+- [Homebridge](https://github.com/homebridge/homebridge)
+- [Homebridge Docker](https://github.com/oznu/docker-homebridge)
 
 ## Helm install
 `helm upgrade -i homebridge .`
