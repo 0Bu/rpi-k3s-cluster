@@ -1,6 +1,6 @@
 apiVersion: v2
 name: deconz
 version: 1.0.0
-home: https://github.com/marthoc/docker-deconz
+home: https://github.com/deconz-community/deconz-docker
 type: application
 appVersion: "2.17.01"
