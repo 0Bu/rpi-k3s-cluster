@@ -98,8 +98,8 @@ telegraf:
       - processes: {}
       - swap: {}
       - system: {}
-      - internet_speed: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/internet_speed/README.md
-          interval: "60m"
+      #- internet_speed: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/internet_speed/README.md
+          #interval: "60m"
       - syslog: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/syslog/README.md
           name_override: "vigor"
           server: "udp://:6514"
