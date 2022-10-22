@@ -1,7 +1,7 @@
 # [MetalLB](https://metallb.universe.tf/)
 
-## [Installation](https://metallb.universe.tf/installation/#installation-with-helm)
+## [Installation](https://metallb.universe.tf/installation/)
 ```
-helm repo add metallb https://metallb.github.io/metallb
-helm install -n metallb-system --create-namespace metallb metallb/metallb --version 0.12.1 -f values.yaml
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+kubectl apply -f IPAddressPool.yaml
 ```

@@ -4,8 +4,8 @@
 
 ## Helm install
 ```
-helm install adguard .
-helm install adguard-iot -f values-iot.yaml .
+helm upgrade -i adguard .
+helm upgrade -i adguard-iot -f values-iot.yaml .
 ```
 
 ## Helm unintall
