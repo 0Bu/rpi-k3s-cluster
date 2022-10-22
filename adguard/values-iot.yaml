@@ -1,5 +1,5 @@
 service:
-  loadBalancerIP: 192.168.1.21
+  loadBalancerIPs: 192.168.1.21, fd::21
 nfs:
   server: 192.168.1.4
   path: "/nfs/adguard-iot"
