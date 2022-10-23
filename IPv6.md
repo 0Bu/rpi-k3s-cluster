@@ -11,7 +11,6 @@ sudo apt install -y radvd
 ```
 interface eth0 {
    AdvSendAdvert on;
-   MaxRtrAdvInterval 60;
    prefix fd::/64 {};
 };
 ```
