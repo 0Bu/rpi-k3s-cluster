@@ -4,6 +4,9 @@ metadata:
   name: {{ .Release.Name }} 
   labels:
     app: {{ .Release.Name }}
+  annotations:
+    metallb.universe.tf/address-pool: default
+    metallb.universe.tf/loadBalancerIPs: {{ .Values.service.loadBalancerIPs }}
 spec:
   selector:
     app: {{ .Release.Name }} 
@@ -17,4 +20,3 @@ spec:
     targetPort: 9001
   type: LoadBalancer
   externalTrafficPolicy: Local
-  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
