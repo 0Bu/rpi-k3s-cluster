@@ -6,6 +6,8 @@ metadata:
     app: {{ .Release.Name }}
   annotations:
     metallb.universe.tf/allow-shared-ip: {{ .Chart.Name }}
+    metallb.universe.tf/address-pool: default
+    metallb.universe.tf/loadBalancerIPs: {{ .Values.service.loadBalancerIPs }}
 spec:
   selector:
     app: {{ .Release.Name }}
@@ -18,7 +20,6 @@ spec:
     targetPort: 21063
   type: LoadBalancer
   externalTrafficPolicy: Local
-  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
 ---
 apiVersion: v1
 kind: Service
@@ -28,6 +29,8 @@ metadata:
     app: {{ .Release.Name }}
   annotations:
     metallb.universe.tf/allow-shared-ip: {{ .Chart.Name }}
+    metallb.universe.tf/address-pool: default
+    metallb.universe.tf/loadBalancerIPs: {{ .Values.service.loadBalancerIPs }}
 spec:
   selector:
     app: {{ .Release.Name }}
@@ -38,5 +41,3 @@ spec:
     protocol: UDP
   type: LoadBalancer
   externalTrafficPolicy: Local
-  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
-
