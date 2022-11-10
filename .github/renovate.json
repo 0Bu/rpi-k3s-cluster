@@ -1,4 +1,5 @@
 {
+  "extends": ["config:base"],
   "onboarding": false,
   "platform": "github",
   "configMigration": true,
