@@ -6,7 +6,7 @@
   "repositories": ["0Bu/pi-cluster"],
   "packageRules": [
     {
-      "matchUpdateTypes": ["pin","digest","patch","minor","major"],
+      "matchDatasources": ["docker"],
       "automerge": true
     }
   ]
