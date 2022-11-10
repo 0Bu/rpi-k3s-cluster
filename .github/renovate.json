@@ -1,6 +1,7 @@
 {
   "onboarding": false,
   "platform": "github",
+  "configMigration": true,
   "automerge": true,
   "ignoreTests": true,
   "dependencyDashboard": true,
