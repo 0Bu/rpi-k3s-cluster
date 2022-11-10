@@ -1,6 +1,6 @@
 image:
   repository: "deconzcommunity/deconz"
-  tag: "2.19.01"
+  tag: "2.19.02"
 vnc:
   mode: 0
 service:
