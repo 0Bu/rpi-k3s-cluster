@@ -1,11 +1,11 @@
 {
   "branchPrefix": "renovate/",
-  "dryRun": true,
+  "dryRun": "full",
   "username": "renovate",
   "gitAuthor": "Renovate Bot <bot@renovateapp.com>",
   "onboarding": false,
   "platform": "github",
-  "includeForks": true,
+  "includeForks": false,
   "repositories": [
     "0Bu/pi-cluster"
   ],
