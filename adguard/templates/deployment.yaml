@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          image: adguard/adguardhome:{{ .Values.tag | default .Chart.AppVersion }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           ports:
             - containerPort: 3000
             - containerPort: 80

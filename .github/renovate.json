@@ -1,0 +1,8 @@
+{
+  "branchPrefix": "renovate/",
+  "onboarding": false,
+  "platform": "github",
+  "automerge": true,
+  "platformAutomerge": true,
+  "repositories": ["0Bu/pi-cluster"]
+}
