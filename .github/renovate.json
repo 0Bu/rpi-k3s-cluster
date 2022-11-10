@@ -1,5 +1,4 @@
 {
-  "branchPrefix": "renovate/",
   "onboarding": false,
   "platform": "github",
   "automerge": true,
