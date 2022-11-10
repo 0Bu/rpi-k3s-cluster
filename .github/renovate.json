@@ -6,22 +6,11 @@
   "onboarding": false,
   "platform": "github",
   "includeForks": false,
-  "repositories": [
-    "0Bu/pi-cluster"
-  ],
+  "repositories": ["0Bu/pi-cluster"],
   "packageRules": [
     {
-      "description": "lockFileMaintenance",
-      "matchUpdateTypes": [
-        "pin",
-        "digest",
-        "patch",
-        "minor",
-        "major",
-        "lockFileMaintenance"
-      ],
-      "dependencyDashboardApproval": false,
-      "stabilityDays": 0
+      "matchUpdateTypes": ["pin","digest","patch","minor","major"],
+      "automerge": true
     }
   ]
 }
