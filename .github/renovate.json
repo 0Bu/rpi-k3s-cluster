@@ -4,6 +4,6 @@
   "automerge": true,
   "automergeType": "pr",
   "platformAutomerge": true,
-  "ignoreTests": true
+  "ignoreTests": true,
   "repositories": ["0Bu/pi-cluster"]
 }
