@@ -3,4 +3,4 @@ name: mosquitto
 version: 1.0.0
 home: https://mosquitto.org 
 type: application
-appVersion: "2.0"
+appVersion: "1.0.0"
