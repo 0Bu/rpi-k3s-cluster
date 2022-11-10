@@ -1,4 +1,4 @@
-name: renovate
+name: Renovate
 on:
   schedule:
     - cron: '0 * * * *'
