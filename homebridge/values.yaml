@@ -1,3 +1,6 @@
+image:
+  repository: "oznu/homebridge"
+  tag: "2022-10-14"
 service:
   loadBalancerIPs: 192.168.1.25
 nfs:

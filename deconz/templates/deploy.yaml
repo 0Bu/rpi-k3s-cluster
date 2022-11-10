@@ -21,7 +21,7 @@ spec:
         usb: conbee
       containers:
       - name: {{ .Chart.Name }}
-        image: deconzcommunity/deconz:{{ .Values.tag | default .Chart.AppVersion }}
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         securityContext:
           runAsUser: 65534
           runAsGroup: 65534
