@@ -3,7 +3,6 @@
   "gitAuthor": "Renovate Bot <bot@renovateapp.com>",
   "onboarding": false,
   "platform": "github",
-  "includeForks": false,
   "repositories": ["0Bu/pi-cluster"],
   "packageRules": [
     {
