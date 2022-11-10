@@ -3,6 +3,7 @@
   "gitAuthor": "Renovate Bot <bot@renovateapp.com>",
   "onboarding": false,
   "platform": "github",
+  "platformAutomerge": true,
   "repositories": ["0Bu/pi-cluster"],
   "packageRules": [
     {
