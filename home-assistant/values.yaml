@@ -1,3 +1,6 @@
+image:
+  repository: "ghcr.io/home-assistant/home-assistant"
+  tag: "2022.10"
 service:
   loadBalancerIPs: 192.168.1.24
 nfs:
