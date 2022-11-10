@@ -2,8 +2,6 @@
   "onboarding": false,
   "platform": "github",
   "automerge": true,
-  "automergeType": "pr",
-  "platformAutomerge": true,
   "ignoreTests": true,
   "dependencyDashboard": true,
   "repositories": ["0Bu/pi-cluster"]
