@@ -6,5 +6,12 @@
   "automerge": true,
   "ignoreTests": true,
   "dependencyDashboard": true,
-  "repositories": ["0Bu/pi-cluster"]
+  "repositories": ["0Bu/pi-cluster"],
+  "packageRules": [
+    {
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["oznu/homebridge"],
+      "versioning": "loose"
+    }
+  ]
 }
