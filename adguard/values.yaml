@@ -1,6 +1,6 @@
 image:
   repository: "adguard/adguardhome"
-  tag: "v0.107.18"
+  tag: "v0.107.17"
 service:
   loadBalancerIPs: 192.168.1.20, fd::20
 nfs:
