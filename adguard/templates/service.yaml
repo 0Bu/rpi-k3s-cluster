@@ -5,7 +5,6 @@ metadata:
   labels:
     app: {{ .Release.Name }}
   annotations:
-    metallb.universe.tf/allow-shared-ip: {{ .Chart.Name }}
     metallb.universe.tf/address-pool: default
     metallb.universe.tf/loadBalancerIPs: {{ .Values.service.loadBalancerIPs }}
 spec:
@@ -20,32 +19,11 @@ spec:
     protocol: TCP
     port: 3000
     targetPort: 3000
-  - name: dns
+  - name: dns-tcp
     protocol: TCP
     port: 53
     targetPort: 53
-  ipFamilyPolicy: PreferDualStack
-  ipFamilies:
-    - IPv6
-    - IPv4
-  type: LoadBalancer
-  externalTrafficPolicy: Local
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Release.Name }}-udp
-  labels:
-    app: {{ .Release.Name }}
-  annotations:
-    metallb.universe.tf/allow-shared-ip: {{ .Chart.Name }}
-    metallb.universe.tf/address-pool: default
-    metallb.universe.tf/loadBalancerIPs: {{ .Values.service.loadBalancerIPs }}
-spec:
-  selector:
-    app: {{ .Release.Name }}
-  ports:
-  - name: dns
+  - name: dns-udp
     protocol: UDP
     port: 53
     targetPort: 53
