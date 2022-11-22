@@ -37,11 +37,14 @@ spec:
           - name: DECONZ_UPNP
             value: "0"
           - name: DECONZ_VNC_MODE
-            value: {{ default "0" .Values.vnc.mode | quote }}
+            value: {{ default "1" .Values.vnc.mode | quote }}
           - name: DECONZ_VNC_PORT
             value: "5900"
           - name: DECONZ_VNC_PASSWORD
-            value: {{ default "geheim" .Values.vnc.password | quote }}
+            valueFrom:
+              secretKeyRef:
+                name: deconz-vnc-password
+                key: vnc-password
           - name: DECONZ_UID
             value: "65534"
           - name: DECONZ_GID
