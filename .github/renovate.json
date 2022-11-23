@@ -27,10 +27,5 @@
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
     }
-  ],
-  "helmv3": {
-    "fileMatch": [
-      "^Chart.yaml$"
-    ]
-  }
+  ]
 }
