@@ -1,11 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-tcp
+  name: {{ .Release.Name }}
   labels:
     app: {{ .Release.Name }}
   annotations:
-    metallb.universe.tf/allow-shared-ip: {{ .Chart.Name }}
     metallb.universe.tf/address-pool: default
     metallb.universe.tf/loadBalancerIPs: {{ .Values.service.loadBalancerIPs }}
 spec:
@@ -18,23 +17,6 @@ spec:
   - name: homekit
     port: 21063
     targetPort: 21063
-  type: LoadBalancer
-  externalTrafficPolicy: Local
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Release.Name }}-udp
-  labels:
-    app: {{ .Release.Name }}
-  annotations:
-    metallb.universe.tf/allow-shared-ip: {{ .Chart.Name }}
-    metallb.universe.tf/address-pool: default
-    metallb.universe.tf/loadBalancerIPs: {{ .Values.service.loadBalancerIPs }}
-spec:
-  selector:
-    app: {{ .Release.Name }}
-  ports:
   - name: mdns
     port: 5353
     targetPort: 5353
