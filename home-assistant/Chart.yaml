@@ -3,4 +3,5 @@ name: home-assistant
 version: 1.0.0
 home: https://www.home-assistant.io/
 type: application
-appVersion: "1.0.0"
+# renovate: image=ghcr.io/home-assistant/home-assistant
+appVersion: "2023.1"
