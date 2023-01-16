@@ -13,5 +13,12 @@
       "matchPackageNames": ["oznu/homebridge"],
       "versioning": "loose"
     }
+  ],
+  "regexManagers": [
+    {
+      "fileMatch": ["(^|/)Chart\\.yaml$"],
+      "matchStrings": ["#\\s?renovate: image=(?<depName>.*?)\\s?appVersion:\\s?\\\"?(?<currentValue>[\\w+\\.\\-]*)"],
+      "datasourceTemplate": "docker"
+    }
   ]
 }
