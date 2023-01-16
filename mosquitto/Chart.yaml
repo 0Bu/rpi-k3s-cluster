@@ -3,4 +3,5 @@ name: mosquitto
 version: 1.0.0
 home: https://mosquitto.org 
 type: application
-appVersion: "1.0.0"
+# renovate: image=eclipse-mosquitto
+appVersion: "2.0.15"
