@@ -1,6 +1,6 @@
 # [AdGuard](https://adguard.com/adguard-home.html)
-- [AdGuard](https://github.com/AdguardTeam/AdGuardHome)
-- [AdGuard Docker](https://hub.docker.com/r/adguard/adguardhome)
+- [GitHub](https://github.com/AdguardTeam/AdGuardHome)
+- [Docker Hub](https://hub.docker.com/r/adguard/adguardhome)
 
 ## Helm install
 ```
