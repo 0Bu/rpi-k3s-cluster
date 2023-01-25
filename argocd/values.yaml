@@ -1,4 +1,7 @@
 argocd:
+  redis:
+    exporter:
+      enabled: false
   server:
     service:
       annotations:
