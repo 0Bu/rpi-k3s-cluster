@@ -4,6 +4,7 @@
   "platform": "github",
   "configMigration": true,
   "automerge": true,
+  "bumpVersion": "patch",
   "ignoreTests": true,
   "dependencyDashboard": true,
   "repositories": ["0Bu/pi-cluster"],
