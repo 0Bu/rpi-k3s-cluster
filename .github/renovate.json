@@ -1,25 +1,19 @@
 {
-  "extends": ["config:base"],
-  "onboarding": false,
+  "extends": [
+    "config:base",
+    "regexManagers:helmChartYamlAppVersions"
+  ],
   "platform": "github",
   "configMigration": true,
   "automerge": true,
   "bumpVersion": "patch",
   "ignoreTests": true,
-  "dependencyDashboard": true,
   "repositories": ["0Bu/pi-cluster"],
   "packageRules": [
     {
       "matchDatasources": ["docker"],
       "matchPackageNames": ["oznu/homebridge"],
       "versioning": "loose"
-    }
-  ],
-  "regexManagers": [
-    {
-      "fileMatch": ["(^|/)Chart\\.yaml$"],
-      "matchStrings": ["#\\s?renovate: image=(?<depName>.*?)\\s?appVersion:\\s?\\\"?(?<currentValue>[\\w+\\.\\-]*)"],
-      "datasourceTemplate": "docker"
     }
   ]
 }
