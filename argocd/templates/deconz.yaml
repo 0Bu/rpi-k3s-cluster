@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: deconz
+  namespace: default
+spec:
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    helm:
+      parameters:
+      - name: vnc.mode
+        value: "1"
+      - name: vnc.password
+        value: SAtLS3ZEnuyT
+      valueFiles:
+      - values.yaml
+    path: deconz
+    repoURL: https://github.com/0Bu/pi-cluster.git
+    targetRevision: HEAD
+  syncPolicy: {}
+
