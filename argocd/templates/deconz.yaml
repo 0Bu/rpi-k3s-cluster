@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: deconz
   namespace: default
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
 spec:
   destination:
     namespace: default
@@ -21,4 +23,3 @@ spec:
     repoURL: https://github.com/0Bu/pi-cluster.git
     targetRevision: HEAD
   syncPolicy: {}
-
