@@ -1,5 +1,5 @@
 # [Home Assistant](https://www.home-assistant.io)
-- [GihHub](https://github.com/home-assistant/core)
+- [GitHub](https://github.com/home-assistant/core)
 - [Docker](https://hub.docker.com/r/homeassistant/home-assistant)
 
 ## Helm install/upgrade
