@@ -14,7 +14,4 @@ spec:
     path: argocd
     repoURL: https://github.com/0Bu/pi-cluster.git
     targetRevision: HEAD
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
+  syncPolicy: {}
