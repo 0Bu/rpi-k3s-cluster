@@ -13,4 +13,4 @@
 `helm uninstall deconz`
 
 ## Create sealed secret
-`kubectl create secret generic deconz-vnc-password --dry-run=client --from-literal=vnc-password=<...> -oyaml | kubeseal -oyaml`
+`kubectl create secret generic deconz-vnc-password --dry-run=client --from-literal=vnc-password=<...> -oyaml | kubeseal --controller-name sealed-secrets -oyaml`

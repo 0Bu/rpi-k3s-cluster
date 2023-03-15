@@ -18,6 +18,6 @@ helm uninstall telegraf
 
 ## Create sealed secret
 ```
-kubectl create secret generic telegraf-influxdb-token --dry-run=client --from-literal=INFLUXDB_TOKEN=<...> -oyaml | kubeseal -oyaml
+kubectl create secret generic telegraf-influxdb-token --dry-run=client --from-literal=INFLUXDB_TOKEN=<...> -oyaml | kubeseal --controller-name sealed-secrets -oyaml
 ```
 
