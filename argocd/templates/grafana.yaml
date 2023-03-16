@@ -4,7 +4,8 @@ metadata:
   name: grafana
   namespace: default
   annotations:
-    "helm.sh/hook": post-install,post-upgrade
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/resource-policy: keep
 spec:
   destination:
     namespace: default
