@@ -1,9 +1,9 @@
 # [ArgoCD](https://argo-cd.readthedocs.io)
 - [Helm Chart](https://github.com/argoproj/argo-helm/tree/main/charts/argo-cd)
 
-## Helm install
+## Helm install/upgrade
 ```
-helm install argocd .
+helm upgrade --install --dependency-update argocd .
 ```
 
 ## Helm unintall
