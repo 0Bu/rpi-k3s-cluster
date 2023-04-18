@@ -4,4 +4,4 @@ description: https://github.com/AdguardTeam/AdGuardHome
 type: application
 version: 1.0.0
 # renovate: image=adguard/adguardhome
-appVersion: "v0.107.28"
+appVersion: "v0.107.29"
