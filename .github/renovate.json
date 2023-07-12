@@ -1,6 +1,6 @@
 {
   "extends": [
-    "config:base",
+    "config:recommended",
     "regexManagers:helmChartYamlAppVersions"
   ],
   "platform": "github",
@@ -8,11 +8,17 @@
   "automerge": true,
   "bumpVersion": "patch",
   "ignoreTests": true,
-  "repositories": ["0Bu/pi-cluster"],
+  "repositories": [
+    "0Bu/pi-cluster"
+  ],
   "packageRules": [
     {
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["oznu/homebridge"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "oznu/homebridge"
+      ],
       "versioning": "loose"
     }
   ]
