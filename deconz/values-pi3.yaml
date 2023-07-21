@@ -1,0 +1,7 @@
+vnc:
+  mode: 0
+service:
+  loadBalancerIPs: 192.168.1.36
+nfs:
+  server: 192.168.1.4
+  path: "/nfs/deconz-pi3"
