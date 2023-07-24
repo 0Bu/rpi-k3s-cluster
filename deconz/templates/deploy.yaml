@@ -18,7 +18,7 @@ spec:
         app: {{ .Release.Name }}
     spec:
       nodeSelector:
-        usb: conbee
+        kubernetes.io/hostname: {{ .Values.conbee.hostname }}
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
