@@ -78,17 +78,11 @@ sudo mkdir /mnt/nfs
 sudo mount <HOST_IP>:/nfs /mnt/nfs
 ```
 
-## k3s
-- [k3s.io](https://k3s.io)
-- [Docs](https://rancher.com/docs/k3s/latest/en/quick-start/)
-- [K3S on Raspberry Pi](https://www.puzzle.ch/de/blog/articles/2020/10/13/k3s-on-raspberry-pi)
-- [High Availibility cluster](https://w-goutas.medium.com/set-up-a-kubernetes-cluster-in-minutes-41a0bd65ab93)
-- [arm_64bit](https://www.raspberrypi.org/documentation/configuration/config-txt/boot.md)
+## [k3s.io](https://k3s.io)
 
 ### [Enabling cgroups](https://rancher.com/docs/k3s/latest/en/advanced/#enabling-cgroups-for-raspbian-buster)
-Append `cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory` to `/boot/cmdline.txt`
-
-Append `arm_64bit=1` to `/boot/config.txt` under `[all]`
+- append `cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory` to `/boot/cmdline.txt`
+- *optional*: append `arm_64bit=1` to `/boot/config.txt` under `[all]` on 32-bit Raspberry Pi OS ([arm_64bit](https://www.raspberrypi.com/documentation/computers/config_txt.html#arm_64bit))
 
 ### Master installation/upgrade
 `ctrl+x ctrl+e`
@@ -109,7 +103,7 @@ export K3S_TOKEN="XXXX"
 curl -sfL https://get.k3s.io | sh -
 ```
 
-### HA cluster installation
+### [High availibility cluster](https://w-goutas.medium.com/set-up-a-kubernetes-cluster-in-minutes-41a0bd65ab93) installation
 ```
 export K3S_KUBECONFIG_MODE="644"
 export INSTALL_K3S_EXEC="--disable servicelb --disable traefik"
