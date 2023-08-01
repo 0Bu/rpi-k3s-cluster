@@ -125,7 +125,8 @@ curl -sfL https://get.k3s.io | sh -s server --server https://192.168.1.4:6443
 
 #### Helm configuration
 ```
-kubectl config view --raw >~/.kube/config
+mkdir -p ~/.kube
+kubectl config view --raw > ~/.kube/config
 sudo chmod go-r ~/.kube/config
 ```
 
