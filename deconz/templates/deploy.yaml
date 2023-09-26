@@ -18,7 +18,7 @@ spec:
         app: {{ .Release.Name }}
     spec:
       nodeSelector:
-        usb: conbee
+        kubernetes.io/hostname: {{ .Values.conbee.hostname }}
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -43,7 +43,7 @@ spec:
           - name: DECONZ_VNC_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: deconz-vnc-password
+                name: deconz-vnc-password-{{ .Release.Name }}
                 key: vnc-password
           - name: DECONZ_UID
             value: "65534"
