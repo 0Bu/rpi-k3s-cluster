@@ -1,10 +1,10 @@
 apiVersion: v2
 name: sealed-secrets
 type: application
-version: 1.0.8
+version: 1.0.11
 # renovate: image=bitnami/sealed-secrets-controller
-appVersion: "v0.22.0"
+appVersion: "v0.24.0"
 dependencies: 
   - name: sealed-secrets
-    version: "2.10.0"
+    version: "2.13.0"
     repository: https://bitnami-labs.github.io/sealed-secrets
