@@ -1,10 +1,10 @@
 apiVersion: v2
 name: prometheus
 type: application
-version: 1.0.49
+version: 1.0.50
 # renovate: image=quay.io/prometheus/prometheus
 appVersion: "v2.47.0"
 dependencies: 
   - name: prometheus
-    version: "25.0.0"
+    version: "25.1.0"
     repository: https://prometheus-community.github.io/helm-charts
