@@ -1,10 +1,10 @@
 apiVersion: v2
 name: telegraf
 type: application
-version: 1.0.10
+version: 1.0.11
 # renovate: image=telegraf
 appVersion: "1.28.2"
 dependencies: 
   - name: telegraf
-    version: "1.8.34"
+    version: "1.8.35"
     repository: https://helm.influxdata.com
