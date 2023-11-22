@@ -9,7 +9,7 @@
   "bumpVersion": "patch",
   "ignoreTests": true,
   "repositories": [
-    "0Bu/pi-cluster"
+    "0Bu/rpi-k3s-cluster"
   ],
   "packageRules": [
     {
