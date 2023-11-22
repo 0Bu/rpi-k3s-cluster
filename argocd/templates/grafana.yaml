@@ -13,7 +13,7 @@ spec:
   project: default
   source:
     path: grafana
-    repoURL: https://github.com/0Bu/pi-cluster.git
+    repoURL: https://github.com/0Bu/rpi-k3s-cluster.git
     targetRevision: HEAD
   syncPolicy:
     automated:
