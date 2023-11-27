@@ -1,6 +1,6 @@
 image:
-  repository: "oznu/homebridge"
-  tag: "2023-01-08-ubuntu"
+  repository: "homebridge/homebridge"
+  tag: "2023-11-27"
 service:
   loadBalancerIPs: 192.168.1.25
 nfs:

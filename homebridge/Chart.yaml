@@ -3,6 +3,6 @@ name: homebridge
 description: https://github.com/homebridge/homebridge
 type: application
 version: 1.0.0
-# renovate: image=oznu/homebridge
-appVersion: "2023-01-08-ubuntu"
+# renovate: image=homebridge/homebridge
+appVersion: "2023-11-27"
 
