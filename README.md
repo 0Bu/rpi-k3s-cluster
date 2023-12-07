@@ -133,7 +133,7 @@ sudo chmod go-r ~/.kube/config
 ### [k9s](https://github.com/derailed/k9s) installation
 ```
 K9S_VERSION=$(curl -sL https://api.github.com/repos/derailed/k9s/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
-curl -sL "https://github.com/derailed/k9s/releases/download/$K9S_VERSION/k9s_Linux_arm.tar.gz" | tar xz k9s
-sudo install -m 755 k9s /usr/local/bin/k9s
-rm k9s
+curl -sLO "https://github.com/derailed/k9s/releases/download/$K9S_VERSION/k9s_linux_arm.deb"
+sudo dpkg -i k9s_linux_arm.deb
+rm k9s_linux_arm.deb
 ```
