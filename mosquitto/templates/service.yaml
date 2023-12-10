@@ -16,7 +16,7 @@ spec:
     port: 1883
     targetPort: 1883
   - name: ws
-    port: 9001
-    targetPort: 9001
+    port: 8083
+    targetPort: 8083
   type: LoadBalancer
   externalTrafficPolicy: Local
