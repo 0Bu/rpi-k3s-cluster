@@ -139,10 +139,7 @@ telegraf:
           name_override: "ems-esp"
           servers: ["tcp://mosquitto:1883"]
           topics: 
-            - "ems-esp/boiler_data"
-            - "ems-esp/boiler_data_ww"
-            - "ems-esp/thermostat_data"
-            - "ems-esp/heartbeat"
+            - "ems-esp/#"
           data_format: "json"
           json_string_fields:
             - "heatingactive"
