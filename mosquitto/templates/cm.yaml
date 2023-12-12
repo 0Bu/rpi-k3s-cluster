@@ -12,5 +12,3 @@ data:
     allow_anonymous true
     log_timestamp true
     log_timestamp_format %Y-%m-%d %H:%M:%S
-    persistence true
-    persistence_location /mosquitto/data/
