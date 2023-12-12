@@ -35,13 +35,7 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /mosquitto/config
-        - name: data
-          mountPath: /mosquitto/data
-          subPath: data
       volumes:
       - name: config
         configMap:
           name: mosquitto
-      - name: data
-        persistentVolumeClaim:
-          claimName: {{ .Release.Name }}
