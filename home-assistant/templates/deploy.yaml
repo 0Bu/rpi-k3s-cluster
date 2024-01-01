@@ -18,7 +18,7 @@ spec:
         app: {{ .Release.Name }}
     spec:
       dnsPolicy: ClusterFirstWithHostNet
-#     hostNetwork: true
+      hostNetwork: true
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -39,15 +39,10 @@ spec:
           limits:
             memory: 768M
         volumeMounts:
-          - name: homeassistant
-            mountPath: /config
-#          - name: conbee
-#            mountPath: "/dev/ttyACM0"
-      volumes:
-#        - name: conbee
-#          hostPath:
-#            path: "/dev/ttyACM0"
         - name: homeassistant
-          persistentVolumeClaim:
-            claimName: {{ .Chart.Name }}-{{ .Release.Namespace }}
+          mountPath: /config
+      volumes:
+      - name: homeassistant
+        persistentVolumeClaim:
+          claimName: {{ .Chart.Name }}-{{ .Release.Namespace }}
 
