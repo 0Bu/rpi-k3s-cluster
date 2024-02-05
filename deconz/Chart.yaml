@@ -4,4 +4,4 @@ version: 1.0.0
 home: https://github.com/deconz-community/deconz-docker
 type: application
 # renovate: image=deconzcommunity/deconz
-appVersion: "2.25.1"
+appVersion: "2.25.2"
