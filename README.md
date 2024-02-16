@@ -30,6 +30,12 @@ sudo mount <HOST_IP>:/nfs /mnt/nfs
 - append `cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory` to `/boot/cmdline.txt`
 - *optional*: append `arm_64bit=1` to `/boot/config.txt` under `[all]` on 32-bit Raspberry Pi OS ([arm_64bit](https://www.raspberrypi.com/documentation/computers/config_txt.html#arm_64bit))
 
+### Disable swap
+```
+sudo swapoff -a
+sudo sed -i 's/CONF_SWAPSIZE=100/CONF_SWAPSIZE=0/' /etc/dphys-swapfile
+```
+
 ### Master installation/upgrade
 `ctrl+x ctrl+e`
 ```
