@@ -1,6 +1,6 @@
 image:
   repository: "deconzcommunity/deconz"
-  tag: "2.26.2"
+  tag: "2.26.3"
 conbee:
   hostname: pi4a
 vnc:
