@@ -1,6 +1,6 @@
 image:
   repository: "homebridge/homebridge"
-  tag: "2024-05-01"
+  tag: "2024-05-02"
 service:
   loadBalancerIPs: 192.168.1.25
 nfs:
