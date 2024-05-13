@@ -1,7 +1,7 @@
 {
   "extends": [
     "config:recommended",
-    "regexManagers:helmChartYamlAppVersions"
+    "customManagers:helmChartYamlAppVersions"
   ],
   "platform": "github",
   "configMigration": true,
