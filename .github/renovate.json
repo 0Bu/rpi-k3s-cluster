@@ -1,7 +1,8 @@
 {
   "extends": [
     "config:recommended",
-    "customManagers:helmChartYamlAppVersions"
+    "customManagers:helmChartYamlAppVersions",
+    ":semanticCommitsDisabled"
   ],
   "platform": "github",
   "configMigration": true,
