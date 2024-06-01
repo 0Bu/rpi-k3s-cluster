@@ -5,12 +5,7 @@
 ## Helm install 
 compare: [CRD considerations](https://cert-manager.io/docs/installation/helm/#crd-considerations)
 ```
-helm install cert-manager --set installCRDs=true .
-```
-
-## Helm upgrade
-```
-helm upgrade cert-manager . 
+helm install cert-manager .
 ```
 
 ## Helm uninstall
@@ -20,9 +15,7 @@ helm uninstall cert-manager
 
 ## Extract certificate
 ```
-kubectl get secrets self-signed-root-ca -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
-kubectl get secrets self-signed-root-ca -o jsonpath='{.data.tls\.crt}' | base64 -d > tls.crt
-kubectl get secrets self-signed-root-ca -o jsonpath='{.data.tls\.key}' | base64 -d > tls.key
+kubectl get secrets selfsigned-secret -o jsonpath='{.data.tls\.crt}' | base64 -d > rpi-k3s-root.crt
 ```
 
 ## [Backup and Restore Resources](https://cert-manager.io/docs/devops-tips/backup/)
@@ -30,3 +23,7 @@ kubectl get secrets self-signed-root-ca -o jsonpath='{.data.tls\.key}' | base64 
 kubectl get --all-namespaces -oyaml issuer,clusterissuer,cert > backup.yaml
 kubectl apply -f backup.yaml
 ```
+
+## Installing self signed certificates in iOS
+[Trust manually installed certificate profiles in iOS](https://support.apple.com/en-us/102390)
+
