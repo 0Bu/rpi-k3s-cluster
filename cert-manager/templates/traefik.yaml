@@ -1,0 +1,12 @@
+# https://docs.k3s.io/networking/networking-services#traefik-ingress-controller
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    service:
+      annotations:
+        metallb.universe.tf/loadBalancerIPs: {{ .Values.service.loadBalancerIPs }}
+
