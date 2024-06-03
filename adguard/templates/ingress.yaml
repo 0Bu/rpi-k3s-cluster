@@ -5,6 +5,7 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: ca-issuer
     cert-manager.io/private-key-algorithm: ECDSA
+    cert-manager.io/private-key-rotation-policy: Always
 spec:
   rules:
     - host: adguard.lan
