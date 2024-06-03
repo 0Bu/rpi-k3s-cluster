@@ -1,7 +1,21 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ .Release.Name }}-http
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  selector:
+    app: {{ .Release.Name }}
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-dns
   labels:
     app: {{ .Release.Name }}
   annotations:
@@ -11,26 +25,18 @@ spec:
   selector:
     app: {{ .Release.Name }}
   ports:
-  - name: http
-    protocol: TCP
-    port: 80
-    targetPort: 80
   - name: web
     protocol: TCP
     port: 3000
-    targetPort: 3000
   - name: dns-tcp
     protocol: TCP
     port: 53
-    targetPort: 53
   - name: dns-udp
     protocol: UDP
     port: 53
-    targetPort: 53
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
     - IPv6
     - IPv4
   type: LoadBalancer
   externalTrafficPolicy: Local
-

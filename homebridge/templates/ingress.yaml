@@ -4,6 +4,7 @@ metadata:
   name: homebridge
   annotations:
     cert-manager.io/cluster-issuer: ca-issuer
+    cert-manager.io/private-key-algorithm: ECDSA
 spec:
   rules:
     - host: homebridge.lan
