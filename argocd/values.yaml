@@ -1,7 +1,18 @@
 argocd:
   server:
     service:
-      annotations:
-       metallb.universe.tf/address-pool: default
-       metallb.universe.tf/loadBalancerIPs: 192.168.1.40
-      type: LoadBalancer
+       annotations:
+         metallb.universe.tf/address-pool: default
+         metallb.universe.tf/loadBalancerIPs: 192.168.1.40
+       type: LoadBalancer
+    certificate:
+      enabled: true
+      domain: "argocd.lan"
+      issuer:
+        group: "cert-manager.io"
+        kind: "ClusterIssuer"
+        name: "ca-issuer"
+    ingress:
+      enabled: true
+      hostname: "argocd.lan"
+      tls: true
