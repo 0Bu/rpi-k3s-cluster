@@ -4,20 +4,15 @@ metadata:
   name: {{ .Release.Name }} 
   labels:
     app: {{ .Release.Name }}
-  annotations:
-    metallb.universe.tf/address-pool: default
-    metallb.universe.tf/loadBalancerIPs: {{ .Values.service.loadBalancerIPs }}
+#  annotations:
+#    metallb.universe.tf/address-pool: default
+#    metallb.universe.tf/loadBalancerIPs: {{ .Values.service.loadBalancerIPs }}
 spec:
   selector:
     app: {{ .Release.Name }} 
   ports:
   - name: http
     port: 80
-    targetPort: 80
-    protocol: TCP
   - name: homebridge
     port: 51826
-    targetPort: 51826
-    protocol: TCP
-  type: LoadBalancer
-  externalTrafficPolicy: Local
+  type: ClusterIP
