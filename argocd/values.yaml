@@ -1,4 +1,9 @@
 argocd:
+  global:
+    domain: argocd.lan
+  configs:
+    params:
+      server.insecure: true
   server:
     service:
        annotations:
