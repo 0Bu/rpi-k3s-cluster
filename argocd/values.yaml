@@ -5,11 +5,6 @@ argocd:
     params:
       server.insecure: true
   server:
-    service:
-       annotations:
-         metallb.universe.tf/address-pool: default
-         metallb.universe.tf/loadBalancerIPs: 192.168.1.40
-       type: LoadBalancer
     certificate:
       enabled: true
       domain: "argocd.lan"
