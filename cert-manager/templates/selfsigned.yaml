@@ -19,8 +19,10 @@ spec:
   isCA: true
   commonName: rpi-k3s-root-ca
   secretName: selfsigned-secret
+  duration: 8760h # 365d
+  renewBefore: 360h # 15d
   privateKey:
-    algorithm: Ed25519
+    algorithm: ECDSA
   issuerRef:
     name: selfsigned-issuer
     kind: ClusterIssuer
