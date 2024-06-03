@@ -4,6 +4,18 @@ pv:
     path: /nfs/grafana
 
 grafana:
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: ca-issuer
+      cert-manager.io/private-key-algorithm: ECDSA
+      cert-manager.io/private-key-rotation-policy: Always
+    hosts:
+      - grafana.lan
+    tls:
+      - hosts:
+          - adguard.lan
+        secretName: grafana-tls
   service:
     type: LoadBalancer
     loadBalancerIP: 192.168.1.30
