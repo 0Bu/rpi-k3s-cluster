@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: deconz
+  annotations:
+    cert-manager.io/cluster-issuer: ca-issuer
+    cert-manager.io/private-key-algorithm: ECDSA
+    cert-manager.io/private-key-rotation-policy: Always
+spec:
+  rules:
+    - host: deconz.lan
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: deconz
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - deconz.lan
+      secretName: deconz-tls
