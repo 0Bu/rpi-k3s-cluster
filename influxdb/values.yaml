@@ -7,11 +7,6 @@ influxdb:
     enabled: true
     useExisting: true
     name: influxdb
-  service:
-   type: LoadBalancer
-   annotations:
-      metallb.universe.tf/address-pool: default
-      metallb.universe.tf/loadBalancerIPs: 192.168.1.31
   ingress:
     enabled: true
     tls: true
