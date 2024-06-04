@@ -6,6 +6,7 @@ metadata:
     cert-manager.io/cluster-issuer: ca-issuer
     cert-manager.io/private-key-algorithm: ECDSA
     cert-manager.io/private-key-rotation-policy: Always
+    traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
 spec:
   rules:
     - host: deconz.lan
