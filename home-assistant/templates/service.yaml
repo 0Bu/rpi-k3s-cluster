@@ -4,9 +4,6 @@ metadata:
   name: {{ .Release.Name }}
   labels:
     app: {{ .Release.Name }}
-  annotations:
-    metallb.universe.tf/address-pool: default
-    metallb.universe.tf/loadBalancerIPs: {{ .Values.service.loadBalancerIPs }}
 spec:
   selector:
     app: {{ .Release.Name }}
@@ -14,12 +11,3 @@ spec:
   - name: http
     port: 80
     targetPort: 8123
-  - name: homekit
-    port: 21063
-    targetPort: 21063
-  - name: mdns
-    port: 5353
-    targetPort: 5353
-    protocol: UDP
-  type: LoadBalancer
-  externalTrafficPolicy: Local
