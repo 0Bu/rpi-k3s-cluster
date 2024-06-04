@@ -12,3 +12,12 @@ influxdb:
    annotations:
       metallb.universe.tf/address-pool: default
       metallb.universe.tf/loadBalancerIPs: 192.168.1.31
+  ingress:
+    enabled: true
+    tls: true
+    secretName: influxdb-tls
+    hostname: influxdb.lan
+    annotations:
+      cert-manager.io/cluster-issuer: ca-issuer
+      cert-manager.io/private-key-algorithm: ECDSA
+      cert-manager.io/private-key-rotation-policy: Always
