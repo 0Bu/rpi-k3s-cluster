@@ -16,3 +16,5 @@ argocd:
       enabled: true
       hostname: "argocd.lan"
       tls: true
+      annotations:
+        traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
