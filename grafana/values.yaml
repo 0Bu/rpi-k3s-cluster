@@ -15,7 +15,7 @@ grafana:
       - grafana.lan
     tls:
       - hosts:
-          - adguard.lan
+          - grafana.lan
         secretName: grafana-tls
   persistence:
     enabled: true
