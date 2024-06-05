@@ -16,7 +16,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: deconz-{{ .Values }}
+                name: deconz-{{ .Values.host }}
                 port:
                   name: http
   tls:
