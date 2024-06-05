@@ -4,3 +4,5 @@ image:
 nfs:
   server: 192.168.1.4
   path: "/nfs/adguard"
+service:
+   loadBalancerIPs: 192.168.1.20, fd::20
