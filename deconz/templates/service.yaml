@@ -1,15 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}
+  name: deconz-{{ required "Required host, e.g. --set host=pi4a" .Values.host }}
   labels:
-    app: {{ .Release.Name }}
+    app: deconz-{{ .Values.host }}
   annotations:
-    metallb.universe.tf/address-pool: default
-    metallb.universe.tf/loadBalancerIPs: {{ .Values.service.loadBalancerIPs }}
+    metallb.universe.tf/loadBalancerIPs: {{ required "Required loadBalancerIPs, e.g. --set loadBalancerIPs=192.168.1.26" .Values.loadBalancerIPs }}
 spec:
   selector:
-    app: {{ .Release.Name }}
+    app: deconz-{{ .Values.host }}
   ports:
   - name: http
     port: 80

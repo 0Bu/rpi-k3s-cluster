@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }} 
+  name: deconz-{{ required "Required host, e.g. --set host=pi4a" .Values.host }}
   labels:
-    app: {{ .Release.Name }}
+    app: deconz-{{ .Values.host }}
 spec:
   replicas: 1
   revisionHistoryLimit: 0
   selector:
     matchLabels:
-      app: {{ .Release.Name }}
+      app: deconz-{{ .Values.host }}
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: {{ .Release.Name }}
+        app: deconz-{{ .Values.host }}
     spec:
       nodeSelector:
-        kubernetes.io/hostname: {{ .Values.conbee.hostname }}
+        kubernetes.io/hostname: {{ .Values.host }}
       containers:
-      - name: {{ .Chart.Name }}
+      - name: deconz
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         securityContext:
           runAsUser: 65534
@@ -77,5 +77,5 @@ spec:
             path: "/dev/ttyACM0"
         - name: deconz
           persistentVolumeClaim:
-            claimName: {{ .Release.Name }}
+            claimName: {{ .Release.Name }}-{{ .Values.host }}
 
