@@ -9,10 +9,10 @@ metadata:
     traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
 spec:
   rules:
-    - host: deconz.lan
+    - host: {{ .Values.host }}.deconz.lan
       http:
         paths:
-          - path: /{{ .Values.host }}
+          - path: /
             pathType: Prefix
             backend:
               service:
@@ -21,5 +21,5 @@ spec:
                   name: http
   tls:
     - hosts:
-        - deconz.lan
+        - {{ .Values.host }}.deconz.lan
       secretName: deconz-tls
