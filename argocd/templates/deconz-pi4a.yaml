@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: deconz
+  name: deconz-pi4a
   namespace: default
   annotations:
     helm.sh/hook: post-install,post-upgrade
@@ -15,4 +15,12 @@ spec:
     path: deconz
     repoURL: https://github.com/0Bu/rpi-k3s-cluster.git
     targetRevision: HEAD
+    helm:
+      valueFiles:
+        - values.yaml
+      parameters:
+        - name: host
+          value: pi4a
+        - name: loadBalancerIPs
+          value: 192.168.1.26
   syncPolicy: {}
