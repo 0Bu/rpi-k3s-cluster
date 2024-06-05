@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ .Release.Name }}
+  name: deconz-{{ required "Required host, e.g. --set host=pi4a" .Values.host }}
 spec:
   capacity:
     storage: 5Gi
@@ -9,5 +9,16 @@ spec:
     - ReadWriteMany
   nfs:
     server: {{ .Values.nfs.server }}
-    path: {{ .Values.nfs.path }}
-
+    path: {{ .Values.nfs.path }}-{{ .Values.host }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: deconz-{{ required "Required host e.g. --set host=pi4a" .Values.host }}
+spec:
+  storageClassName: ""
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi

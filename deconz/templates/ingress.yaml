@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: deconz
+  name: deconz-{{ required "Required host, e.g. --set host=pi4a" .Values.host }}
   annotations:
     cert-manager.io/cluster-issuer: ca-issuer
     cert-manager.io/private-key-algorithm: ECDSA
@@ -12,11 +12,11 @@ spec:
     - host: deconz.lan
       http:
         paths:
-          - path: /
+          - path: /{{ .Values.host }}
             pathType: Prefix
             backend:
               service:
-                name: deconz
+                name: deconz-{{ .Values }}
                 port:
                   name: http
   tls:
