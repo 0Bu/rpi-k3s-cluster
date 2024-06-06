@@ -6,15 +6,14 @@ metadata:
   annotations:
     helm.sh/hook: post-install,post-upgrade
     helm.sh/resource-policy: keep
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
     namespace: default
     server: https://kubernetes.default.svc
   project: default
   source:
-    helm:
-      valueFiles:
-      - values.yaml
     path: cert-manager
     repoURL: https://github.com/0Bu/rpi-k3s-cluster.git
     targetRevision: HEAD

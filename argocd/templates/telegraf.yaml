@@ -6,6 +6,8 @@ metadata:
   annotations:
     helm.sh/hook: post-install,post-upgrade
     helm.sh/resource-policy: keep
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
     namespace: default
@@ -15,7 +17,4 @@ spec:
     path: telegraf
     repoURL: https://github.com/0Bu/rpi-k3s-cluster.git
     targetRevision: HEAD
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
+  syncPolicy: {}

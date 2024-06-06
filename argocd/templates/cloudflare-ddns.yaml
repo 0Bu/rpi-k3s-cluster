@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: adguard
+  name: cloudflare-ddns
   namespace: default
   annotations:
     helm.sh/hook: post-install,post-upgrade
@@ -14,7 +14,7 @@ spec:
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: adguard
-    repoURL: https://github.com/0Bu/rpi-k3s-cluster.git
+    path: "."
+    repoURL: https://github.com/0Bu/cloudflare-ddns.git
     targetRevision: HEAD
   syncPolicy: {}
