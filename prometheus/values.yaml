@@ -16,7 +16,7 @@ prometheus:
         - prometheus.lan
       tls:
         - hosts:
-          - prometeus.lan
+          - prometheus.lan
           secretName: prometheus-tls
     persistentVolume:
       existingClaim: prometheus
