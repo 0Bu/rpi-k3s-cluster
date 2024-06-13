@@ -15,4 +15,7 @@ spec:
     path: home-assistant
     repoURL: https://github.com/0Bu/rpi-k3s-cluster.git
     targetRevision: HEAD
-  syncPolicy: {}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
