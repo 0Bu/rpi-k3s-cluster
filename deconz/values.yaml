@@ -1,5 +1,5 @@
 image:
-  repository: "deconzcommunity/deconz"
+  repository: "ghcr.io/deconz-community/deconz-docker"
   tag: "2.27.4"
 vnc:
   mode: "1"
