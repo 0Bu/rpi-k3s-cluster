@@ -3,7 +3,7 @@ name: sealed-secrets
 type: application
 version: 1.0.23
 # renovate: image=bitnami/sealed-secrets-controller
-appVersion: "0.26.3"
+appVersion: "0.27.0"
 dependencies: 
   - name: sealed-secrets
     version: "2.15.4"
