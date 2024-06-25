@@ -20,3 +20,7 @@ prometheus:
           secretName: prometheus-tls
     persistentVolume:
       existingClaim: prometheus
+  alertmanager:
+    enabled: false
+  prometheus-pushgateway:
+    enabled: false
