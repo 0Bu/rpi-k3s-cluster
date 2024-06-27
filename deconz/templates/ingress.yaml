@@ -22,4 +22,4 @@ spec:
   tls:
     - hosts:
         - {{ .Values.host }}.deconz.lan
-      secretName: deconz-tls
+      secretName: deconz-{{ .Values.host }}-tls
