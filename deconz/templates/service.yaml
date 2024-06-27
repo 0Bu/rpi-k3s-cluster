@@ -15,8 +15,8 @@ spec:
     targetPort: 80
     protocol: TCP
   - name: ws
-    port: 1443
-    targetPort: 1443
+    port: 443
+    targetPort: 443
     protocol: TCP
   - name: vnc
     port: 5900
