@@ -1,6 +1,6 @@
 image:
   repository: "nodered/node-red"
-  tag: "4.0.1-22"
+  tag: "4.0.2-22"
 nfs:
   server: 192.168.1.4
   path: "/nfs/node-red"
