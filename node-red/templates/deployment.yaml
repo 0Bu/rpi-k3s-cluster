@@ -25,7 +25,7 @@ spec:
             requests:
               memory: 64M
             limits:
-              memory: 128M
+              memory: 256M
           readinessProbe:
             tcpSocket:
               port: 1880
