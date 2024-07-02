@@ -16,6 +16,7 @@ spec:
       labels:
         app: {{ .Release.Name }}
     spec:
+      hostNetwork: true
       containers:
         - name: {{ .Chart.Name }}
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
