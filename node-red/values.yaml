@@ -4,3 +4,6 @@ image:
 nfs:
   server: 192.168.1.4
   path: "/nfs/node-red"
+env:
+  - name: NRCHKB_EXPERIMENTAL
+    value: "true"
