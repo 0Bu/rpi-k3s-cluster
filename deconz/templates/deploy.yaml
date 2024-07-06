@@ -26,12 +26,14 @@ spec:
           runAsUser: 65534
           runAsGroup: 65534
         env:
+          - name: DECONZ_BAUDRATE
+            value: "115200"
           - name: DECONZ_WEB_PORT
             value: "80"
           - name: DECONZ_WS_PORT 
             value: "443"
           - name: DECONZ_DEVICE
-            value: "/dev/ttyACM0"
+            value: {{ .Values.device | default  "/dev/ttyACM0" }}
           - name: TZ
             value: "Europe/Berlin"
           - name: DECONZ_UPNP
@@ -68,13 +70,13 @@ spec:
             memory: 384M
         volumeMounts:
           - name: conbee
-            mountPath: "/dev/ttyACM0"
+            mountPath: {{ .Values.device | default  "/dev/ttyACM0" }}
           - name: deconz
             mountPath: /opt/deCONZ
       volumes:
         - name: conbee
           hostPath:
-            path: "/dev/ttyACM0"
+            path: {{ .Values.device | default  "/dev/ttyACM0" }}
         - name: deconz
           persistentVolumeClaim:
             claimName: deconz-{{ .Values.host }}

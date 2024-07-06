@@ -4,7 +4,7 @@
 - [Docker Hub](https://hub.docker.com/r/deconzcommunity/deconz)
 
 ## Helm install/upgrade
-`helm install deconz . --set host=pi4a --set loadBalancerIPs=192.168.1.26`
+`helm install deconz . --set host=pi4a --set loadBalancerIPs=192.168.1.26 --set device=/dev/ttyUSB0`
 
 ## Helm unintall
 `helm uninstall deconz`
