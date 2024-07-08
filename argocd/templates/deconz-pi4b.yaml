@@ -23,6 +23,4 @@ spec:
           value: "pi4b"
         - name: loadBalancerIPs
           value: "192.168.1.36"
-        - name: device
-          value: "/dev/ttyUSB0"
   syncPolicy: {}
