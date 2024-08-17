@@ -4,7 +4,7 @@ description: A Helm chart for Kubernetes
 type: application
 version: 1.0.1
 # renovate: image=influxdb
-appVersion: "2.7.9"
+appVersion: "2.7.10"
 dependencies: 
   - name: influxdb2
     alias: influxdb
