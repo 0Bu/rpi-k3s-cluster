@@ -1,6 +1,6 @@
 image:
   repository: "homebridge/homebridge"
-  tag: "2024-06-27"
+  tag: "2024-09-03"
 nfs:
   server: 192.168.1.4
   path: "/nfs/homebridge"
