@@ -4,4 +4,4 @@ description: https://nodered.org
 type: application
 version: 1.0.0
 # renovate: image=nodered/node-red
-appVersion: "4.0.2-22"
+appVersion: "4.0.3-22"
