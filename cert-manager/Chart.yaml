@@ -3,7 +3,7 @@ name: cert-manager
 type: application
 version: 1.0.5
 # renovate: image=bitnami/cert-manager
-appVersion: "1.15.3"
+appVersion: "1.16.0"
 dependencies: 
   - name: cert-manager
     version: "v1.16.0"
