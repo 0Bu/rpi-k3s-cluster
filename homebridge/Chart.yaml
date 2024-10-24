@@ -4,5 +4,5 @@ description: https://github.com/homebridge/homebridge
 type: application
 version: 1.0.0
 # renovate: image=homebridge/homebridge
-appVersion: "2024-10-09"
+appVersion: "2024-10-24"
 
