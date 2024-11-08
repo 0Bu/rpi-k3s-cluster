@@ -3,6 +3,8 @@ telegraf:
     tag: "latest"
   service:
     enabled: false
+  pdb:
+    create: false
   envFromSecret: telegraf-influxdb-token
   env:
     - name: INFLUXDB_URL
