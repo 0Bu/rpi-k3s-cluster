@@ -24,6 +24,13 @@ telegraf:
       logfile: ""
       hostname: "$HOSTNAME"
       omit_hostname: true
+    processors:
+      regex:
+        fields: 
+        - key: "lastcode"
+          pattern: "[^\\x20-\\x7E]"
+          replacement: ""
+          result_key: "lastcode"
     outputs:
       - influxdb_v2:
           urls:
