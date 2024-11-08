@@ -1,23 +1,12 @@
 telegraf:
   image:
     tag: "latest"
-  envFromSecret: telegraf-influxdb-token
   service:
-    type: LoadBalancer
-    annotations:
-      metallb.universe.tf/address-pool: default
-      metallb.universe.tf/loadBalancerIPs: 192.168.1.22
+    enabled: false
+  envFromSecret: telegraf-influxdb-token
   env:
     - name: INFLUXDB_URL
       value: "http://influxdb"
-  volumes:
-    - name: cputemp
-      hostPath:
-        path: "/sys/class/thermal/thermal_zone0/"
-  mountPoints:
-    - name: cputemp
-      mountPath: "/sys/class/thermal/thermal_zone0/temp"
-      subPath: "temp"
   config: # https://github.com/influxdata/telegraf/blob/master/docs/CONFIGURATION.md
     agent:
       interval: "10s"
@@ -33,45 +22,7 @@ telegraf:
       logfile: ""
       hostname: "$HOSTNAME"
       omit_hostname: true
-    processors:
-      - regex: # https://github.com/influxdata/telegraf/tree/release-1.23/plugins/processors/regex
-          fields: {key: "message", pattern: ".*Mode=([a-zA-Z0-9]+).*", replacement: "${1}", result_key: "Mode"}
-      - regex:
-          fields: {key: "message", pattern: ".*States=([a-zA-Z0-9]+).*", replacement: "${1}", result_key: "States"}
-      - regex:
-          fields: {key: "message", pattern: ".*UpSpeed=(\\d+).*", replacement: "${1}", result_key: "UpSpeed"}
-      - regex:
-          fields: {key: "message", pattern: ".*DownSpeed=(\\d+).*", replacement: "${1}", result_key: "DownSpeed"}
-      - regex:
-          fields: {key: "message", pattern: ".*SNR=(\\d+).*", replacement: "${1}", result_key: "SNR"}
-      - regex:
-          fields: {key: "message", pattern: ".*Atten=(\\d+).*", replacement: "${1}", result_key: "Atten"}
-      - converter: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/processors/converter/README.md
-          order: 1000
-          fields:
-            integer: ["UpSpeed", "DownSpeed", "SNR", "Atten"]
     outputs:
-      - influxdb_v2:
-          urls:
-            - "${INFLUXDB_URL}"
-          token: "${INFLUXDB_TOKEN}"
-          organization: "influxdata"
-          bucket: "default"
-          namedrop: ["vigor","internet_speed","shelly*","ems-esp"]
-      - influxdb_v2:
-          urls:
-            - "${INFLUXDB_URL}"
-          token: "${INFLUXDB_TOKEN}"
-          organization: "influxdata"
-          bucket: "dsl"
-          namepass: ["vigor","internet_speed"]
-      - influxdb_v2:
-          urls:
-            - "${INFLUXDB_URL}"
-          token: "${INFLUXDB_TOKEN}"
-          organization: "influxdata"
-          bucket: "power"
-          namepass: ["shelly*"]
       - influxdb_v2:
           urls:
             - "${INFLUXDB_URL}"
@@ -81,83 +32,11 @@ telegraf:
           namepass: ["ems-esp"]
       - file:
           files: ["stdout"]
-          namepass: ["vigor"]
+          namepass: ["ems-esp"]
     inputs:
-      - file:
-          name_override: "cpu_temperature"
-          files: ["/sys/class/thermal/thermal_zone0/temp"]
-          data_format: "value"
-          data_type: "integer"
-      - cpu:
-          percpu: true
-          totalcpu: true
-          collect_cpu_time: false
-          report_active: false
-      - disk:
-          ignore_fs: ["tmpfs", "devtmpfs", "devfs", "iso9660", "overlay", "aufs", "squashfs"]
-      - diskio: {}
-      - mem: {}
-      - net: {}
-      - processes: {}
-      - swap: {}
-      - system: {}
-      #- internet_speed: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/internet_speed/README.md
-          #interval: "60m"
-      - syslog: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/syslog/README.md
-          name_override: "vigor"
-          server: "udp://:6514"
-          syslog_standard: "RFC3164"
-          fielddrop: ["severity_code", "facility_code"]
-      - mqtt_consumer: # https://github.com/influxdata/telegraf/blob/release-1.23/plugins/inputs/mqtt_consumer/README.md
-          name_override: "shelly_3em"
-          servers: ["tcp://mosquitto:1883"]
-          topics: 
-            - "shellies/shellyem3-C45BBE5FD547/emeter/#"
-          data_format: "value"
-          data_type: "float"
-      - mqtt_consumer:
-          name_override: "shelly_rack"
-          servers: ["tcp://mosquitto:1883"]
-          topics: 
-            - "shellyplus1pm-a8032ab9b91c/status/switch:0"
-          data_format: "json"
-      - mqtt_consumer:
-          name_override: "shelly_underfloor_heating"
-          servers: ["tcp://mosquitto:1883"]
-          topics: 
-            - "shellyplus1pm-a8032ab9d8e4/status/switch:0"
-          data_format: "json"
-      - mqtt_consumer:
-          name_override: "shelly_boiler"
-          servers: ["tcp://mosquitto:1883"]
-          topics: 
-            - "shellies/shelly1pm-F4CFA2E50172/relay/0/power"
-            - "shellies/shelly1pm-F4CFA2E50172/relay/0/energy"
-          data_format: "value"
-          data_type: "float"
-      - mqtt_consumer: # https://emsesp.github.io/docs/#/MQTT?id=boiler
+      - mqtt_consumer: # https://emsesp.org
           name_override: "ems-esp"
           servers: ["tcp://mosquitto:1883"]
           topics: 
             - "ems-esp/#"
           data_format: "json"
-          json_string_fields:
-            - "heatingactive"
-            - "tapwateractive"
-            - "burngas"
-            - "burngas2"
-            - "heatingpump"
-            - "fanwork"
-            - "ignwork"
-            - "oilpreheat"
-            - "heatingactivated"
-            - "ww3wayvalve"
-            - "wwactivated"
-            - "wwactive"
-            - "wwcharging"
-            - "wwcirc"
-            - "wwcircpump"
-            - "wwdisinfecting"
-            - "wwonetime"
-            - "wwrecharging"
-            - "wwtempok"
