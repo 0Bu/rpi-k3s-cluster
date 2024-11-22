@@ -3,7 +3,7 @@ kind: ClusterIssuer
 metadata:
   name: selfsigned-issuer
   annotations:
-    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook: post-install
     helm.sh/hook-weight: "1000"
 spec:
   selfSigned: {}
@@ -13,7 +13,7 @@ kind: Certificate
 metadata:
   name: selfsigned-ca
   annotations:
-    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook: post-install
     helm.sh/hook-weight: "2000"
 spec:
   isCA: true
@@ -33,7 +33,7 @@ kind: ClusterIssuer
 metadata:
   name: ca-issuer
   annotations:
-    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook: post-install
     helm.sh/hook-weight: "3000"
 spec:
   ca:
