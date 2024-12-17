@@ -5,7 +5,7 @@ metadata:
   labels:
     app: deconz-{{ .Values.host }}
   annotations:
-    metallb.universe.tf/loadBalancerIPs: {{ required "Required loadBalancerIPs, e.g. --set loadBalancerIPs=192.168.1.26" .Values.loadBalancerIPs }}
+    metallb.io/loadBalancerIPs: {{ required "Required loadBalancerIPs, e.g. --set loadBalancerIPs=192.168.1.26" .Values.loadBalancerIPs }}
 spec:
   selector:
     app: deconz-{{ .Values.host }}
