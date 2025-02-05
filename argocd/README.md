@@ -10,3 +10,8 @@ helm install argocd .
 ```
 helm uninstall argocd
 ``` 
+
+### [admin initial-password](https://argo-cd.readthedocs.io/en/stable/user-guide/commands/argocd_admin_initial-password/)
+```
+argocd admin initial-password
+```
