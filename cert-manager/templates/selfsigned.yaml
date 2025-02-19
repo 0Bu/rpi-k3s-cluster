@@ -1,3 +1,4 @@
+{{- if not (lookup "cert-manager.io/v1" "ClusterIssuer" .Release.Namespace "selfsigned-issuer") }}
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -7,7 +8,9 @@ metadata:
     helm.sh/hook-weight: "1000"
 spec:
   selfSigned: {}
+{{- end }}
 ---
+{{- if not (lookup "cert-manager.io/v1" "Certificate" .Release.Namespace "selfsigned-ca") }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -27,7 +30,9 @@ spec:
     name: selfsigned-issuer
     kind: ClusterIssuer
     group: cert-manager.io
+{{- end }}
 ---
+{{- if not (lookup "cert-manager.io/v1" "ClusterIssuer" .Release.Namespace "ca-issuer") }}
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -38,4 +43,4 @@ metadata:
 spec:
   ca:
     secretName: selfsigned-secret
-
+{{- end }}
