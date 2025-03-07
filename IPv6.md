@@ -10,7 +10,7 @@ sudo apt install radvd
 ```
 interface eth0 {
    AdvSendAdvert on;
-   prefix fd05::/64 {};
+   prefix fd7c:3b4a:5f1d::/48 {};
 };
 ```
 
@@ -20,14 +20,14 @@ add
 ```
 auto eth0
 iface eth0 inet6 static
-    address fd05::5
-    netmask 64
+    address fd7c:3b4a:5f1d::5
+    netmask 48
 ```
 
 ### [k3s dual-stack installation](https://docs.k3s.io/installation/network-options#dual-stack-installation)
 ```
 export K3S_KUBECONFIG_MODE="644"
-export INSTALL_K3S_EXEC="--disable servicelb --disable traefik --node-ip 192.168.1.5,fd05::5 --cluster-cidr 172.16.0.0/16,fd16::/56 --service-cidr 10.0.0.0/16,fd10::/112 --flannel-ipv6-masq"
+export INSTALL_K3S_EXEC="--disable servicelb --disable traefik --node-ip 192.168.1.5,fd7c:3b4a:5f1d::5 --cluster-cidr 172.16.0.0/16,fd3a:bc89:172::/56 --service-cidr 10.0.0.0/16,fd3a:bc89:10::/112 --flannel-ipv6-masq"
 export INSTALL_K3S_VERSION=$(curl -sL https://api.github.com/repos/k3s-io/k3s/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
 curl -sfL https://get.k3s.io | sh -
 ```
@@ -39,7 +39,7 @@ curl -sfL https://get.k3s.io | sh -
 ```
 export K3S_KUBECONFIG_MODE="644"
 export INSTALL_K3S_VERSION=$(curl -sL https://api.github.com/repos/k3s-io/k3s/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
-export INSTALL_K3S_EXEC="--node-ip 192.168.1.11,fd05::4b"
+export INSTALL_K3S_EXEC="--node-ip 192.168.1.11,fd7c:3b4a:5f1d:5"
 export K3S_URL="https://192.168.1.5:6443"
 export K3S_TOKEN="..."
 curl -sfL https://get.k3s.io | sh -
