@@ -1,6 +1,6 @@
 image:
   repository: "ghcr.io/home-assistant/home-assistant"
-  tag: "2025.4.0"
+  tag: "2025.4.1"
 nfs:
   server: 192.168.1.4
   path: "/nfs/home-assistant"
