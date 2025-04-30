@@ -13,17 +13,5 @@ helm install cert-manager .
 helm uninstall cert-manager
 ``` 
 
-## Extract certificate
-```
-kubectl get secrets selfsigned-secret -o jsonpath='{.data.tls\.crt}' | base64 -d > rpi-k3s-root.crt
-```
-
-## [Backup and Restore Resources](https://cert-manager.io/docs/devops-tips/backup/)
-```
-kubectl get --all-namespaces -oyaml issuer,clusterissuer,cert > backup.yaml
-kubectl apply -f backup.yaml
-```
-
-## Installing self signed certificates in iOS
-[Trust manually installed certificate profiles in iOS](https://support.apple.com/en-us/102390)
-
+## Create sealed secret
+`kubectl create secret generic cloudflare-api-token --dry-run=client --from-literal=token=<...> -oyaml | kubeseal --controller-name sealed-secrets -oyaml`

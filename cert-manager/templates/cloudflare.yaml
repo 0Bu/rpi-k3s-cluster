@@ -1,0 +1,47 @@
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: cloudflare-api-token
+spec:
+ template:
+   metadata:
+     name: cloudflare-api-token
+ encryptedData:
+   token: {{ index .Values "cloudflare-api-token" }}
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: cloudflare-issuer
+  annotations:
+    helm.sh/hook: post-install
+    helm.sh/hook-weight: "1000"
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: issuer-account-key
+    solvers:
+    - dns01:
+        cloudflare:
+          apiTokenSecretRef:
+            name: cloudflare-api-token
+            key: token
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cloudflare-cert
+  annotations:
+    helm.sh/hook: post-install
+    helm.sh/hook-weight: "2000"
+spec:
+  secretName: cloudflare-tls
+  commonName: burau.dev
+  dnsNames:
+    - burau.dev
+  issuerRef:
+    name: cloudflare-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+

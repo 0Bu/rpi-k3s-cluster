@@ -12,14 +12,14 @@ argocd:
        type: LoadBalancer
     certificate:
       enabled: true
-      domain: "argocd.lan"
+      domain: "argocd.burau.dev"
       issuer:
         group: "cert-manager.io"
         kind: "ClusterIssuer"
-        name: "ca-issuer"
+        name: "cloudflare-issuer"
     ingress:
       enabled: true
-      hostname: "argocd.lan"
+      hostname: "argocd.burau.dev"
       tls: true
       annotations:
         traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd

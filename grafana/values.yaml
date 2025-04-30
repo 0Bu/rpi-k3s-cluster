@@ -7,16 +7,17 @@ grafana:
   ingress:
     enabled: true
     annotations:
-      cert-manager.io/cluster-issuer: ca-issuer
+      cert-manager.io/cluster-issuer: cloudflare-issuer
       cert-manager.io/private-key-algorithm: ECDSA
       cert-manager.io/private-key-rotation-policy: Always
       traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
     hosts:
-      - grafana.lan
+      - grafana.burau.dev
     tls:
       - hosts:
-          - grafana.lan
-        secretName: grafana-tls
+          - grafana.burau.dev
+        secretName: grafana-ingress-tls
   persistence:
     enabled: true
-    existingClaim: grafana 
+    existingClaim: grafana
+
