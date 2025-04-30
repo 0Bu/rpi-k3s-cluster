@@ -14,4 +14,6 @@ helm uninstall cert-manager
 ``` 
 
 ## Create sealed secret
-`kubectl create secret generic cloudflare-api-token --dry-run=client --from-literal=token=<...> -oyaml | kubeseal --controller-name sealed-secrets -oyaml`
+```
+kubectl create secret generic cloudflare-api-token --dry-run=client --from-literal=token=<...> -oyaml | kubeseal --controller-name sealed-secrets -oyaml
+```
