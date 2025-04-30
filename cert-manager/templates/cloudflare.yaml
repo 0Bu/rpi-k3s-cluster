@@ -39,7 +39,8 @@ spec:
   secretName: cloudflare-tls
   commonName: burau.dev
   dnsNames:
-    - burau.dev
+    - "*.burau.dev"
+    - "burau.dev"
   issuerRef:
     name: cloudflare-issuer
     kind: ClusterIssuer
