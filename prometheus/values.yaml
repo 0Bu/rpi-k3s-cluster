@@ -8,16 +8,16 @@ prometheus:
     ingress:
       enabled: true
       annotations:
-        cert-manager.io/cluster-issuer: ca-issuer
+        cert-manager.io/cluster-issuer: cloudflare-issuer
         cert-manager.io/private-key-algorithm: ECDSA
         cert-manager.io/private-key-rotation-policy: Always
         traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
       hosts:
-        - prometheus.lan
+        - prometheus.burau.dev
       tls:
         - hosts:
-          - prometheus.lan
-          secretName: prometheus-tls
+          - prometheus.burau.dev
+          secretName: prometheus-ingress-tls
     persistentVolume:
       existingClaim: prometheus
   alertmanager:
