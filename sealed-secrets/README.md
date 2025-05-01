@@ -13,8 +13,8 @@ helm uninstall -n kube-system sealed-secrets
 
 ## Install kubeseal
 ```
-curl -sL 'https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.19.2/kubeseal-0.19.2-linux-arm.tar.gz' | tar xz kubeseal
+curl -sL $(curl -sL https://api.github.com/repos/bitnami-labs/sealed-secrets/releases/latest | grep -oP '"browser_download_url":\s*"\K(https://.*?linux-arm\.tar\.gz)(?=")') | tar xzf - kubeseal
 sudo install -m 755 kubeseal /usr/local/bin/kubeseal
-rm kubeseal
+rm kubeseal 
 ```
 
