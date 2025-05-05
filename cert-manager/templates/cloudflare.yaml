@@ -37,6 +37,8 @@ metadata:
     helm.sh/hook-weight: "2000"
 spec:
   secretName: cloudflare-tls
+  privateKey:
+    algorithm: ECDSA
   commonName: burau.dev
   dnsNames:
     - "*.burau.dev"
