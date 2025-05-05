@@ -46,5 +46,4 @@ spec:
   issuerRef:
     name: cloudflare-issuer
     kind: ClusterIssuer
-    group: cert-manager.io
 
