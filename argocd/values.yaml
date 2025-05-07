@@ -1,6 +1,6 @@
 argocd:
   global:
-    domain: argocd.lan
+    domain: argocd.burau.dev
   configs:
     params:
       server.insecure: true
