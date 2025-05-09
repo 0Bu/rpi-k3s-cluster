@@ -1,3 +1,4 @@
-namespace: "kube-system"
-fullnameOverride: "sealed-secrets-controller"
+sealed-secrets:
+  namespace: "kube-system"
+  fullnameOverride: "sealed-secrets-controller"
 
