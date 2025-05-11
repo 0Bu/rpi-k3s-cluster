@@ -1,13 +1,4 @@
 {
-  "extends": [
-    "config:recommended",
-    "customManagers:helmChartYamlAppVersions",
-    ":semanticCommitsDisabled"
-  ],
-  "configMigration": true,
-  "automerge": true,
-  "bumpVersion": "patch",
-  "ignoreTests": true,
   "packageRules": [
     {
       "matchDatasources": ["docker"],
