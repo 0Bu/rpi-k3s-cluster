@@ -35,6 +35,7 @@ metadata:
   annotations:
     helm.sh/hook: post-install
     helm.sh/hook-weight: "2000"
+    helm.sh/resource-policy: keep
 spec:
   secretName: cloudflare-tls
   privateKey:
