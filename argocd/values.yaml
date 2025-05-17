@@ -71,7 +71,7 @@ argocd:
         kind: "ClusterIssuer"
         name: "cloudflare-issuer"
       annotations:
-        "helm.sh/resource-policy": keep
+        helm.sh/resource-policy: keep
     ingress:
       enabled: true
       hostname: "argocd.burau.dev"
