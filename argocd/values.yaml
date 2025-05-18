@@ -1,9 +1,6 @@
 argocd:
   global:
     domain: argocd.burau.dev
-  configs:
-    params:
-      server.insecure: true
   dex:
     enabled: false
   notifications:
@@ -65,16 +62,15 @@ argocd:
        type: LoadBalancer
     certificate:
       enabled: true
-      domain: "argocd.burau.dev"
+      domain: argocd.burau.dev
       issuer:
-        group: "cert-manager.io"
-        kind: "ClusterIssuer"
-        name: "cloudflare-issuer"
+        kind: ClusterIssuer
+        name: cloudflare-issuer
       annotations:
         helm.sh/resource-policy: keep
     ingress:
       enabled: true
-      hostname: "argocd.burau.dev"
+      hostname: argocd.burau.dev
       tls: true
       annotations:
         traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
