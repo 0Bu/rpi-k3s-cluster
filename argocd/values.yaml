@@ -8,6 +8,8 @@ argocd:
   commitServer:
     enabled: false
   configs:
+    params:
+      server.insecure: true
     gpg:
       keys:
         B5690EEEBB952194: |
@@ -56,10 +58,10 @@ argocd:
             -----END PGP PUBLIC KEY BLOCK-----
   server:
     service:
-       annotations:
-         metallb.universe.tf/address-pool: default
-         metallb.universe.tf/loadBalancerIPs: 192.168.1.40
-       type: LoadBalancer
+      annotations:
+        metallb.universe.tf/address-pool: default
+        metallb.universe.tf/loadBalancerIPs: 192.168.1.40
+      type: LoadBalancer
     certificate:
       enabled: true
       domain: argocd.burau.dev
@@ -70,7 +72,4 @@ argocd:
         helm.sh/resource-policy: keep
     ingress:
       enabled: true
-      hostname: argocd.burau.dev
       tls: true
-      annotations:
-        traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
