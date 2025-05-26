@@ -31,7 +31,7 @@ telegraf:
           token: "${INFLUXDB_TOKEN}"
           organization: "influxdata"
           bucket: "power"
-          namepass: ["shelly*"]
+          namepass: ["shelly"]
       - influxdb_v2:
           urls:
             - "${INFLUXDB_URL}"
@@ -41,7 +41,7 @@ telegraf:
           namepass: ["ems-esp"]
       - file:
           files: ["stdout"]
-          namepass: ["shelly*"]
+          namepass: ["shelly"]
     inputs:
       - mqtt_consumer: # https://emsesp.org
           name_override: "ems-esp"
@@ -50,21 +50,12 @@ telegraf:
             - "ems-esp/#"
           data_format: "json"
       - mqtt_consumer:
-          name_override: "shelly_pro_3em"
+          name_override: "shelly"
           servers: ["tcp://mosquitto:1883"]
           topics:
-            - "shellypro3em-2cbcbbb2ddb8/#"
-          data_format: "json"
-      - mqtt_consumer:
-          name_override: "shelly_underfloor_heating"
-          servers: ["tcp://mosquitto:1883"]
-          topics:
-            - "shellyplus1pm-a8032ab9d8e4/#"
-          data_format: "json"
-      - mqtt_consumer:
-          name_override: "shelly_rack"
-          servers: ["tcp://mosquitto:1883"]
-          topics:
-            - "shellypmmini-543204b695cc/#"
+            - "shellypro3em-2cbcbbb2ddb8/status/#"
+            - "shellyplugsg3-8cbfea9fd6c8/status/#"
+            - "shellyplus1pm-a8032ab9d8e4/status/#"
+            - "shellypmmini-543204b695cc/status/#"
           data_format: "json"
 
