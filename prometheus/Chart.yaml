@@ -3,7 +3,7 @@ name: prometheus
 type: application
 version: 1.0.117
 # renovate: image=quay.io/prometheus/prometheus
-appVersion: "v3.4.0"
+appVersion: "v3.4.1"
 dependencies: 
   - name: prometheus
     version: "27.17.0"
