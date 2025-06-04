@@ -1,10 +1,10 @@
 apiVersion: v2
 name: metallb
 type: application
-version: 1.0.5
+version: 1.0.6
 # renovate: image=quay.io/metallb/controller
 appVersion: "v0.15.0"
 dependencies:
   - name: metallb
-    version: "0.15.0"
+    version: "0.15.1"
     repository: https://metallb.github.io/metallb
