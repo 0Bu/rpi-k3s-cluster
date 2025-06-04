@@ -3,7 +3,7 @@ name: metallb
 type: application
 version: 1.0.6
 # renovate: image=quay.io/metallb/controller
-appVersion: "v0.15.0"
+appVersion: "v0.15.1"
 dependencies:
   - name: metallb
     version: "0.15.1"
