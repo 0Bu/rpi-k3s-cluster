@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment 
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  strategy:
+    type: Recreate    
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      {{- if .Values.host }}
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.host }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          ports:
+            - containerPort: {{ .Values.port }}
+          env:
+            - name: TZ
+              value: {{ .Values.timezone }}
+          resources:
+            requests:
+              memory: 64M
+            limits:
+              memory: 128M
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.port }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.port }}
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.port }}
+          volumeMounts:
+            - name: {{ .Release.Name }}
+              mountPath: /app/data
+            {{- if .Values.device }}
+            - name: device
+              mountPath: {{ .Values.device }}
+            {{- end }}
+      volumes:
+        - name: {{ .Release.Name }}
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}
+        {{- if .Values.device }}
+        - name: device
+          hostPath:
+            path: {{ .Values.device }}
+        {{- end }}
