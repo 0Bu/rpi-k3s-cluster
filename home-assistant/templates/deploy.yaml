@@ -41,8 +41,16 @@ spec:
         volumeMounts:
         - name: homeassistant
           mountPath: /config
+        {{- if .Values.device }}
+        - name: conbee
+          mountPath: {{ .Values.device }}
+        {{- end }}
       volumes:
       - name: homeassistant
         persistentVolumeClaim:
           claimName: {{ .Chart.Name }}-{{ .Release.Namespace }}
-
+      {{- if .Values.device }}
+      - name: conbee
+        hostPath:
+          path: {{ .Values.device }}
+      {{- end }} 
