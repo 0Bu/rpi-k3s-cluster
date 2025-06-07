@@ -5,5 +5,16 @@
       "matchPackageNames": ["homebridge/homebridge"],
       "versioning": "loose"
     }
+  ],
+  "regexManagers": [
+    {
+      "fileMatch": ["^README\\.md$"],
+      "matchStrings": [
+        "https://raw\\.githubusercontent\\.com/metallb/metallb/v(?<currentValue>[^/]+)/config/manifests/metallb-native\\.yaml"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "metallb/metallb",
+      "versioningTemplate": "semver"
+    }
   ]
 }
