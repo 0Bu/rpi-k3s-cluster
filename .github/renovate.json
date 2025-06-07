@@ -1,14 +1,21 @@
 {
   "packageRules": [
     {
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["homebridge/homebridge"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "homebridge/homebridge"
+      ],
       "versioning": "loose"
     }
   ],
-  "regexManagers": [
+  "customManagers": [
     {
-      "fileMatch": ["^README\\.md$"],
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^README\\.md$/"
+      ],
       "matchStrings": [
         "https://raw\\.githubusercontent\\.com/metallb/metallb/v(?<currentValue>[^/]+)/config/manifests/metallb-native\\.yaml"
       ],
