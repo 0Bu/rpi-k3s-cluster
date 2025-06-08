@@ -4,10 +4,14 @@
 
 ## Helm install/upgrade
 ```
-helm install deconz . --set host=pi4a --set loadBalancerIPs=192.168.1.26 --set device=/dev/ttyUSB0`--set vncPassword=deconz
+helm install deconz . \
+--set host=pi4a \
+--set loadBalancerIPs=192.168.1.26 \
+--set device=/dev/ttyUSB0 \
+--set vncPassword=deconz
 ```
 
 ## Helm unintall
-````
-helm uninstall deconz`
+```
+helm uninstall deconz
 ```
