@@ -24,6 +24,9 @@ spec:
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         securityContext:
           privileged: true
+        env:
+        - name: TZ
+          value: {{ .Values.timezone | default  "Europe/Berlin" }}
         readinessProbe:
           tcpSocket:
             port: 8123
