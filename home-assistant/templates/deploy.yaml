@@ -41,6 +41,9 @@ spec:
         volumeMounts:
         - name: homeassistant
           mountPath: /config
+        - name: dbus
+          mountPath: /run/dbus
+          readOnly: true
         {{- if .Values.device }}
         - name: conbee
           mountPath: {{ .Values.device }}
@@ -49,8 +52,11 @@ spec:
       - name: homeassistant
         persistentVolumeClaim:
           claimName: {{ .Chart.Name }}-{{ .Release.Namespace }}
+      - name: dbus
+        hostPath:
+          path: /run/dbus
       {{- if .Values.device }}
       - name: conbee
         hostPath:
           path: {{ .Values.device }}
-      {{- end }} 
+      {{- end }}
