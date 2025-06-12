@@ -1,6 +1,4 @@
 telegraf:
-  image:
-    tag: "latest"
   service:
     enabled: false
   pdb:
