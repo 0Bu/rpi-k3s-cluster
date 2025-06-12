@@ -19,23 +19,23 @@ spec:
     spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
-      - name: {{ .Chart.Name }}
-        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-        livenessProbe:
-          tcpSocket:
-            port: 1883
-        readinessProbe:
-          tcpSocket:
-            port: 1883
-        resources:
-          requests:
-            memory: 20Mi
-          limits:
-            memory: 128Mi
-        volumeMounts:
-        - name: config
-          mountPath: /mosquitto/config
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          livenessProbe:
+            tcpSocket:
+              port: 1883
+          readinessProbe:
+            tcpSocket:
+              port: 1883
+          resources:
+            requests:
+              memory: 20Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: config
+              mountPath: /mosquitto/config
       volumes:
-      - name: config
-        configMap:
-          name: mosquitto
+        - name: config
+          configMap:
+            name: mosquitto

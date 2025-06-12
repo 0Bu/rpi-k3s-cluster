@@ -20,37 +20,37 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       containers:
-      - name: {{ .Chart.Name }}
-        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-        env:
-          - name: TZ
-            value: "Europe/Berlin"
-          - name: PGID
-            value: "65534"
-          - name: PUID
-            value: "65534"
-        readinessProbe:
-          tcpSocket:
-            port: 80
-        livenessProbe:
-          tcpSocket:
-            port: 80
-          failureThreshold: 30
-        startupProbe:
-          tcpSocket:
-            port: 80
-          failureThreshold: 60
-        resources:
-          requests:
-            memory: 64M
-            cpu: 250m
-          limits:
-            memory: 1024M
-            cpu: 1.0
-        volumeMounts:
-        - name: homebridge
-          mountPath: /homebridge
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          env:
+            - name: TZ
+              value: "Europe/Berlin"
+            - name: PGID
+              value: "65534"
+            - name: PUID
+              value: "65534"
+          readinessProbe:
+            tcpSocket:
+              port: 80
+          livenessProbe:
+            tcpSocket:
+              port: 80
+            failureThreshold: 30
+          startupProbe:
+            tcpSocket:
+              port: 80
+            failureThreshold: 60
+          resources:
+            requests:
+              memory: 192M
+              cpu: 250m
+            limits:
+              memory: 1024M
+              cpu: 1.0
+          volumeMounts:
+            - name: homebridge
+              mountPath: /homebridge
       volumes:
-      - name: homebridge
-        persistentVolumeClaim:
-          claimName: {{ .Release.Name }}
+        - name: homebridge
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}

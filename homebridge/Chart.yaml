@@ -5,4 +5,3 @@ type: application
 version: 1.0.0
 # renovate: datasource=docker depName=homebridge/homebridge versioning=loose
 appVersion: "2025-05-14"
-

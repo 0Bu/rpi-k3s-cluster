@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment 
+kind: Deployment
 metadata:
   name: {{ .Release.Name }}
   labels:
@@ -10,7 +10,7 @@ spec:
     matchLabels:
       app: {{ .Release.Name }}
   strategy:
-    type: Recreate    
+    type: Recreate
   template:
     metadata:
       labels:
@@ -20,10 +20,14 @@ spec:
         - name: {{ .Chart.Name }}
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           ports:
-            - containerPort: 3000
-            - containerPort: 80
-            - containerPort: 53
-            - containerPort: 53
+            - name: http-setup
+              containerPort: 3000
+            - name: http
+              containerPort: 80
+            - name: dns-tcp
+              containerPort: 53
+            - name: dns-udp
+              containerPort: 53
               protocol: UDP
           resources:
             requests:
@@ -47,7 +51,6 @@ spec:
               mountPath: /opt/adguardhome/work
               subPath: work
       volumes:
-      - name: adguard
-        persistentVolumeClaim:
-          claimName: {{ .Release.Name }}
-
+        - name: adguard
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}
