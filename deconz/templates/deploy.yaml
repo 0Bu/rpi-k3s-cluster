@@ -23,8 +23,7 @@ spec:
       - name: deconz
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         securityContext:
-          runAsUser: 65534
-          runAsGroup: 65534
+          privileged: true
         env:
           - name: DECONZ_BAUDRATE
             value: "115200"
@@ -44,12 +43,6 @@ spec:
             value: "5900"
           - name: DECONZ_VNC_PASSWORD
             value: {{ default "deconz" .Values.vncPassword | quote }}
-          - name: DECONZ_UID
-            value: "65534"
-          - name: DECONZ_GID
-            value: "65534"
-        securityContext:
-          privileged: true
         readinessProbe:
           tcpSocket:
             port: 80
@@ -70,6 +63,7 @@ spec:
             mountPath: {{ .Values.device | default  "/dev/ttyACM0" }}
           - name: deconz
             mountPath: /opt/deCONZ
+            subPath: {{ .Values.host }}
       volumes:
         - name: conbee
           hostPath:
