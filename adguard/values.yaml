@@ -1,6 +1,6 @@
 image:
   repository: adguard/adguardhome
-  tag: v0.107.62
+  tag: v0.107.63
 nfs:
   server: 192.168.1.4
   path: /nfs/adguard
