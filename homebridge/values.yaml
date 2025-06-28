@@ -1,6 +1,6 @@
 image:
   repository: "homebridge/homebridge"
-  tag: "latest@sha256:bf911d5b043c80ea120674a1e870814d66d3dd24f0f4fb1013ffbaab3567eb7f"
+  tag: "latest@sha256:9049a89217f6cecc9f58a19d1f40e754e3384136f8b6d06dfbc9e38aad6676b0"
 nfs:
   server: 192.168.1.4
   path: "/nfs/homebridge"
