@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/koenkk/zigbee2mqtt
-  tag: 2.4.0
+  tag: 2.5.0
 port: 8080
 timezone: Europe/Berlin
 nfs:
