@@ -1,10 +1,10 @@
 apiVersion: v2
 name: cert-manager
 type: application
-version: 1.0.13
+version: 1.0.14
 # renovate: image=bitnami/cert-manager
 appVersion: "1.18.2"
 dependencies: 
   - name: cert-manager
-    version: "v1.18.1"
+    version: "v1.18.2"
     repository: https://charts.jetstack.io
