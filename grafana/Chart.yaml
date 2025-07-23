@@ -4,7 +4,7 @@ description: A Helm chart for Kubernetes
 type: application
 version: 1.0.175
 # renovate: image=grafana/grafana
-appVersion: "12.0.2"
+appVersion: "12.0.3"
 dependencies: 
   - name: grafana
     version: "9.2.10"
