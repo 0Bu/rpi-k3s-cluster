@@ -40,8 +40,8 @@ sudo sed -i 's/CONF_SWAPSIZE=100/CONF_SWAPSIZE=0/' /etc/dphys-swapfile
 `ctrl+x ctrl+e`
 ```
 export K3S_KUBECONFIG_MODE="644"
+export INSTALL_K3S_VERSION="v1.33.2+k3s1"
 export INSTALL_K3S_EXEC="--disable servicelb --disable traefik"
-export INSTALL_K3S_VERSION=$(curl -sL https://api.github.com/repos/k3s-io/k3s/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
 curl -sfL https://get.k3s.io | sh - 
 ```
 
@@ -49,7 +49,7 @@ curl -sfL https://get.k3s.io | sh -
 On master `sudo cat /var/lib/rancher/k3s/server/node-token`
 ```
 export K3S_KUBECONFIG_MODE="644"
-export INSTALL_K3S_VERSION=$(curl -sL https://api.github.com/repos/k3s-io/k3s/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
+export INSTALL_K3S_VERSION="v1.33.2+k3s1"
 export K3S_URL="https://192.168.1.4:6443"
 export K3S_TOKEN="XXXX"
 curl -sfL https://get.k3s.io | sh -
@@ -58,16 +58,16 @@ curl -sfL https://get.k3s.io | sh -
 ### [High availibility cluster](https://w-goutas.medium.com/set-up-a-kubernetes-cluster-in-minutes-41a0bd65ab93) installation
 ```
 export K3S_KUBECONFIG_MODE="644"
+export INSTALL_K3S_VERSION="v1.33.2+k3s1"
 export INSTALL_K3S_EXEC="--disable servicelb --disable traefik"
-export INSTALL_K3S_VERSION=$(curl -sL https://api.github.com/repos/k3s-io/k3s/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
 curl -sfL https://get.k3s.io | sh -s server --cluster-init --token 'secret'
 ```
 
 ### HA node installation
 ```
 export K3S_KUBECONFIG_MODE="644"
+export INSTALL_K3S_VERSION="v1.33.2+k3s1"
 export INSTALL_K3S_EXEC="--disable servicelb --disable traefik"
-export INSTALL_K3S_VERSION=$(curl -sL https://api.github.com/repos/k3s-io/k3s/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
 export K3S_TOKEN="secret"
 curl -sfL https://get.k3s.io | sh -s server --server https://192.168.1.4:6443
 ```
@@ -84,8 +84,7 @@ sudo chmod go-r ~/.kube/config
 
 ### [k9s](https://github.com/derailed/k9s) installation
 ```
-K9S_VERSION=$(curl -sL https://api.github.com/repos/derailed/k9s/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
-curl -sLO "https://github.com/derailed/k9s/releases/download/$K9S_VERSION/k9s_linux_arm.deb"
+curl -sLO "https://github.com/derailed/k9s/releases/download/v0.50.8/k9s_linux_arm.rpm"
 sudo dpkg -i k9s_linux_arm.deb
 rm k9s_linux_arm.deb
 ```
