@@ -1,23 +1,33 @@
 {
   "packageRules": [
     {
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["homebridge/homebridge"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "homebridge/homebridge"
+      ],
       "versioning": "loose"
     }
   ],
   "customManagers": [
     {
-      "customType": "regex", 
-      "managerFilePatterns": ["^README\\.md$"],
-      "matchStrings": ["https://raw\\.githubusercontent\\.com/metallb/metallb/v(?<currentValue>[^/]+)/config/manifests/metallb-native\\.yaml"],
+      "customType": "regex",
+      "managerFilePatterns": [
+        "^README\\.md$"
+      ],
+      "matchStrings": [
+        "https://raw\\.githubusercontent\\.com/metallb/metallb/v(?<currentValue>[^/]+)/config/manifests/metallb-native\\.yaml"
+      ],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "metallb/metallb",
       "versioningTemplate": "semver"
     },
     {
       "customType": "regex",
-      "fileMatch": ["^IPv6\\.md$"],
+      "managerFilePatterns": [
+        "/^IPv6\\.md$/"
+      ],
       "matchStrings": [
         "export INSTALL_K3S_VERSION=(?<currentValue>.+)"
       ],
