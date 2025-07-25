@@ -14,6 +14,14 @@
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "metallb/metallb",
       "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^IPv6\\.md$"],
+      "matchStrings": ["export INSTALL_K3S_VERSION=\\\"(?<currentValue>v[^\"]+)\\\""],
+      "depNameTemplate": "k3s",
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "k3s-io/k3s"
     }
   ]
 }
