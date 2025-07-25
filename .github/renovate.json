@@ -9,10 +9,26 @@
   "customManagers": [
     {
       "customType": "regex", 
-      "managerFilePatterns": ["^README\\.md$"],
+      "fileMatch": ["^README\\.md$"],
       "matchStrings": ["https://raw\\.githubusercontent\\.com/metallb/metallb/v(?<currentValue>[^/]+)/config/manifests/metallb-native\\.yaml"],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "metallb/metallb",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [".*\\.md$"],
+      "matchStrings": ["export INSTALL_K3S_VERSION=\\\"(?<currentValue>v[^\"]+)\\\""],
+      "depNameTemplate": "k3s",
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "k3s-io/k3s"
+    },
+    {
+      "customType": "regex", 
+      "fileMatch": ["^README\\.md$"],
+      "matchStrings": ["https://github\\.com/derailed/k9s/releases/download/v(?<currentValue>[0-9.]+)/k9s_linux_arm\\.rpm"],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "derailed/k9s",
       "versioningTemplate": "semver"
     }
   ]
