@@ -28,7 +28,7 @@ iface eth0 inet6 static
 ```
 export K3S_KUBECONFIG_MODE="644"
 export INSTALL_K3S_EXEC="--disable servicelb --node-ip 192.168.1.5,fd7c:3b4a:5f1d::5 --cluster-cidr 10.42.0.0/16,fd00:10:42::/56 --service-cidr 10.43.0.0/16,fd00:10:43::/112 --flannel-ipv6-masq"
-export INSTALL_K3S_VERSION="v1.31.10+k3s1"
+export INSTALL_K3S_VERSION="v1.33.2+k3s1"
 curl -sfL https://get.k3s.io | sh -
 ```
 
@@ -38,7 +38,7 @@ curl -sfL https://get.k3s.io | sh -
 ### Node installation
 ```
 export K3S_KUBECONFIG_MODE="644"
-export INSTALL_K3S_VERSION="v1.31.10+k3s1"
+export INSTALL_K3S_VERSION="v1.33.2+k3s1"
 export INSTALL_K3S_EXEC="--node-ip 192.168.1.11,fd7c:3b4a:5f1d:4b"
 export K3S_URL="https://192.168.1.5:6443"
 export K3S_TOKEN="..."
