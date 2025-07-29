@@ -1,6 +1,6 @@
 image:
   repository: "ghcr.io/homebridge/homebridge"
-  tag: "latest@sha256:6f869d799bfe7c203b7d46a8dcba382005eaf66a5dd6940874c46ebf211b0bae"
+  tag: "latest@sha256:0e839f8bf24babeddb24abba0f6b37e999f037a6b2c12b915dcf50cd39fefa35"
 nfs:
   server: 192.168.1.4
   path: "/nfs/homebridge"
