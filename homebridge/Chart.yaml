@@ -3,5 +3,5 @@ name: homebridge
 description: https://github.com/homebridge/homebridge
 type: application
 version: 1.0.0
-# renovate: datasource=docker depName=homebridge/homebridge versioning=loose
+# renovate: datasource=docker depName=ghcr.io/homebridge/homebridge versioning=loose
 appVersion: "2025-05-14"
