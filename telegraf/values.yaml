@@ -55,5 +55,7 @@ telegraf:
             - "shellyplugsg3-8cbfea9fd6c8/status/#"
             - "shellyplus1pm-a8032ab9d8e4/status/#"
             - "shellypmmini-543204b695cc/status/#"
+            - "shelly1pmminig4-ccba97c4e854/status/#"
+            - "shelly1pmminig4-ccba97c65f18/status/#"
           data_format: "json"
 
