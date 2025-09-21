@@ -3,9 +3,6 @@ kind: Ingress
 metadata:
   name: node-red
   annotations:
-    cert-manager.io/cluster-issuer: cloudflare-issuer
-    cert-manager.io/private-key-algorithm: ECDSA
-    cert-manager.io/private-key-rotation-policy: Always
     traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
 spec:
   rules:
@@ -22,4 +19,4 @@ spec:
   tls:
     - hosts:
         - nodered.burau.dev
-      secretName: nodered-ingress-tls
+      secretName: cloudflare-tls
