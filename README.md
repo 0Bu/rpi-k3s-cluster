@@ -84,7 +84,7 @@ sudo chmod go-r ~/.kube/config
 
 ### [k9s](https://github.com/derailed/k9s) installation
 ```
-curl -sLO "https://github.com/derailed/k9s/releases/download/v0.50.14/k9s_linux_arm.rpm"
+curl -sLO "https://github.com/derailed/k9s/releases/download/v0.50.15/k9s_linux_arm.rpm"
 sudo dpkg -i k9s_linux_arm.deb
 rm k9s_linux_arm.deb
 ```
