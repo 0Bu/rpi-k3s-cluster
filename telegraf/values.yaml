@@ -52,6 +52,7 @@ telegraf:
           servers: ["tcp://mosquitto:1883"]
           topics:
             - "shellypro3em-2cbcbbb2ddb8/status/#"
+            - "shellypro3em63-3c8a1fd182e0/status/#"
             - "shellyplugsg3-8cbfea9fd6c8/status/#"
             - "shellyplus1pm-a8032ab9d8e4/status/#"
             - "shellypmmini-543204b695cc/status/#"
