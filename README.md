@@ -40,7 +40,7 @@ sudo sed -i 's/CONF_SWAPSIZE=100/CONF_SWAPSIZE=0/' /etc/dphys-swapfile
 `ctrl+x ctrl+e`
 ```
 export K3S_KUBECONFIG_MODE="644"
-export INSTALL_K3S_VERSION="v1.34.2+k3s1"
+export INSTALL_K3S_VERSION="v1.34.3+k3s1"
 export INSTALL_K3S_EXEC="--disable servicelb --disable traefik"
 curl -sfL https://get.k3s.io | sh - 
 ```
@@ -49,7 +49,7 @@ curl -sfL https://get.k3s.io | sh -
 On master `sudo cat /var/lib/rancher/k3s/server/node-token`
 ```
 export K3S_KUBECONFIG_MODE="644"
-export INSTALL_K3S_VERSION="v1.34.2+k3s1"
+export INSTALL_K3S_VERSION="v1.34.3+k3s1"
 export K3S_URL="https://192.168.1.4:6443"
 export K3S_TOKEN="XXXX"
 curl -sfL https://get.k3s.io | sh -
@@ -58,7 +58,7 @@ curl -sfL https://get.k3s.io | sh -
 ### [High availibility cluster](https://w-goutas.medium.com/set-up-a-kubernetes-cluster-in-minutes-41a0bd65ab93) installation
 ```
 export K3S_KUBECONFIG_MODE="644"
-export INSTALL_K3S_VERSION="v1.34.2+k3s1"
+export INSTALL_K3S_VERSION="v1.34.3+k3s1"
 export INSTALL_K3S_EXEC="--disable servicelb --disable traefik"
 curl -sfL https://get.k3s.io | sh -s server --cluster-init --token 'secret'
 ```
@@ -66,7 +66,7 @@ curl -sfL https://get.k3s.io | sh -s server --cluster-init --token 'secret'
 ### HA node installation
 ```
 export K3S_KUBECONFIG_MODE="644"
-export INSTALL_K3S_VERSION="v1.34.2+k3s1"
+export INSTALL_K3S_VERSION="v1.34.3+k3s1"
 export INSTALL_K3S_EXEC="--disable servicelb --disable traefik"
 export K3S_TOKEN="secret"
 curl -sfL https://get.k3s.io | sh -s server --server https://192.168.1.4:6443
