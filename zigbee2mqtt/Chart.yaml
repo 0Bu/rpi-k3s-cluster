@@ -4,4 +4,4 @@ description: https://zigbee2mqtt.io
 type: application
 version: 1.0.0
 # renovate: image=ghcr.io/koenkk/zigbee2mqtt
-appVersion: "2.7.1"
+appVersion: "2.7.2"
