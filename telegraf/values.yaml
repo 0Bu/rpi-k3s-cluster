@@ -1,4 +1,7 @@
 telegraf:
+  rbac:
+    create: true
+    clusterWide: true
   service:
     enabled: false
   pdb:
