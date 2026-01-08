@@ -48,9 +48,9 @@ telegraf:
           organization: "influxdata"
           bucket: "ems-esp"
           namepass: ["ems-esp"]
-      - file:
-          files: ["stdout"]
-          namepass: ["shelly"]
+#      - file:
+#          files: ["stdout"]
+#          namepass: ["shelly"]
 
     inputs:
       - kubernetes:
