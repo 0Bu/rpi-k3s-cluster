@@ -3,13 +3,7 @@ telegraf:
     create: true
     clusterWide: true
     rules:
-      - apiGroups: [""]
-        resources: ["*"]
-        verbs: ["get","list","watch"]
-      - apiGroups: ["apps"]
-        resources: ["*"]
-        verbs: ["get","list","watch"]
-      - apiGroups: ["networking.k8s.io"]
+      - apiGroups: ["","apps","discovery.k8s.io","networking.k8s.io"]
         resources: ["*"]
         verbs: ["get","list","watch"]
       - nonResourceURLs: ["/metrics"]
