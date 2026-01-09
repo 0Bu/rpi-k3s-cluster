@@ -2,6 +2,18 @@ telegraf:
   rbac:
     create: true
     clusterWide: true
+    rules:
+      - apiGroups: [""]
+        resources: ["*"]
+        verbs: ["get","list","watch"]
+      - apiGroups: ["apps"]
+        resources: ["*"]
+        verbs: ["get","list","watch"]
+      - apiGroups: ["networking.k8s.io"]
+        resources: ["*"]
+        verbs: ["get","list","watch"]
+      - nonResourceURLs: ["/metrics"]
+        verbs: ["get"]
   service:
     enabled: false
   pdb:
@@ -10,6 +22,7 @@ telegraf:
   env:
     - name: INFLUXDB_URL
       value: "http://influxdb"
+
   config: # https://github.com/influxdata/telegraf/blob/master/docs/CONFIGURATION.md
     agent:
       interval: "10s"
@@ -28,22 +41,19 @@ telegraf:
 
     outputs:
       - influxdb_v2:
-          urls:
-            - "${INFLUXDB_URL}"
+          urls: ["${INFLUXDB_URL}"]
           token: "${INFLUXDB_TOKEN}"
           organization: "influxdata"
           bucket: "default"
           namedrop: ["shelly","ems-esp"]
       - influxdb_v2:
-          urls:
-            - "${INFLUXDB_URL}"
+          urls: ["${INFLUXDB_URL}"]
           token: "${INFLUXDB_TOKEN}"
           organization: "influxdata"
           bucket: "power"
           namepass: ["shelly"]
       - influxdb_v2:
-          urls:
-            - "${INFLUXDB_URL}"
+          urls: ["${INFLUXDB_URL}"]
           token: "${INFLUXDB_TOKEN}"
           organization: "influxdata"
           bucket: "ems-esp"
@@ -78,8 +88,7 @@ telegraf:
       - mqtt_consumer: # https://emsesp.org
           name_override: "ems-esp"
           servers: ["tcp://mosquitto:1883"]
-          topics: 
-            - "ems-esp/#"
+          topics: ["ems-esp/#"]
           data_format: "json"
       - mqtt_consumer:
           name_override: "shelly"
