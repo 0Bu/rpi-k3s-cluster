@@ -59,7 +59,6 @@ telegraf:
     inputs:
       - kubernetes:
       - kube_inventory:
-
       - file:
           name_override: "cpu_temperature"
           files: ["/sys/class/thermal/thermal_zone0/temp"]
@@ -72,13 +71,11 @@ telegraf:
           report_active: false
       - disk:
           ignore_fs: ["tmpfs", "devtmpfs", "devfs", "iso9660", "overlay", "aufs", "squashfs"]
-      - diskio:
       - mem:
       - nstat:
       - processes:
       - swap:
       - system:
-
       - mqtt_consumer: # https://emsesp.org
           name_override: "ems-esp"
           servers: ["tcp://mosquitto:1883"]
