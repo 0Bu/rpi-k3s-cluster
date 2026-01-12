@@ -1,0 +1,29 @@
+name: Renovate
+on:
+  schedule:
+    - cron: '0 * * * *'
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: renovatebot/github-action@66387ab8c2464d575b933fa44e9e5a86b2822809 # v44.2.4
+        with:
+          token: ${{ secrets.RENOVATE_TOKEN }}
+        env:
+          RENOVATE_PLATFORM: github
+          RENOVATE_EXTENDS: config:best-practices,customManagers:dockerfileVersions,customManagers:helmChartYamlAppVersions
+          RENOVATE_AUTODISCOVER: true
+          RENOVATE_AUTODISCOVER_FILTER: ${{ github.repository }}, ${{ github.repository_owner }}/rpi-*
+          RENOVATE_CONFIG_MIGRATION: true
+          RENOVATE_AUTOMERGE: true
+          RENOVATE_BUMP_VERSION: patch
+          RENOVATE_IGNORE_TESTS: true
+          LOG_LEVEL: debug
+#         RENOVATE_DRY_RUN: full
