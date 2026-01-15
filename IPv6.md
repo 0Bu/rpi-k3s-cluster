@@ -36,7 +36,12 @@ sudo systemctl restart systemd-networkd
 ```
 export K3S_KUBECONFIG_MODE="644"
 export INSTALL_K3S_VERSION="v1.35.0+k3s1"
-export INSTALL_K3S_EXEC="--disable servicelb --node-ip 192.168.1.5,fd7c:3b4a:5f1d::5a --cluster-cidr 10.42.0.0/16,fd00:10:42::/56 --service-cidr 10.43.0.0/16,fd00:10:43::/112 --flannel-ipv6-masq"
+export INSTALL_K3S_EXEC=" \
+--disable servicelb \
+--node-ip 192.168.1.5,fd7c:3b4a:5f1d::5a \
+--cluster-cidr 10.42.0.0/16,fd00:10:42::/56 \
+--service-cidr 10.43.0.0/16,fd00:10:43::/112 \
+--flannel-ipv6-masq"
 curl -sfL https://get.k3s.io | sh -
 ```
 
@@ -54,20 +59,40 @@ curl -sfL https://get.k3s.io | sh -
 ```
 
 ## [High Availability Cluster Installation](https://docs.k3s.io/datastore/ha-embedded)
+`sudo mkdir -p /etc/rancher/k3s`
+
+`sudo vim /etc/rancher/k3s/config.yaml`
+
 ```
-export K3S_CLUSTER_INIT=true
-export K3S_TOKEN="..."
-export K3S_KUBECONFIG_MODE="644"
-export INSTALL_K3S_VERSION="v1.35.0+k3s1"
-export INSTALL_K3S_EXEC="--disable servicelb --node-ip 192.168.1.5,fd7c:3b4a:5f1d::5a --cluster-cidr 10.42.0.0/16,fd00:10:42::/56 --service-cidr 10.43.0.0/16,fd00:10:43::/112 --flannel-ipv6-masq"
-curl -sfL https://get.k3s.io | sh -
+cluster-init: true
+token: "..."
+write-kubeconfig-mode: "644"
+disable:
+  - servicelb
+node-ip: "192.168.1.5,fd7c:3b4a:5f1d::5a"
+cluster-cidr: "10.42.0.0/16,fd00:10:42::/56"
+service-cidr: "10.43.0.0/16,fd00:10:43::/112"
+flannel-ipv6-masq: true
 ```
 
+`curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.0+k3s1" sh -`
+
 ### High Availability Node Installation
+`sudo mkdir -p /etc/rancher/k3s`
+
+`sudo vim /etc/rancher/k3s/config.yaml`
+
 ```
-export K3S_KUBECONFIG_MODE="644"
-export INSTALL_K3S_VERSION="v1.35.0+k3s1"
-export INSTALL_K3S_EXEC="--node-ip 192.168.1.15,fd7c:3b4a:5f1d::5b"
-export K3S_TOKEN="..."
-curl -sfL https://get.k3s.io | sh -s server --server https://192.168.1.5:6443
+server: https://192.168.1.5:6443
+token: "..."
+write-kubeconfig-mode: "644"
+disable:
+  - servicelb
+node-ip: "192.168.1.15,fd7c:3b4a:5f1d::5b"
+cluster-cidr: "10.42.0.0/16,fd00:10:42::/56"
+service-cidr: "10.43.0.0/16,fd00:10:43::/112"
+flannel-ipv6-masq: true
 ```
+
+`curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.0+k3s1" sh -`
+
