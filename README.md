@@ -59,7 +59,7 @@ curl -sfL https://get.k3s.io | sh -
 ```
 export K3S_KUBECONFIG_MODE="644"
 export INSTALL_K3S_VERSION="v1.35.0+k3s1"
-export INSTALL_K3S_EXEC="--disable servicelb --disable traefik"
+export INSTALL_K3S_EXEC="--disable servicelb"
 curl -sfL https://get.k3s.io | sh -s server --cluster-init --token 'secret'
 ```
 
@@ -67,7 +67,7 @@ curl -sfL https://get.k3s.io | sh -s server --cluster-init --token 'secret'
 ```
 export K3S_KUBECONFIG_MODE="644"
 export INSTALL_K3S_VERSION="v1.35.0+k3s1"
-export INSTALL_K3S_EXEC="--disable servicelb --disable traefik"
+export INSTALL_K3S_EXEC="--disable servicelb"
 export K3S_TOKEN="secret"
 curl -sfL https://get.k3s.io | sh -s server --server https://192.168.1.4:6443
 ```
