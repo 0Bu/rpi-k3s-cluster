@@ -1,0 +1,10 @@
+apiVersion: v2
+name: longhorn
+type: application
+version: 1.0.0
+# renovate: image=longhornio/longhorn-engine
+appVersion: "v1.4.0"
+dependencies: 
+  - name: longhorn
+    version: "1.4.0"
+    repository: https://charts.longhorn.io

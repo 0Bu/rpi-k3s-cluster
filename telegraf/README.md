@@ -5,12 +5,7 @@
 
 ## Helm install
 ```
-helm upgrade -i --dependency-update telegraf .
-```
-
-## Helm upgrade
-```
-helm upgrade -i telegraf . --reuse-values
+helm install telegraf .
 ```
 
 ## Helm unintall
@@ -20,6 +15,6 @@ helm uninstall telegraf
 
 ## Create sealed secret
 ```
-kubectl create secret generic telegraf-influxdb-token --dry-run=client --from-literal=INFLUXDB_TOKEN=<...> -oyaml | kubeseal --controller-name sealed-secrets -oyaml
+kubectl create secret generic telegraf-influxdb-token --dry-run=client -oyaml --from-literal=INFLUXDB_TOKEN=... | kubeseal -oyaml
 ```
 

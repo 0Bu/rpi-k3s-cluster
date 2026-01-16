@@ -1,6 +1,3 @@
 image:
   repository: ghcr.io/home-assistant/home-assistant
   tag: 2026.1.2@sha256:3007eeeaf87d1e3a2047faeac6ff01dfef218b8a404bdff3ce421c1f4f363a43
-nfs:
-  server: 192.168.1.4
-  path: /nfs/home-assistant
