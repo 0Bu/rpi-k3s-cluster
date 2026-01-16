@@ -1,13 +1,4 @@
 telegraf:
-  rbac:
-    create: true
-    clusterWide: true
-    rules:
-      - apiGroups: ["","apps","discovery.k8s.io","networking.k8s.io"]
-        resources: ["*"]
-        verbs: ["get","list","watch"]
-      - nonResourceURLs: ["/metrics"]
-        verbs: ["get"]
   service:
     enabled: false
   pdb:
@@ -17,7 +8,7 @@ telegraf:
     - name: INFLUXDB_URL
       value: "http://influxdb"
 
-  config: # https://github.com/influxdata/telegraf/blob/master/docs/CONFIGURATION.md
+  config: # https://docs.influxdata.com/telegraf/v1/configuration/
     agent:
       interval: "10s"
       round_interval: true
@@ -31,15 +22,9 @@ telegraf:
       quiet: false
       logfile: ""
       hostname: "$HOSTNAME"
-      omit_hostname: true
+      omit_hostname: false
 
     outputs:
-      - influxdb_v2:
-          urls: ["${INFLUXDB_URL}"]
-          token: "${INFLUXDB_TOKEN}"
-          organization: "influxdata"
-          bucket: "default"
-          namedrop: ["shelly","ems-esp"]
       - influxdb_v2:
           urls: ["${INFLUXDB_URL}"]
           token: "${INFLUXDB_TOKEN}"
@@ -57,25 +42,6 @@ telegraf:
 #          namepass: ["shelly"]
 
     inputs:
-      - kubernetes:
-      - kube_inventory:
-      - file:
-          name_override: "cpu_temperature"
-          files: ["/sys/class/thermal/thermal_zone0/temp"]
-          data_format: "value"
-          data_type: "integer"
-      - cpu:
-          percpu: true
-          totalcpu: true
-          collect_cpu_time: false
-          report_active: false
-      - disk:
-          ignore_fs: ["tmpfs", "devtmpfs", "devfs", "iso9660", "overlay", "aufs", "squashfs"]
-      - mem:
-      - nstat:
-      - processes:
-      - swap:
-      - system:
       - mqtt_consumer: # https://emsesp.org
           name_override: "ems-esp"
           servers: ["tcp://mosquitto:1883"]

@@ -4,7 +4,7 @@
 
 ## Helm install
 ```
-helm upgrade -i node-red .
+helm install node-red .
 ```
 
 ## Helm unintall

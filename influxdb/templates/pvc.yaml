@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Chart.Name }}-{{ .Release.Namespace }}
+  name: influxdb
   annotations:
     helm.sh/resource-policy: keep
 spec:

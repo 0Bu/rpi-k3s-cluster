@@ -1,7 +1,3 @@
-pv:
-  - name: influxdb
-    path: "/nfs/influxdb"
-
 influxdb:
   persistence:
     enabled: true
