@@ -1,4 +1,5 @@
 {
+  "baseBranches": ["main","longhorn"],
   "packageRules": [
     {
       "matchDatasources": ["docker"],
