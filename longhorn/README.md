@@ -10,7 +10,6 @@ sudo apt install open-iscsi nfs-common
 
 ## [Helm installation](https://github.com/longhorn/longhorn/tree/master/chart#installation)
 ```
-kubectl create namespace longhorn-system
 helm install --namespace longhorn-system longhorn .
 ```
 
