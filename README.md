@@ -101,9 +101,10 @@ flannel-ipv6-masq: true
 `curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.0+k3s1" sh -`
 
 ### High Availability Node Installation
-`sudo mkdir -p /etc/rancher/k3s`
-
-`sudo vim /etc/rancher/k3s/config.yaml`
+```
+sudo mkdir -p /etc/rancher/k3s
+sudo vim /etc/rancher/k3s/config.yaml
+```
 
 ```
 server: https://192.168.1.5:6443
