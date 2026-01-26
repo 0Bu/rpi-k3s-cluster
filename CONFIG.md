@@ -1,24 +1,10 @@
 # Raspberry Pi OS configuration
 
-### ssh
-`ssh pi:raspberry@<IP>`
-
 ### Set default editor
 ```
 sudo update-alternatives --config editor
 sudo update-alternatives --set editor /usr/bin/vim.tiny
 ```
-
-### Create a new user
-`sudo adduser oleg`
-
-### Sudoers
-```
-sudo adduser oleg sudo
-sudo sh -c 'echo "oleg ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/000_oleg-nopasswd'
-```
-### Delete ubuntu user
-`sudo userdel -r pi`
 
 ### Disable welcome message
 `sudo sh -c 'echo "" > /etc/motd'`

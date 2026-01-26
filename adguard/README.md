@@ -4,7 +4,7 @@
 
 ## Helm install
 ```
-helm upgrade -i adguard .
+helm install adguard .
 ```
 
 ## Helm unintall

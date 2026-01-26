@@ -1,9 +1,0 @@
-image:
-  repository: "nodered/node-red"
-  tag: "4.1.4-20@sha256:926f1f116276e434dd8c74ab7ca36eb0158e1def5cf2fbe78451938ee0e58790"
-nfs:
-  server: 192.168.1.4
-  path: "/nfs/node-red"
-env:
-  - name: NRCHKB_EXPERIMENTAL
-    value: "true"

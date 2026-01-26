@@ -1,33 +1,7 @@
-# pi cluster
+# Installing [k3s](https://k3s.io) on [Raspberry Pi OS](https://www.raspberrypi.com/software/operating-systems/)
 
-### [NFS](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nfs-mount-on-ubuntu-20-04-de)
-#### Client
-```
-sudo apt update
-sudo apt install nfs-common
-```
-#### Server
-```
-sudo apt update
-sudo apt install nfs-kernel-server
-sudo mkdir /nfs
-sudo chown -R nobody:nogroup /nfs
-```
-#### NFS export config
-```
-sudo vim /etc/exports
-/nfs 192.168.1.0/24(rw,sync,no_subtree_check)
-```
-#### NFS client mount
-```
-sudo mkdir /mnt/nfs
-sudo mount <HOST_IP>:/nfs /mnt/nfs
-```
-
-## [k3s.io](https://k3s.io)
-
-### [Enabling cgroups](https://rancher.com/docs/k3s/latest/en/advanced/#enabling-cgroups-for-raspbian-buster)
-- append `cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory` to `/boot/cmdline.txt`
+### Enable cgroups
+- append `cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory` to `/boot/firmware/cmdline.txt`
 - *optional*: append `arm_64bit=1` to `/boot/config.txt` under `[all]` on 32-bit Raspberry Pi OS ([arm_64bit](https://www.raspberrypi.com/documentation/computers/config_txt.html#arm_64bit))
 
 ### Disable swap
@@ -36,43 +10,138 @@ sudo swapoff -a
 sudo sed -i 's/CONF_SWAPSIZE=100/CONF_SWAPSIZE=0/' /etc/dphys-swapfile
 ```
 
-### Master installation/upgrade
-`ctrl+x ctrl+e`
+## Dual stack installation
+k3s docs: <https://docs.k3s.io/networking/basic-network-options#dual-stack-ipv4--ipv6-networking>
+
+#### *Optional*: Router Advertisement Daemon
+```
+sudo apt install radvd
+```
+
+#### [radvd configuration](https://linux.die.net/man/5/radvd.conf)
+`sudo vim /etc/radvd.conf`
+```
+interface eth0 {
+   AdvSendAdvert on;
+   prefix fd7c:3b4a:5f1d::/64 {};
+};
+```
+
+### Add static IPv6 ULA
+check the link `ip link` and create
+`sudo vim /etc/systemd/network/10-eth0-static-ipv6.network`
+```
+[Match]
+Name=eth0
+
+[Network]
+IPv6AcceptRA=yes
+Address=fd7c:3b4a:5f1d::5a/64
+```
+
+### Enable systemd-network
+```
+sudo systemctl enable systemd-networkd
+sudo systemctl restart systemd-networkd
+```
+
+## Master installation
+```
+sudo mkdir -p /etc/rancher/k3s
+sudo vim /etc/rancher/k3s/config.yaml
+```
+
+```
+write-kubeconfig-mode: "644"
+disable:
+  - servicelb
+node-ip: "192.168.1.5,fd7c:3b4a:5f1d::5a"
+cluster-cidr: "10.42.0.0/16,fd00:10:42::/56"
+service-cidr: "10.43.0.0/16,fd00:10:43::/112"
+flannel-ipv6-masq: true
+```
+
+`curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.0+k3s1" sh -`
+
+### Node installation
+Get master token
+`sudo cat /var/lib/rancher/k3s/server/node-token`
+
+```
+sudo mkdir -p /etc/rancher/k3s
+sudo vim /etc/rancher/k3s/config.yaml
+```
+
+```
+server: "https://192.168.1.5:6443"
+token: "TOKEN"
+write-kubeconfig-mode: "644"
+node-ip: "192.168.1.5,fd7c:3b4a:5f1d::5a"
+```
+
+`curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.0+k3s1" sh -`
+
+## High availability cluster installation
+k3s docs: <https://docs.k3s.io/datastore/ha-embedded>
+```
+sudo mkdir -p /etc/rancher/k3s
+sudo vim /etc/rancher/k3s/config.yaml
+```
+
+```
+cluster-init: true
+token: "TOKEN"
+write-kubeconfig-mode: "644"
+disable:
+  - servicelb
+node-ip: "192.168.1.5,fd7c:3b4a:5f1d::5a"
+cluster-cidr: "10.42.0.0/16,fd00:10:42::/56"
+service-cidr: "10.43.0.0/16,fd00:10:43::/112"
+flannel-ipv6-masq: true
+```
+
+`curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.0+k3s1" sh -`
+
+### High availability node installation
+```
+sudo mkdir -p /etc/rancher/k3s
+sudo vim /etc/rancher/k3s/config.yaml
+```
+
+```
+server: https://192.168.1.5:6443
+token: "TOKEN"
+write-kubeconfig-mode: "644"
+disable:
+  - servicelb
+node-ip: "192.168.1.15,fd7c:3b4a:5f1d::5b"
+cluster-cidr: "10.42.0.0/16,fd00:10:42::/56"
+service-cidr: "10.43.0.0/16,fd00:10:43::/112"
+flannel-ipv6-masq: true
+```
+
+`curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.0+k3s1" sh -`
+
+## Single stack installation
+k3s docs: <https://docs.k3s.io/installation>
 ```
 export K3S_KUBECONFIG_MODE="644"
 export INSTALL_K3S_VERSION="v1.35.0+k3s1"
-export INSTALL_K3S_EXEC="--disable servicelb --disable traefik"
-curl -sfL https://get.k3s.io | sh - 
+export INSTALL_K3S_EXEC="--disable servicelb"
+curl -sfL https://get.k3s.io | sh -
 ```
 
-### Node installation/upgrade
+### Node installation
 On master `sudo cat /var/lib/rancher/k3s/server/node-token`
 ```
 export K3S_KUBECONFIG_MODE="644"
 export INSTALL_K3S_VERSION="v1.35.0+k3s1"
-export K3S_URL="https://192.168.1.4:6443"
-export K3S_TOKEN="XXXX"
+export K3S_URL="https://192.168.1.5:6443"
+export K3S_TOKEN="TOKEN"
 curl -sfL https://get.k3s.io | sh -
 ```
 
-### [High availibility cluster](https://w-goutas.medium.com/set-up-a-kubernetes-cluster-in-minutes-41a0bd65ab93) installation
-```
-export K3S_KUBECONFIG_MODE="644"
-export INSTALL_K3S_VERSION="v1.35.0+k3s1"
-export INSTALL_K3S_EXEC="--disable servicelb"
-curl -sfL https://get.k3s.io | sh -s server --cluster-init --token 'secret'
-```
-
-### HA node installation
-```
-export K3S_KUBECONFIG_MODE="644"
-export INSTALL_K3S_VERSION="v1.35.0+k3s1"
-export INSTALL_K3S_EXEC="--disable servicelb"
-export K3S_TOKEN="secret"
-curl -sfL https://get.k3s.io | sh -s server --server https://192.168.1.4:6443
-```
-
-### [Helm](https://helm.sh) [installation](https://helm.sh/docs/intro/install/)
+### [Helm](https://helm.sh) installation
 `curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash`
 
 #### Helm configuration
@@ -88,3 +157,4 @@ curl -sLO "https://github.com/derailed/k9s/releases/download/v0.50.16/k9s_linux_
 sudo dpkg -i k9s_linux_arm.deb
 rm k9s_linux_arm.deb
 ```
+

@@ -1,8 +1,3 @@
-pv:
-  - name: grafana
-    server: 192.168.1.4
-    path: /nfs/grafana
-
 grafana:
   ingress:
     enabled: true
