@@ -3,7 +3,7 @@
 
 ## Helm install
 ```
-helm upgrade -i --dependency-update grafana .
+helm install grafana .
 ```
 
 ## Helm unintall

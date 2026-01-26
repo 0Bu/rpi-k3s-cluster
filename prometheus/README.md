@@ -4,7 +4,7 @@
 
 ## Helm install
 ```
-helm upgrade -i prometheus . 
+helm install prometheus .
 ```
 
 ## Helm uninstall
