@@ -10,3 +10,10 @@ helm install grafana .
 ```
 helm uninstall grafana
 ``` 
+
+#### [Reset admin password](https://grafana.com/docs/grafana/latest/administration/cli/#reset-admin-password)
+```
+grafana cli admin reset-admin-password <password>
+``` 
+
+
