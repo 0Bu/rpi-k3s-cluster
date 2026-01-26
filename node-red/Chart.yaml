@@ -1,7 +1,0 @@
-apiVersion: v2
-name: node-red
-description: https://nodered.org
-type: application
-version: 1.0.0
-# renovate: image=nodered/node-red
-appVersion: "4.1.3-22"
