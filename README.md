@@ -4,13 +4,6 @@
 - append `cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory` to `/boot/firmware/cmdline.txt`
 - *optional*: append `arm_64bit=1` to `/boot/config.txt` under `[all]` on 32-bit Raspberry Pi OS ([arm_64bit](https://www.raspberrypi.com/documentation/computers/config_txt.html#arm_64bit))
 
-### Disable swap (debian 13)
-```
-sudo swapon --show
-sudo swapoff -a
-sudo sed -i '$a\zram-size = 0' /usr/lib/systemd/zram-generator.conf
-```
-
 ## Dual stack installation
 k3s docs: <https://docs.k3s.io/networking/basic-network-options#dual-stack-ipv4--ipv6-networking>
 
