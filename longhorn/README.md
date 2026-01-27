@@ -20,3 +20,14 @@ helm uninstall longhorn -n longhorn-system
 kubectl delete namespace longhorn-system
 ``` 
 
+## Ingress basic auth [middleware](https://doc.traefik.io/traefik/reference/routing-configuration/http/middlewares/basicauth/)
+```
+kubectl create secret generic longhorn-basic-auth \
+-n longhorn-system \
+--dry-run=client -oyaml \
+--type kubernetes.io/basic-auth \
+--from-literal username=longhorn \
+--from-literal password=longhorn \
+| kubeseal -oyaml
+```
+
