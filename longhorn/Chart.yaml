@@ -3,7 +3,7 @@ name: longhorn
 type: application
 version: 1.0.2
 # renovate: image=longhornio/longhorn-engine
-appVersion: "v1.10.2"
+appVersion: "v1.11.0"
 dependencies: 
   - name: longhorn
     version: "1.10.2"
