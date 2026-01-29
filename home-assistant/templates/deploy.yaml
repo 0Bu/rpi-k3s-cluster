@@ -34,7 +34,7 @@ spec:
             tcpSocket:
               port: 8123
           startupProbe:
-            initialDelaySeconds: 60
+            initialDelaySeconds: 15
             tcpSocket:
               port: 8123
           resources:
