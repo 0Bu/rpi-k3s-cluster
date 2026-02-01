@@ -139,6 +139,8 @@ curl -sfL https://get.k3s.io | sh -
 `curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash`
 
 #### Helm configuration
+`export KUBECONFIG=/etc/rancher/k3s/k3s.yaml`
+or
 ```
 mkdir -p ~/.kube
 kubectl config view --raw > ~/.kube/config
