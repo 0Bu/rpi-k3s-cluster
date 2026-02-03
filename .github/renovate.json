@@ -1,12 +1,5 @@
 {
-  "baseBranches": ["main","longhorn"],
-  "packageRules": [
-    {
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["homebridge/homebridge"],
-      "versioning": "loose"
-    }
-  ],
+  "baseBranches": ["main"],
   "customManagers": [
     {
       "customType": "regex", 
@@ -18,8 +11,8 @@
     },
     {
       "customType": "regex",
-      "fileMatch": [".*\\.md$"],
-      "matchStrings": ["export INSTALL_K3S_VERSION=\\\"(?<currentValue>v[^\"]+)\\\""],
+      "fileMatch": ["^README\\.md$"],
+      "matchStrings": ["INSTALL_K3S_VERSION=\\\"(?<currentValue>v[^\"]+)\\\""],
       "depNameTemplate": "k3s",
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "k3s-io/k3s"
