@@ -1,0 +1,29 @@
+victoria-metrics:
+  server:
+    persistentVolume:
+      existingClaim: victoria-metrics
+    ingress:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: cloudflare-issuer
+        cert-manager.io/private-key-algorithm: ECDSA
+        cert-manager.io/private-key-rotation-policy: Always
+        traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
+      ingressClassName: "traefik"
+      hosts:
+        - name: victoria-metrics.burau.dev
+          path:
+            - /
+          port: http
+        - name: vm.burau.dev
+          path:
+            - /
+          port: http       
+      tls:
+        - secretName: victoriamectrics-ingress-tls
+          hosts:
+            - victoria-metrics.burau.dev
+            - vm.burau.dev
+    service:
+      clusterIP: ""
+

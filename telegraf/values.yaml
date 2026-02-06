@@ -5,6 +5,8 @@ telegraf:
     create: false
   envFromSecret: telegraf-influxdb-token
   env:
+    - name: VICTORIA_METRICS_URL
+      value: "http://victoria-metrics-server:8428"
     - name: INFLUXDB_URL
       value: "http://influxdb"
 
@@ -25,6 +27,12 @@ telegraf:
       omit_hostname: false
 
     outputs:
+      - influxdb:
+          urls: ["${VICTORIA_METRICS_URL}"] 
+          database: "victoriametrics"
+          skip_database_creation: true
+          exclude_retention_policy_tag: true
+          content_encoding: "gzip"
       - influxdb_v2:
           urls: ["${INFLUXDB_URL}"]
           token: "${INFLUXDB_TOKEN}"
