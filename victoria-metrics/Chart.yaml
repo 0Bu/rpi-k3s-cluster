@@ -7,5 +7,13 @@ appVersion: "v1.135.0"
 dependencies: 
   - name: victoria-metrics-single
     alias: victoria-metrics
-    version: "0.30.0"
+    version: "0.30.*"
+    repository: https://victoriametrics.github.io/helm-charts/
+  - name: victoria-metrics-common
+    alias: victoria-metrics-common
+    version: "0.0.*"
+    repository: https://victoriametrics.github.io/helm-charts/
+  - name: victoria-metrics-operator
+    alias: victoria-metrics-operator
+    version: "0.58.*"
     repository: https://victoriametrics.github.io/helm-charts/
