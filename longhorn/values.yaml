@@ -3,10 +3,9 @@ longhorn:
     enabled: true
     host: longhorn.burau.dev
     tls: true
-    tlsSecret: longhorn-ingress-tls
+    tlsSecret: ingress-tls
     annotations:
-      cert-manager.io/cluster-issuer: cloudflare-issuer
-      cert-manager.io/private-key-algorithm: ECDSA
-      cert-manager.io/private-key-rotation-policy: Always
       traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
       helm.sh/resource-policy: keep
+  defaultBackupStore:
+    backupTarget: nfs://192.168.1.2:/volume2/nfs/longhorn

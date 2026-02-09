@@ -37,9 +37,9 @@ metadata:
     helm.sh/hook-weight: "2000"
     helm.sh/resource-policy: keep
 spec:
-  secretName: cloudflare-tls
+  secretName: ingress-tls
   privateKey:
-    algorithm: ECDSA
+    algorithm: ECDSA 
   commonName: burau.dev
   dnsNames:
     - "*.burau.dev"

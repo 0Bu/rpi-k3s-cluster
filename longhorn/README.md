@@ -10,7 +10,7 @@ sudo apt install open-iscsi nfs-common
 
 ## [Helm installation](https://github.com/longhorn/longhorn/tree/master/chart#installation)
 ```
-helm install --namespace longhorn-system longhorn .
+helm install --create-namespace --namespace longhorn-system longhorn .
 ```
 
 ## [Helm uninstallation](https://github.com/longhorn/longhorn/tree/master/chart#uninstallation)
