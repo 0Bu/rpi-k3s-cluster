@@ -12,7 +12,7 @@ jobs:
   renovate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+#     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: renovatebot/github-action@e23f4d9675532445118c886434f5a34292b630b4 # v46.0.2
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
@@ -20,10 +20,11 @@ jobs:
           RENOVATE_PLATFORM: github
           RENOVATE_EXTENDS: config:best-practices,customManagers:dockerfileVersions,customManagers:helmChartYamlAppVersions
           RENOVATE_AUTODISCOVER: true
-          RENOVATE_AUTODISCOVER_FILTER: ${{ github.repository }}, ${{ github.repository_owner }}/rpi-*
+          RENOVATE_AUTODISCOVER_FILTER: ${{ github.repository }},${{ github.repository_owner }}/rpi-*
           RENOVATE_CONFIG_MIGRATION: true
           RENOVATE_AUTOMERGE: true
           RENOVATE_BUMP_VERSION: patch
           RENOVATE_IGNORE_TESTS: true
-          LOG_LEVEL: debug
+          RENOVATE_REBASE_WHEN: never
+#         LOG_LEVEL: debug
 #         RENOVATE_DRY_RUN: full
