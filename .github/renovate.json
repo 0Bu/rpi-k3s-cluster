@@ -20,7 +20,7 @@
     {
       "customType": "regex", 
       "fileMatch": ["^README\\.md$"],
-      "matchStrings": ["https://github\\.com/derailed/k9s/releases/download/v(?<currentValue>[0-9.]+)/k9s_linux_arm\\.rpm"],
+      "matchStrings": ["https://github\\.com/derailed/k9s/releases/download/v(?<currentValue>[^/]+)/k9s_linux_arm\\.deb"],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "derailed/k9s",
       "versioningTemplate": "semver"
