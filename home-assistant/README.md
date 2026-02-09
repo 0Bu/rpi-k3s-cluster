@@ -3,7 +3,7 @@
 - [Docker](https://hub.docker.com/r/homeassistant/home-assistant)
 
 ## Helm install/upgrade
-`helm upgrade --install home-assistant .`
+`helm install home-assistant .`
 
 ## Helm unintall
 `helm uninstall home-assistant`
