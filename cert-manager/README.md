@@ -20,7 +20,7 @@ kubectl create secret generic cloudflare-api-token --dry-run=client -oyaml --fro
 
 ## Get public and private certificates
 ```
-kubectl get secrets cloudflare-tls -o jsonpath='{.data.tls\.crt}' | base64 -d
-kubectl get secrets cloudflare-tls -o jsonpath='{.data.tls\.key}' | base64 -d
+kubectl get secrets ingress-tls -o jsonpath='{.data.tls\.crt}' | base64 -d
+kubectl get secrets ingress-tls -o jsonpath='{.data.tls\.key}' | base64 -d
 ```
 
