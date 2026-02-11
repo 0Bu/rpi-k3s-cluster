@@ -55,7 +55,9 @@ service-cidr: "10.43.0.0/16,fd00:10:43::/112"
 flannel-ipv6-masq: true
 ```
 
-`curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.0+k3s3" sh -`
+```
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.0+k3s3" sh -
+```
 
 ### Node installation
 Get master token
@@ -73,7 +75,9 @@ write-kubeconfig-mode: "644"
 node-ip: "192.168.1.5,fd7c:3b4a:5f1d::5a"
 ```
 
-`curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.0+k3s3" sh -`
+```
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.0+k3s3" sh -
+```
 
 ## High availability cluster installation
 k3s docs: <https://docs.k3s.io/datastore/ha-embedded>
@@ -94,7 +98,9 @@ service-cidr: "10.43.0.0/16,fd00:10:43::/112"
 flannel-ipv6-masq: true
 ```
 
-`curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.0+k3s3" sh -`
+```
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.0+k3s3" sh -
+```
 
 ### High availability node installation
 ```
@@ -114,7 +120,9 @@ service-cidr: "10.43.0.0/16,fd00:10:43::/112"
 flannel-ipv6-masq: true
 ```
 
-`curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.0+k3s3" sh -`
+```
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.35.0+k3s3" sh -
+```
 
 ## Single stack installation
 k3s docs: <https://docs.k3s.io/installation>
@@ -126,7 +134,11 @@ curl -sfL https://get.k3s.io | sh -
 ```
 
 ### Node installation
-On master `sudo cat /var/lib/rancher/k3s/server/node-token`
+On master 
+```
+sudo cat /var/lib/rancher/k3s/server/node-token
+```
+
 ```
 export K3S_KUBECONFIG_MODE="644"
 export INSTALL_K3S_VERSION="v1.35.0+k3s3"
@@ -136,10 +148,14 @@ curl -sfL https://get.k3s.io | sh -
 ```
 
 ### [Helm](https://helm.sh) installation
-`curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash`
+```
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+```
 
 #### Helm configuration
-`export KUBECONFIG=/etc/rancher/k3s/k3s.yaml`
+```
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+```
 or
 ```
 mkdir -p ~/.kube
