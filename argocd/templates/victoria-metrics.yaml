@@ -16,9 +16,6 @@ spec:
     repoURL: https://github.com/0Bu/rpi-k3s-cluster.git
     targetRevision: HEAD
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
     syncOptions:
     - RespectIgnoreDifferences=true
   ignoreDifferences:
