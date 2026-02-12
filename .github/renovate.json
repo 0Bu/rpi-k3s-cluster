@@ -1,26 +1,40 @@
 {
-  "baseBranches": ["main"],
+  "baseBranchPatterns": [
+    "main"
+  ],
   "customManagers": [
     {
-      "customType": "regex", 
-      "managerFilePatterns": ["(^|/)README\\.md$"],
-      "matchStrings": ["https://raw\\.githubusercontent\\.com/metallb/metallb/v(?<currentValue>[^/]+)/config/manifests/metallb-native\\.yaml"],
+      "customType": "regex",
+      "managerFilePatterns": [
+        "(^|/)README\\.md$"
+      ],
+      "matchStrings": [
+        "https://raw\\.githubusercontent\\.com/metallb/metallb/v(?<currentValue>[^/]+)/config/manifests/metallb-native\\.yaml"
+      ],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "metallb/metallb",
       "versioningTemplate": "semver"
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["^README\\.md$"],
-      "matchStrings": ["INSTALL_K3S_VERSION=\\\"(?<currentValue>v[^\"]+)\\\""],
+      "managerFilePatterns": [
+        "^README\\.md$"
+      ],
+      "matchStrings": [
+        "INSTALL_K3S_VERSION=\\\"(?<currentValue>v[^\"]+)\\\""
+      ],
       "depNameTemplate": "k3s",
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "k3s-io/k3s"
     },
     {
-      "customType": "regex", 
-      "managerFilePatterns": ["^README\\.md$"],
-      "matchStrings": ["https://github\\.com/derailed/k9s/releases/download/v(?<currentValue>[^/]+)/k9s_linux_arm\\.deb"],
+      "customType": "regex",
+      "managerFilePatterns": [
+        "^README\\.md$"
+      ],
+      "matchStrings": [
+        "https://github\\.com/derailed/k9s/releases/download/v(?<currentValue>[^/]+)/k9s_linux_arm\\.deb"
+      ],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "derailed/k9s",
       "versioningTemplate": "semver"
