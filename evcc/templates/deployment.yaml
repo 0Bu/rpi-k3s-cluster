@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          ports:
+            - name: http
+              containerPort: 7070
+            - name: ocpp-server
+              containerPort: 8887
+          resources:
+            requests:
+              memory: 64M
+            limits:
+              memory: 128M
+          readinessProbe:
+            tcpSocket:
+              port: 7070
+          livenessProbe:
+            tcpSocket:
+              port: 7070
+          startupProbe:
+            tcpSocket:
+              port: 7070
+          volumeMounts:
+            - name: evcc
+              mountPath: /root/.evcc
+              subPath: .evcc
+      volumes:
+        - name: evcc
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}
+
