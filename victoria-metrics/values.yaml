@@ -1,26 +1,6 @@
 victoria-metrics:
-  server:
-    persistentVolume:
-      existingClaim: victoria-metrics
-    ingress:
-      enabled: true
-      annotations:
-        traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
-      ingressClassName: "traefik"
-      hosts:
-        - name: victoria-metrics.burau.dev
-          path:
-            - /
-          port: http
-        - name: vm.burau.dev
-          path:
-            - /
-          port: http       
-      tls:
-        - secretName: ingress-tls
-          hosts:
-            - victoria-metrics.burau.dev
-            - vm.burau.dev
-    service:
-      clusterIP: ""
-
+  vmsingle:
+    enabled: true
+    storage:
+      persistentVolumeClaim:
+        claimName: "victoria-metrics"

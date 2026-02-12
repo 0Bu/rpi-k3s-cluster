@@ -39,6 +39,34 @@ sudo systemctl enable systemd-networkd
 sudo systemctl restart systemd-networkd
 ```
 
+## [NFS](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nfs-mount-on-ubuntu-20-04-de)
+#### Client
+```
+sudo apt update
+sudo apt install nfs-common
+```
+#### Server
+```
+sudo apt update
+sudo apt install nfs-kernel-server
+sudo mkdir /nfs
+sudo chown -R nobody:nogroup /nfs
+```
+#### NFS export config
+```
+sudo vim /etc/exports
+/nfs 192.168.1.0/24(rw,sync,no_subtree_check)
+```
+```
+sudo systemctl restart nfs-kernel-server
+```
+
+#### NFS client mount
+```
+sudo mkdir /mnt/nfs
+sudo mount <HOST_IP>:/nfs /mnt/nfs
+```
+
 ## Master installation
 ```
 sudo mkdir -p /etc/rancher/k3s
