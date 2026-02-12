@@ -3,7 +3,7 @@ name: telegraf
 type: application
 version: 1.0.41
 # renovate: image=telegraf
-appVersion: "1.37.1"
+appVersion: "1.37.2"
 dependencies: 
   - name: telegraf
     version: "1.8.66"
