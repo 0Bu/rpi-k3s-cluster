@@ -57,14 +57,13 @@ argocd:
             =HyMY
             -----END PGP PUBLIC KEY BLOCK-----
   server:
-    certificate:
-      enabled: true
-      domain: argocd.burau.dev
-      issuer:
-        kind: ClusterIssuer
-        name: cloudflare-issuer
-      annotations:
-        helm.sh/resource-policy: keep
     ingress:
       enabled: true
-      tls: true
+      annotations:
+        traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
+      ingressClassName: "traefik"
+      hostname: argocd.burau.dev
+      extraTls:
+      - hosts:
+          - argocd.burau.dev
+        secretName: ingress-tls

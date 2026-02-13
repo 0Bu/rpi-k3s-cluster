@@ -5,7 +5,7 @@ metadata:
   annotations:
     helm.sh/resource-policy: keep
 spec:
-  storageClassName: longhorn
+  storageClassName: ""
   accessModes:
     - ReadWriteMany
   resources:

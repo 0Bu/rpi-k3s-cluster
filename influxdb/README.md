@@ -3,7 +3,7 @@
 
 ## Helm install
 ```
-helm install influxdb . 
+helm install influxdb .
 ```
 
 ## Helm unintall
