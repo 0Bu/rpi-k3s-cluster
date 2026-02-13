@@ -20,3 +20,11 @@ sudo install -m 755 kubeseal /usr/local/bin/kubeseal
 rm kubeseal 
 ```
 
+### Backup and restore of master key
+```
+kubectl get secret -n kube-system sealed-secrets-<TAB> -o yaml > sealed-secrets-key.yaml
+```
+```
+kubectl apply -f sealed-secrets-key.yaml
+```
+

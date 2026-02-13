@@ -4,6 +4,34 @@
 - append `cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory` to `/boot/firmware/cmdline.txt`
 - *optional*: append `arm_64bit=1` to `/boot/config.txt` under `[all]` on 32-bit Raspberry Pi OS ([arm_64bit](https://www.raspberrypi.com/documentation/computers/config_txt.html#arm_64bit))
 
+## [NFS](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nfs-mount-on-ubuntu-20-04-de)
+#### Client
+```
+sudo apt update
+sudo apt install nfs-common
+```
+#### Server
+```
+sudo apt update
+sudo apt install nfs-kernel-server
+sudo mkdir /nfs
+sudo chown -R nobody:nogroup /nfs
+```
+#### NFS export config
+```
+sudo vim /etc/exports
+/nfs 192.168.1.0/24(rw,sync,no_subtree_check,no_root_squash)
+```
+```
+sudo systemctl restart nfs-kernel-server
+```
+
+#### NFS client mount
+```
+sudo mkdir /mnt/nfs
+sudo mount <HOST_IP>:/nfs /mnt/nfs
+```
+
 ## Dual stack installation
 k3s docs: <https://docs.k3s.io/networking/basic-network-options#dual-stack-ipv4--ipv6-networking>
 

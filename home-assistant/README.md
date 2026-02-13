@@ -3,10 +3,14 @@
 - [Docker](https://hub.docker.com/r/homeassistant/home-assistant)
 
 ## Helm install/upgrade
-`helm install home-assistant .`
+```
+helm install home-assistant .
+```
 
 ## Helm unintall
-`helm uninstall home-assistant`
+```
+helm uninstall home-assistant
+```
 
 ## Reverse proxy configuration
 configuration.yaml

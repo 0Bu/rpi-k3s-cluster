@@ -1,17 +1,21 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: longhorn
+  name: evcc
   namespace: default
   annotations:
     helm.sh/hook: post-install,post-upgrade
     helm.sh/resource-policy: keep
 spec:
   destination:
-    namespace: longhorn-system
+    namespace: default
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: longhorn
+    path: evcc
     repoURL: https://github.com/0Bu/rpi-k3s-cluster.git
     targetRevision: HEAD
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
