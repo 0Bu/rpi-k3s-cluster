@@ -1,11 +1,11 @@
 apiVersion: v2
 name: victoria-metrics
 type: application
-version: 1.0.0
+version: 1.0.1
 # renovate: image=victoriametrics/victoria-metrics
 appVersion: "v1.136.0"
 dependencies: 
   - name: victoria-metrics-single
     alias: victoria-metrics
-    version: "0.30.*"
+    version: "0.31.0"
     repository: https://victoriametrics.github.io/helm-charts/
