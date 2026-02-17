@@ -1,5 +1,6 @@
 {
   "baseBranches": ["main"],
+  "semanticCommits": "disabled",
   "customManagers": [
     {
       "customType": "regex", 
