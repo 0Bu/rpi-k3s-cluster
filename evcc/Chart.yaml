@@ -4,4 +4,4 @@ description: evcc helm chart
 type: application
 version: 1.0.0
 # renovate: image=evcc/evcc
-appVersion: "0.300.8"
+appVersion: "0.301.0"
