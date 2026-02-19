@@ -1,8 +1,5 @@
 {
   "baseBranches": ["main"],
-  "semanticCommits": "disabled",
-  "postUpdateOptions": ["helmUpdateReadme"],
-  "packageRules": [{ "matchFiles": ["**/Chart.yaml"],"bumpVersion": "patch"}],
   "customManagers": [
     {
       "customType": "regex", 
@@ -27,6 +24,18 @@
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "derailed/k9s",
       "versioningTemplate": "semver"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchFileNames": ["**/Chart.yaml"],
+      "bumpVersions": [
+        {
+          "filePatterns": ["{{packageFileDir}}/Chart.yaml"],
+          "matchStrings": ["version:\\s(?<version>[^\\s]+)"],
+          "bumpType": "patch"
+        }
+      ]
     }
   ]
 }

@@ -25,5 +25,6 @@ jobs:
           RENOVATE_BUMP_VERSION: patch
           RENOVATE_IGNORE_TESTS: true
           RENOVATE_REBASE_WHEN: never
+          RENOVATE_SEMANTIC_COMMITS: "disabled"
 #         LOG_LEVEL: debug
 #         RENOVATE_DRY_RUN: full
