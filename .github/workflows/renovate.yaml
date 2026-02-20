@@ -17,7 +17,7 @@ jobs:
           token: ${{ secrets.RENOVATE_TOKEN }}
         env:
           RENOVATE_PLATFORM: github
-          RENOVATE_EXTENDS: config:best-practices,helpers:pinGitHubActionDigests
+          RENOVATE_EXTENDS: config:best-practices,customManagers:dockerfileVersions,customManagers:helmChartYamlAppVersions,helpers:pinGitHubActionDigests
           RENOVATE_AUTODISCOVER: true
           RENOVATE_AUTODISCOVER_FILTER: ${{ github.repository }},${{ github.repository_owner }}/rpi-*
           RENOVATE_CONFIG_MIGRATION: true
