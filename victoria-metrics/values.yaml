@@ -1,6 +1,0 @@
-victoria-metrics:
-  vmsingle:
-    enabled: true
-    storage:
-      persistentVolumeClaim:
-        claimName: "victoria-metrics"
