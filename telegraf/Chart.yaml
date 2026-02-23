@@ -1,9 +1,9 @@
 apiVersion: v2
 name: telegraf
 type: application
-version: 1.0.41
+version: 1.0.42
 # renovate: image=telegraf
-appVersion: "1.37.2"
+appVersion: "1.37.3"
 dependencies: 
   - name: telegraf
     version: "1.8.66"
