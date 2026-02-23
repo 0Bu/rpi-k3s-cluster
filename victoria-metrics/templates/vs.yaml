@@ -1,9 +1,0 @@
-apiVersion: snapshot.storage.k8s.io/v1
-kind: VolumeSnapshot
-metadata:
-  name: victoria-metrics-volume-snapshot
-spec:
-  volumeSnapshotClassName: volume-snapshot-class
-  source:
-    persistentVolumeClaimName: vmsingle-victoria-metrics
-
