@@ -45,9 +45,9 @@ telegraf:
           organization: "influxdata"
           bucket: "ems-esp"
           namepass: ["ems-esp"]
-#      - file:
-#          files: ["stdout"]
-#          namepass: ["shelly"]
+      - file:
+          files: ["stdout"]
+          namepass: ["foxess"]
 
     inputs:
       - mqtt_consumer: # https://emsesp.org
@@ -68,4 +68,13 @@ telegraf:
             - "shelly1pmminig4-ccba97c65f18/status/#"
             - "shellypill-d885ac1a6284/status/#"
           data_format: "json"
-
+      - modbus: # https://docs.influxdata.com/telegraf/v1/input-plugins/modbus/#modbus-input-plugin
+          name: "foxess"
+          controller: "tcp://192.168.107.186:502"
+          slave_id: 247
+          holding_registers:
+            - name: "Grid_Power"
+              byte_order: "AB"
+              data_type: "INT16"
+              scale: 1.0
+              address: [11005]
