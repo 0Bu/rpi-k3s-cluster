@@ -31,11 +31,11 @@ spec:
             tcpSocket:
               port: 8123
           livenessProbe:
+            failureThreshold: 100
             tcpSocket:
               port: 8123
           startupProbe:
-            failureThreshold: 30
-            periodSeconds: 10
+            failureThreshold: 100
             tcpSocket:
               port: 8123
           resources:
