@@ -10,7 +10,7 @@ telegraf:
     - name: INFLUXDB_URL
       value: "http://influxdb"
 
-  config: # https://docs.influxdata.com/telegraf/v1/configuration/
+  config:
     agent:
       interval: "10s"
       round_interval: true
@@ -28,7 +28,7 @@ telegraf:
 
     outputs:
       - influxdb:
-          urls: ["${VICTORIA_METRICS_URL}"] 
+          urls: ["${VICTORIA_METRICS_URL}"]
           database: "victoriametrics"
           skip_database_creation: true
           exclude_retention_policy_tag: true
@@ -45,15 +45,21 @@ telegraf:
           organization: "influxdata"
           bucket: "ems-esp"
           namepass: ["ems-esp"]
-      - file:
-          files: ["stdout"]
-          namepass: ["foxess"]
+      - influxdb_v2:
+          urls: ["${INFLUXDB_URL}"]
+          token: "${INFLUXDB_TOKEN}"
+          organization: "influxdata"
+          bucket: "foxess"
+          namepass: ["foxess_grid", "foxess_energy", "foxess_pv", "foxess_battery"]
+#      - file:
+#          files: ["stdout"]
+#          namepass: ["foxess_grid", "foxess_energy", "foxess_pv", "foxess_battery"]
 
     inputs:
-      - mqtt_consumer: # https://emsesp.org
+      - mqtt_consumer:
           name_override: "ems-esp"
           servers: ["tcp://mosquitto:1883"]
-          topics: ["ems-esp/thermostat_data","ems-esp/boiler_data"]
+          topics: ["ems-esp/thermostat_data", "ems-esp/boiler_data"]
           data_format: "json"
       - mqtt_consumer:
           name_override: "shelly"
@@ -69,3 +75,17 @@ telegraf:
             - "shellypill-d885ac1a6284/status/#"
           data_format: "json"
 
+  args:
+    - --config
+    - /etc/telegraf/telegraf.conf
+    - --config-directory
+    - /etc/telegraf/conf.d
+
+  volumes:
+    - name: telegraf-modbus
+      configMap:
+        name: telegraf-modbus
+
+  mountPoints:
+    - name: telegraf-modbus
+      mountPath: /etc/telegraf/conf.d
