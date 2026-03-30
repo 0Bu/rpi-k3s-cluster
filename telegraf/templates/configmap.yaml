@@ -31,8 +31,12 @@ data:
         register = "holding"
         measurement = "foxess_energy"
         fields = [
-          {name = "consumption_total", address = 39617, type = "UINT32", scale = 0.01},
-          {name = "feedin_total",      address = 39619, type = "UINT32", scale = 0.01}
+          {name = "pv_total",               address = 39601, type = "UINT32", scale = 0.01},
+          {name = "battery_charge_total",   address = 39605, type = "UINT32", scale = 0.01},
+          {name = "battery_discharge_total",address = 39609, type = "UINT32", scale = 0.01},
+          {name = "grid_export_total",      address = 39613, type = "UINT32", scale = 0.01},
+          {name = "consumption_total",      address = 39617, type = "UINT32", scale = 0.01},
+          {name = "feedin_total",           address = 39619, type = "UINT32", scale = 0.01}
         ]
 
       [[inputs.modbus.request]]
@@ -50,6 +54,17 @@ data:
         register = "holding"
         measurement = "foxess_battery"
         fields = [
-          {name = "power", address = 39237, type = "INT32", scale = 1.0},
-          {name = "soc",   address = 37612, type = "INT16", scale = 1.0}
+          {name = "power",       address = 39237, type = "INT32",  scale = 1.0},
+          {name = "temperature", address = 37611, type = "INT16",  scale = 0.1},
+          {name = "soc",        address = 37612, type = "UINT16", scale = 1.0},
+          {name = "soh",        address = 37624, type = "UINT16", scale = 1.0}
+        ]
+
+      [[inputs.modbus.request]]
+        slave_id = 247
+        byte_order = "ABCD"
+        register = "holding"
+        measurement = "foxess_inverter"
+        fields = [
+          {name = "temperature", address = 39141, type = "INT16", scale = 0.1}
         ]
