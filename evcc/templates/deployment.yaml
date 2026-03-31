@@ -42,8 +42,18 @@ spec:
             - name: evcc
               mountPath: /root/.evcc
               subPath: .evcc
+            - name: config
+              mountPath: /etc/evcc.yaml
+              subPath: evcc.yaml
+              readOnly: true
+          args:
+            - --config
+            - /etc/evcc.yaml
       volumes:
         - name: evcc
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}
+        - name: config
+          configMap:
+            name: {{ .Release.Name }}-config
 
