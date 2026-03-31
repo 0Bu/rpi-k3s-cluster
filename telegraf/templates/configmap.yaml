@@ -13,58 +13,157 @@ data:
       [inputs.modbus.tags]
         inverter = "foxess_h3_smart"
 
+      # ── Netz / Meter CT1 ────────────────────────────────────────────────
+      # Quellen: Tab. 3-4 (Meter1/CT1, 38xxx) + Tab. 3-5 (Inverter, 39xxx)
+      # Vorzeichen-Konvention: negativ = Einspeisung, positiv = Bezug
       [[inputs.modbus.request]]
         slave_id = 247
         byte_order = "ABCD"
         register = "holding"
         measurement = "foxess_grid"
         fields = [
-          {name = "l1",    address = 38816, type = "INT32", scale = -0.1},
-          {name = "l2",    address = 38818, type = "INT32", scale = -0.1},
-          {name = "l3",    address = 38820, type = "INT32", scale = -0.1},
-          {name = "total", address = 38822, type = "INT32", scale = -0.1}
+          # Meter1/CT1 Phasenwirkleistungen (W; gain=10 → scale=-0.1 = invertiertes Vorzeichen)
+          {name = "l1",             address = 38816, type = "INT32",  scale = -0.1},
+          {name = "l2",             address = 38818, type = "INT32",  scale = -0.1},
+          {name = "l3",             address = 38820, type = "INT32",  scale = -0.1},
+          {name = "total",          address = 38822, type = "INT32",  scale = -0.1},
+          # Meter1/CT1 kombinierte Wirkleistung (W) – Hinweis: "total" oben (38822) ist Blindleistung
+          {name = "meter_active",   address = 38814, type = "INT32",  scale = -0.1},
+          # Meter1/CT1 Leistungsfaktor kombiniert (gain=1000)
+          {name = "power_factor",   address = 38838, type = "INT32",  scale = 0.001},
+          # Meter1/CT1 Frequenz (Hz; gain=100)
+          {name = "freq_meter",     address = 38846, type = "INT32",  scale = 0.01},
+          # Netzspannungen vom Wechselrichter (V; gain=10)
+          {name = "voltage_l1",     address = 39123, type = "INT16",  scale = 0.1},
+          {name = "voltage_l2",     address = 39124, type = "INT16",  scale = 0.1},
+          {name = "voltage_l3",     address = 39125, type = "INT16",  scale = 0.1},
+          # Netzfrequenz vom Wechselrichter (Hz; gain=100)
+          {name = "frequency",      address = 39139, type = "INT16",  scale = 0.01},
+          # Wechselrichter-Ausgangsströme pro Phase (A; gain=1000)
+          {name = "current_l1",     address = 39126, type = "INT32",  scale = 0.001},
+          {name = "current_l2",     address = 39128, type = "INT32",  scale = 0.001},
+          {name = "current_l3",     address = 39130, type = "INT32",  scale = 0.001},
+          # Meter-Gesamtleistung (W; >0 = Einspeisung, <0 = Bezug)
+          {name = "meter_power",    address = 39168, type = "INT32",  scale = 1.0},
+          # Verfügbare Import-/Exportleistung (W)
+          {name = "import_power",   address = 39275, type = "INT32",  scale = 1.0},
+          {name = "export_power",   address = 39277, type = "INT32",  scale = 1.0},
         ]
 
-      [[inputs.modbus.request]]
-        slave_id = 247
-        byte_order = "ABCD"
-        register = "holding"
-        measurement = "foxess_energy"
-        fields = [
-          {name = "pv_total",               address = 39601, type = "UINT32", scale = 0.01},
-          {name = "battery_charge_total",   address = 39605, type = "UINT32", scale = 0.01},
-          {name = "battery_discharge_total",address = 39609, type = "UINT32", scale = 0.01},
-          {name = "grid_export_total",      address = 39613, type = "UINT32", scale = 0.01},
-          {name = "consumption_total",      address = 39617, type = "UINT32", scale = 0.01},
-          {name = "feedin_total",           address = 39619, type = "UINT32", scale = 0.01}
-        ]
-
-      [[inputs.modbus.request]]
-        slave_id = 247
-        byte_order = "ABCD"
-        register = "holding"
-        measurement = "foxess_pv"
-        fields = [
-          {name = "pv1", address = 39279, type = "INT32", scale = 1.0}
-        ]
-
-      [[inputs.modbus.request]]
-        slave_id = 247
-        byte_order = "ABCD"
-        register = "holding"
-        measurement = "foxess_battery"
-        fields = [
-          {name = "power",       address = 39237, type = "INT32",  scale = 1.0},
-          {name = "temperature", address = 37611, type = "INT16",  scale = 0.1},
-          {name = "soc",        address = 37612, type = "UINT16", scale = 1.0},
-          {name = "soh",        address = 37624, type = "UINT16", scale = 1.0}
-        ]
-
+      # ── Wechselrichter-AC-Ausgang ────────────────────────────────────────
+      # Quelle: Tab. 3-5 (39xxx)
       [[inputs.modbus.request]]
         slave_id = 247
         byte_order = "ABCD"
         register = "holding"
         measurement = "foxess_inverter"
         fields = [
-          {name = "temperature", address = 39141, type = "INT16", scale = 0.1}
+          # Innentemperatur (°C; gain=10)
+          {name = "temperature",    address = 39141, type = "INT16",  scale = 0.1},
+          # Wirkleistung (W; gain=1000)
+          {name = "active_power",   address = 39134, type = "INT32",  scale = 1.0},
+          # Blindleistung (Var; gain=1000)
+          {name = "reactive_power", address = 39136, type = "INT32",  scale = 1.0},
+          # Leistungsfaktor (gain=1000)
+          {name = "power_factor",   address = 39138, type = "INT16",  scale = 0.001},
+          # Lastleistung kombiniert (W; >0 = Verbrauch)
+          {name = "load_power",     address = 39225, type = "INT32",  scale = 1.0},
+          # Lastleistung pro Phase (W)
+          {name = "load_l1",        address = 39219, type = "INT32",  scale = 1.0},
+          {name = "load_l2",        address = 39221, type = "INT32",  scale = 1.0},
+          {name = "load_l3",        address = 39223, type = "INT32",  scale = 1.0},
+          # Status-Bitfelder
+          {name = "status",         address = 39063, type = "UINT16", scale = 1.0},
+          {name = "alarm1",         address = 39067, type = "UINT16", scale = 1.0},
+          {name = "alarm2",         address = 39068, type = "UINT16", scale = 1.0},
+          {name = "alarm3",         address = 39069, type = "UINT16", scale = 1.0},
+        ]
+
+      # ── PV-String 1 ─────────────────────────────────────────────────────
+      # Quelle: Tab. 3-5 (39xxx)
+      [[inputs.modbus.request]]
+        slave_id = 247
+        byte_order = "ABCD"
+        register = "holding"
+        measurement = "foxess_pv"
+        fields = [
+          # Spannung (V; gain=10)
+          {name = "pv1_voltage",    address = 39070, type = "INT16",  scale = 0.1},
+          # Strom (A; gain=100)
+          {name = "pv1_current",    address = 39071, type = "INT16",  scale = 0.01},
+          # Leistung String 1 (W; gain=1)
+          {name = "pv1",            address = 39279, type = "INT32",  scale = 1.0},
+          # PV-Gesamtleistung (W; gain=1000 → Rohwert in W)
+          {name = "total",          address = 39118, type = "INT32",  scale = 1.0},
+        ]
+
+      # ── MPPT-Kanal 1 ─────────────────────────────────────────────────────
+      # Quelle: Tab. 3-5 (39327+)
+      [[inputs.modbus.request]]
+        slave_id = 247
+        byte_order = "ABCD"
+        register = "holding"
+        measurement = "foxess_mppt"
+        fields = [
+          # MPPT1 (V gain=10, A gain=100, W gain=1)
+          {name = "mppt1_voltage",  address = 39327, type = "INT16",  scale = 0.1},
+          {name = "mppt1_current",  address = 39328, type = "INT16",  scale = 0.01},
+          {name = "mppt1_power",    address = 39329, type = "INT32",  scale = 1.0},
+        ]
+
+      # ── Batterie ─────────────────────────────────────────────────────────
+      # Quellen: Tab. 3-3 (BMS1, 37xxx) + Tab. 3-5 (39xxx)
+      [[inputs.modbus.request]]
+        slave_id = 247
+        byte_order = "ABCD"
+        register = "holding"
+        measurement = "foxess_battery"
+        fields = [
+          # BMS1 Rohdaten (direkt vom BMS gemeldet)
+          {name = "voltage_bms",    address = 37609, type = "UINT16", scale = 0.1},
+          {name = "current_bms",    address = 37610, type = "INT16",  scale = 0.1},
+          {name = "temperature",    address = 37611, type = "INT16",  scale = 0.1},
+          {name = "soc",            address = 37612, type = "UINT16", scale = 1.0},
+          {name = "soh",            address = 37624, type = "UINT16", scale = 1.0},
+          {name = "temp_max",       address = 37617, type = "INT16",  scale = 0.1},
+          {name = "temp_min",       address = 37618, type = "INT16",  scale = 0.1},
+          {name = "cell_v_max",     address = 37619, type = "UINT16", scale = 1.0},
+          {name = "cell_v_min",     address = 37620, type = "UINT16", scale = 1.0},
+          # Verbleibende Energie / Kapazität (gain=0.1 → scale=10.0)
+          {name = "remain_energy",  address = 37632, type = "UINT16", scale = 10.0},
+          {name = "fcc_capacity",   address = 37633, type = "UINT16", scale = 0.1},
+          # Wechselrichter-seitige Batteriedaten (genauer für Leistungsmessung)
+          {name = "voltage",        address = 39227, type = "INT16",  scale = 0.1},
+          {name = "current",        address = 39228, type = "INT32",  scale = 0.001},
+          {name = "power",          address = 39237, type = "INT32",  scale = 1.0},
+          # System-SoC (kombiniert, falls mehrere Batterien)
+          {name = "system_soc",     address = 39423, type = "UINT16", scale = 1.0},
+        ]
+
+      # ── Energiezähler ────────────────────────────────────────────────────
+      # Quelle: Tab. 3-5 (39149+) + Tab. 3-6 (39601+)
+      # Alle Werte in kWh (gain=100 → scale=0.01)
+      [[inputs.modbus.request]]
+        slave_id = 247
+        byte_order = "ABCD"
+        register = "holding"
+        measurement = "foxess_energy"
+        fields = [
+          # Gesamtzähler (kWh)
+          {name = "pv_total",                address = 39601, type = "UINT32", scale = 0.01},
+          {name = "battery_charge_total",    address = 39605, type = "UINT32", scale = 0.01},
+          {name = "battery_discharge_total", address = 39609, type = "UINT32", scale = 0.01},
+          {name = "grid_export_total",       address = 39613, type = "UINT32", scale = 0.01},
+          {name = "consumption_total",       address = 39617, type = "UINT32", scale = 0.01},
+          {name = "feedin_total",            address = 39619, type = "UINT32", scale = 0.01},
+          {name = "load_total",              address = 39629, type = "UINT32", scale = 0.01},
+          {name = "generation_total",        address = 39149, type = "UINT32", scale = 0.01},
+          # Tageszähler (kWh)
+          {name = "pv_today",                address = 39603, type = "UINT32", scale = 0.01},
+          {name = "battery_charge_today",    address = 39607, type = "UINT32", scale = 0.01},
+          {name = "battery_discharge_today", address = 39611, type = "UINT32", scale = 0.01},
+          {name = "grid_export_today",       address = 39615, type = "UINT32", scale = 0.01},
+          {name = "grid_import_today",       address = 39621, type = "UINT32", scale = 0.01},
+          {name = "load_today",              address = 39631, type = "UINT32", scale = 0.01},
+          {name = "generation_today",        address = 39151, type = "UINT32", scale = 0.01},
         ]
