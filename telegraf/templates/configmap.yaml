@@ -10,6 +10,8 @@ data:
       name = "foxess"
       controller = "tcp://192.168.107.186:502"
       configuration_type = "request"
+      interval = "60s"
+      timeout = "2s"
       [inputs.modbus.tags]
         inverter = "foxess_h3_smart"
 
@@ -29,10 +31,6 @@ data:
           {name = "total",          address = 38822, type = "INT32",  scale = -0.1},
           # Meter1/CT1 kombinierte Wirkleistung (W) – Hinweis: "total" oben (38822) ist Blindleistung
           {name = "meter_active",   address = 38814, type = "INT32",  scale = -0.1},
-          # Meter1/CT1 Leistungsfaktor kombiniert (gain=1000)
-          {name = "power_factor",   address = 38838, type = "INT32",  scale = 0.001},
-          # Meter1/CT1 Frequenz (Hz; gain=100)
-          {name = "freq_meter",     address = 38846, type = "INT32",  scale = 0.01},
           # Netzspannungen vom Wechselrichter (V; gain=10)
           {name = "voltage_l1",     address = 39123, type = "INT16",  scale = 0.1},
           {name = "voltage_l2",     address = 39124, type = "INT16",  scale = 0.1},
@@ -43,11 +41,6 @@ data:
           {name = "current_l1",     address = 39126, type = "INT32",  scale = 0.001},
           {name = "current_l2",     address = 39128, type = "INT32",  scale = 0.001},
           {name = "current_l3",     address = 39130, type = "INT32",  scale = 0.001},
-          # Meter-Gesamtleistung (W; >0 = Einspeisung, <0 = Bezug)
-          {name = "meter_power",    address = 39168, type = "INT32",  scale = 1.0},
-          # Verfügbare Import-/Exportleistung (W)
-          {name = "import_power",   address = 39275, type = "INT32",  scale = 1.0},
-          {name = "export_power",   address = 39277, type = "INT32",  scale = 1.0},
         ]
 
       # ── Wechselrichter-AC-Ausgang ────────────────────────────────────────
@@ -72,11 +65,6 @@ data:
           {name = "load_l1",        address = 39219, type = "INT32",  scale = 1.0},
           {name = "load_l2",        address = 39221, type = "INT32",  scale = 1.0},
           {name = "load_l3",        address = 39223, type = "INT32",  scale = 1.0},
-          # Status-Bitfelder
-          {name = "status",         address = 39063, type = "UINT16", scale = 1.0},
-          {name = "alarm1",         address = 39067, type = "UINT16", scale = 1.0},
-          {name = "alarm2",         address = 39068, type = "UINT16", scale = 1.0},
-          {name = "alarm3",         address = 39069, type = "UINT16", scale = 1.0},
         ]
 
       # ── PV-String 1 ─────────────────────────────────────────────────────
@@ -136,8 +124,6 @@ data:
           {name = "voltage",        address = 39227, type = "INT16",  scale = 0.1},
           {name = "current",        address = 39228, type = "INT32",  scale = 0.001},
           {name = "power",          address = 39237, type = "INT32",  scale = 1.0},
-          # System-SoC (kombiniert, falls mehrere Batterien)
-          {name = "system_soc",     address = 39423, type = "UINT16", scale = 1.0},
         ]
 
       # ── Energiezähler ────────────────────────────────────────────────────
