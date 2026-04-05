@@ -4,6 +4,7 @@ nfs:
 
 victoria-metrics:
   server:
+    retentionPeriod: "100y"
     persistentVolume:
       existingClaim: victoria-metrics
     ingress:
