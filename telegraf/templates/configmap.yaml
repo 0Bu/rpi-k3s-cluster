@@ -160,9 +160,7 @@ data:
           {name = "power",           address = 39237, type = "INT32",  scale = 1.0},
           {name = "power1",          address = 39230, type = "INT32",  scale = 1.0},
           # Energy Storage Lade-/Entladeleistung (W; gain=1)
-          {name = "charge_discharge", address = 39162, type = "INT32", scale = 1.0},
-          # System SoC (%)
-          {name = "system_soc",      address = 39423, type = "UINT16", scale = 1.0}
+          {name = "charge_discharge", address = 39162, type = "INT32", scale = 1.0}
         ]
 
       # ── EPS / Notstrom ──────────────────────────────────────────────────
