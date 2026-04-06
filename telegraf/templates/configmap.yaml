@@ -88,9 +88,7 @@ data:
           {name = "load_l3",         address = 39223, type = "INT32",  scale = 1.0},
           # Verfügbare Import-/Exportleistung (W; gain=1)
           {name = "available_import", address = 39275, type = "INT32", scale = 1.0},
-          {name = "available_export", address = 39277, type = "INT32", scale = 1.0},
-          # Work Mode (1=Self-Use, 2=Feed-In, 3=BackUp, 4=Peak Shaving)
-          {name = "work_mode",       address = 49203, type = "UINT16", scale = 1.0}
+          {name = "available_export", address = 39277, type = "INT32", scale = 1.0}
         ]
 
       # ── PV-Strings ─────────────────────────────────────────────────────

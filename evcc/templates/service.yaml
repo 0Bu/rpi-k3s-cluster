@@ -11,3 +11,6 @@ spec:
     - name: http
       port: 7070
       targetPort: 7070
+    - name: modbus-proxy
+      port: 502
+      targetPort: 502
