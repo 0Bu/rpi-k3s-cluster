@@ -9,6 +9,8 @@ telegraf:
       value: "http://victoria-metrics-server:8428"
     - name: INFLUXDB_URL
       value: "http://influxdb"
+    - name: MODBUS_CONTROLLER
+      value: "tcp://192.168.107.186:502"
 
   config:
     agent:
