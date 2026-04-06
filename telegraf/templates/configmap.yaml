@@ -8,10 +8,12 @@ data:
   modbus.conf: |
     [[inputs.modbus]]
       name = "foxess"
-      controller = "tcp://192.168.107.186:502"
+      controller = "${MODBUS_CONTROLLER}"
       configuration_type = "request"
       interval = "60s"
-      timeout = "2s"
+      timeout = "10s"
+      busy_retries = 5
+      busy_retries_wait = "1s"
       [inputs.modbus.tags]
         inverter = "foxess_h3_smart"
 
