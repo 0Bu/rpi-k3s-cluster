@@ -2,6 +2,6 @@ apiVersion: v2
 name: evcc
 description: evcc helm chart
 type: application
-version: 1.0.10
+version: 1.0.11
 # renovate: image=evcc/evcc
-appVersion: "0.304.2"
+appVersion: "0.304.3"
