@@ -1,0 +1,143 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-blueprints
+data:
+  passwordless.yaml: |
+    version: 1
+    entries:
+      # WebAuthn setup stage for passkey enrollment
+      - model: authentik_stages_authenticator_webauthn.authenticatorwebauthnstage
+        state: present
+        identifiers:
+          name: passkey-setup
+        attrs:
+          name: passkey-setup
+          friendly_name: Passkey
+          resident_key_requirement: required
+          user_verification: required
+
+      # WebAuthn validate stage (passkey only, no password fallback)
+      - model: authentik_stages_authenticator_validate.authenticatorvalidatestage
+        state: present
+        identifiers:
+          name: passkey-validation
+        attrs:
+          name: passkey-validation
+          not_configured_action: deny
+          device_classes:
+            - webauthn
+          webauthn_user_verification: required
+
+      # Authentication flow: username → passkey → login
+      - model: authentik_flows.flow
+        state: present
+        identifiers:
+          slug: passkey-authentication
+        attrs:
+          name: Passkey Authentication
+          slug: passkey-authentication
+          title: Sign in with Passkey
+          designation: authentication
+
+      - model: authentik_flows.flowstagebinding
+        state: present
+        identifiers:
+          target: !Find [authentik_flows.flow, [slug, passkey-authentication]]
+          order: 10
+        attrs:
+          target: !Find [authentik_flows.flow, [slug, passkey-authentication]]
+          stage: !Find [authentik_stages_identification.identificationstage, [name, default-authentication-identification]]
+          order: 10
+
+      - model: authentik_flows.flowstagebinding
+        state: present
+        identifiers:
+          target: !Find [authentik_flows.flow, [slug, passkey-authentication]]
+          order: 20
+        attrs:
+          target: !Find [authentik_flows.flow, [slug, passkey-authentication]]
+          stage: !Find [authentik_stages_authenticator_validate.authenticatorvalidatestage, [name, passkey-validation]]
+          order: 20
+
+      - model: authentik_flows.flowstagebinding
+        state: present
+        identifiers:
+          target: !Find [authentik_flows.flow, [slug, passkey-authentication]]
+          order: 100
+        attrs:
+          target: !Find [authentik_flows.flow, [slug, passkey-authentication]]
+          stage: !Find [authentik_stages_user_login.userloginstage, [name, default-authentication-login]]
+          order: 100
+
+      # Enrollment flow: registers passkey for a new user
+      - model: authentik_flows.flow
+        state: present
+        identifiers:
+          slug: passkey-enrollment
+        attrs:
+          name: Passkey Enrollment
+          slug: passkey-enrollment
+          title: Register your Passkey
+          designation: enrollment
+
+      - model: authentik_flows.flowstagebinding
+        state: present
+        identifiers:
+          target: !Find [authentik_flows.flow, [slug, passkey-enrollment]]
+          order: 10
+        attrs:
+          target: !Find [authentik_flows.flow, [slug, passkey-enrollment]]
+          stage: !Find [authentik_stages_authenticator_webauthn.authenticatorwebauthnstage, [name, passkey-setup]]
+          order: 10
+
+      - model: authentik_flows.flowstagebinding
+        state: present
+        identifiers:
+          target: !Find [authentik_flows.flow, [slug, passkey-enrollment]]
+          order: 100
+        attrs:
+          target: !Find [authentik_flows.flow, [slug, passkey-enrollment]]
+          stage: !Find [authentik_stages_user_login.userloginstage, [name, default-authentication-login]]
+          order: 100
+
+      # Set passkey flow as default login
+      - model: authentik_brands.brand
+        state: present
+        identifiers:
+          domain: authentik-default
+        attrs:
+          flow_authentication: !Find [authentik_flows.flow, [slug, passkey-authentication]]
+
+  adguard.yaml: |
+    version: 1
+    entries:
+      - model: authentik_providers_proxy.proxyprovider
+        state: present
+        identifiers:
+          name: adguard
+        attrs:
+          name: adguard
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          mode: forward_single
+          external_host: https://adguard.burau.dev
+
+      - model: authentik_core.application
+        state: present
+        identifiers:
+          slug: adguard
+        attrs:
+          name: AdGuard
+          slug: adguard
+          provider: !Find [authentik_providers_proxy.proxyprovider, [name, adguard]]
+
+      - model: authentik_outposts.outpost
+        state: present
+        identifiers:
+          name: authentik Embedded Outpost
+        attrs:
+          name: authentik Embedded Outpost
+          type: proxy
+          providers:
+            - !Find [authentik_providers_proxy.proxyprovider, [name, adguard]]

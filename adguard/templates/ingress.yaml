@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: adguard-ingress
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd,default-authentik@kubernetescrd
 spec:
   rules:
     - host: adguard.burau.dev

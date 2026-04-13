@@ -1,0 +1,11 @@
+apiVersion: v2
+name: authentik
+description: A Helm chart for authentik, using the official authentik chart.
+type: application
+version: 1.0.0
+# renovate: image=ghcr.io/goauthentik/server
+appVersion: "2026.2.2"
+dependencies: 
+  - name: authentik
+    version: "2026.2.2"
+    repository: https://charts.goauthentik.io

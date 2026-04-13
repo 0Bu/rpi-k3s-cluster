@@ -1,0 +1,56 @@
+nfs:
+  server: 192.168.1.5
+  path: /nfs/authentik
+
+authentik:
+  authentik:
+    existingSecret:
+      secretName: "authentik-secrets"
+
+  global:
+    env:
+      - name: AUTHENTIK_POSTGRESQL__HOST
+        value: authentik-postgresql
+      - name: AUTHENTIK_POSTGRESQL__NAME
+        value: authentik
+      - name: AUTHENTIK_POSTGRESQL__USER
+        value: authentik
+      - name: AUTHENTIK_POSTGRESQL__PORT
+        value: "5432"
+    volumes:
+      - name: media
+        persistentVolumeClaim:
+          claimName: authentik-media
+    volumeMounts:
+      - name: media
+        mountPath: /media
+
+  server:
+    ingress:
+      enabled: true
+      annotations:
+        traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
+      hosts:
+        - auth.burau.dev
+      tls:
+        - hosts:
+            - auth.burau.dev
+          secretName: ingress-tls
+
+  postgresql:
+    enabled: true
+    auth:
+      existingSecret: "authentik-secrets"
+      secretKeys:
+        adminPasswordKey: "AUTHENTIK_POSTGRESQL__PASSWORD"
+        userPasswordKey: "AUTHENTIK_POSTGRESQL__PASSWORD"
+    primary:
+      persistence:
+        existingClaim: authentik-postgresql
+
+  blueprints:
+    configMaps:
+      - authentik-blueprints
+
+persistence:
+  size: 10Gi
