@@ -1,9 +1,9 @@
 apiVersion: v2
 name: prometheus
 type: application
-version: 1.0.208
+version: 1.0.209
 # renovate: image=quay.io/prometheus/prometheus
-appVersion: "v3.11.1"
+appVersion: "v3.11.2"
 dependencies: 
   - name: prometheus
     version: "29.2.1"
