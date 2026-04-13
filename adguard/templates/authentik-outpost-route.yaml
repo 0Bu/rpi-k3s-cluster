@@ -1,0 +1,21 @@
+# Route /outpost.goauthentik.io/ on adguard.burau.dev to authentik server.
+# Required for authentik ForwardAuth: after login on auth.burau.dev, the browser
+# is redirected to adguard.burau.dev/outpost.goauthentik.io/start?rd=... to set
+# the session cookie. Without this route, that path goes to AdGuard instead.
+# https://docs.goauthentik.io/docs/add-secure-apps/providers/proxy/server_traefik
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: adguard-authentik-outpost
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`adguard.burau.dev`) && PathPrefix(`/outpost.goauthentik.io/`)
+      kind: Rule
+      services:
+        - name: authentik-server
+          namespace: default
+          port: 80
+  tls:
+    secretName: ingress-tls
