@@ -52,7 +52,7 @@ telegraf:
           token: "${INFLUXDB_TOKEN}"
           organization: "influxdata"
           bucket: "foxess"
-          namepass: ["foxess_grid", "foxess_grid_meter", "foxess_energy", "foxess_pv", "foxess_battery", "foxess_battery_bms"]
+          namepass: ["foxess_grid", "foxess_grid_meter", "foxess_inverter", "foxess_energy", "foxess_pv", "foxess_battery", "foxess_battery_bms"]
 #      - file:
 #          files: ["stdout"]
 #          namepass: ["foxess_grid", "foxess_grid_meter", "foxess_energy", "foxess_pv", "foxess_battery", "foxess_battery_bms"]
