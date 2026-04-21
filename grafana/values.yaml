@@ -16,4 +16,5 @@ grafana:
   persistence:
     enabled: true
     existingClaim: grafana
-
+  plugins:
+    - volkovlabs-echarts-panel
