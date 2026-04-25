@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tibber-pulse-bot
+  namespace: default
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/resource-policy: keep
+spec:
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    repoURL: https://github.com/0Bu/tibber-pulse-bot.git
+    path: chart
+    targetRevision: HEAD
+    helm:
+      releaseName: tibber-pulse-bot
+      values: |
+        pulse:
+          host: 192.168.107.118
+          sealedSecret:
+            # kubeseal --raw, scope=strict (name=tibber-pulse-bot, ns=default)
+            encryptedPassword: AgCcl3zMWH9gx6JGOZ2vNpEyfNnurrJiUoy3bU/AiAZ8E/0XevMc3afYlPjNME+lQonNRgi3HpdERszpZauiJQYfTOPyr5UHO1ybxE1oIqeZjFhJXLySi78esO8OFbEbsjYFQgP3OnJ3ODrc33Goqyhe0UKZ1Mt92N3DXMFsNM1BVo6ejBQKWn0L1OT8eNWuRywWOpoqnyNiPnyR0z23Z4law91GlLoFM9vfTVrj+fEcwhLhk1CrUw3nhcmqPlBILEO8bppPXCQDwz5HaVYx1hrYunk6xy1i0GQaHon0GdymBCYSPqub/xyMocXllMXNxDsk7yUmv1b0cY8T8VwxGqJwMPywZBMDDdzFwy/H82uI3M7PoPiOrLzjeGfZbYba3f/17jAVmKhTuZQWANRw5BW028WRft4YmTbbWqeQeToeBSO5t0++V0a0/73DgVGJyMWv2fpwa0edmGhk4LroTux9sX4X0DhxVcyGyFSKILvzli0wAWTaKs6JHCyUCxBsprnE3FaG3G6EFf9P/R5mV1Ve6IpoEdsMbHBw+3OsSSOKrZlpGhpNdyIv5D3864QP68AgA9PgLnBqMsHzQF5a1ArQ2FVdy/wkj4PUUAUmsqecL64ewJ8yPTh0lLRapAeAv5H0zTQTPSGVbuahWRRfGpg+7qfMLDN8bI1IiK/oo9/CUYj6Fpuxzel+g40illWvQop6SB4kXpM6HYU=
+        mqtt:
+          host: mosquitto.default.svc.cluster.local
+          port: 1883
+          topic: tibber/pulse
+        homeAssistant:
+          discovery: true
+        mode: push
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
