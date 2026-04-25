@@ -18,6 +18,11 @@ spec:
     helm:
       releaseName: tibber-pulse-bot
       values: |
+        image:
+          # Pinned short-SHA. Bump when a new build should roll out, or
+          # tag a v0.1.x git release in the bot repo so chart appVersion
+          # matches and this override can be removed.
+          tag: "8b29ce8"
         pulse:
           host: 192.168.107.118
           sealedSecret:
