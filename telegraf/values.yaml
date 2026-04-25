@@ -79,9 +79,9 @@ telegraf:
       # Tibber Pulse Bridge — meter readings published by tibber-pulse-bot.
       # Listed topics are float-only; text fields (manufacturer, device_id,
       # meter_serial) and binary ON/OFF (bridge/available, bridge/cloud_mqtt,
-      # bridge/update_available) intentionally excluded. The pivot processor
-      # turns the topic-suffix tag into a clean field name so InfluxDB/Grafana
-      # see fields like power_total, energy_import_total, ... directly.
+      # bridge/update_available) intentionally excluded.
+      # Each metric arrives as a separate MQTT message; topic_tag stores the
+      # full topic so queries filter via WHERE topic = 'tibber/pulse/power_total'.
       - mqtt_consumer:
           name_override: "tibber_pulse"
           servers: ["tcp://mosquitto:1883"]
@@ -105,15 +105,7 @@ telegraf:
             - "tibber/pulse/frequency"
           data_format: "value"
           data_type: "float"
-          topic_parsing:
-            - topic: "tibber/pulse/+"
-              tags: "_/_/metric"
-
-    processors:
-      - pivot:
-          tag_key: "metric"
-          value_key: "value"
-          namepass: ["tibber_pulse"]
+          topic_tag: "topic"
 
   args:
     - --config
