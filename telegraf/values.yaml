@@ -40,7 +40,7 @@ telegraf:
           token: "${INFLUXDB_TOKEN}"
           organization: "influxdata"
           bucket: "power"
-          namepass: ["shelly"]
+          namepass: ["shelly", "tibber_pulse"]
       - influxdb_v2:
           urls: ["${INFLUXDB_URL}"]
           token: "${INFLUXDB_TOKEN}"
@@ -76,6 +76,44 @@ telegraf:
             - "shelly1pmminig4-ccba97c65f18/status/#"
             - "shellypill-d885ac1a6284/status/#"
           data_format: "json"
+      # Tibber Pulse Bridge — meter readings published by tibber-pulse-bot.
+      # Listed topics are float-only; text fields (manufacturer, device_id,
+      # meter_serial) and binary ON/OFF (bridge/available, bridge/cloud_mqtt,
+      # bridge/update_available) intentionally excluded. The pivot processor
+      # turns the topic-suffix tag into a clean field name so InfluxDB/Grafana
+      # see fields like power_total, energy_import_total, ... directly.
+      - mqtt_consumer:
+          name_override: "tibber_pulse"
+          servers: ["tcp://mosquitto:1883"]
+          topics:
+            - "tibber/pulse/power_total"
+            - "tibber/pulse/power_l1"
+            - "tibber/pulse/power_l2"
+            - "tibber/pulse/power_l3"
+            - "tibber/pulse/energy_import_total"
+            - "tibber/pulse/energy_import_t1"
+            - "tibber/pulse/energy_import_t2"
+            - "tibber/pulse/energy_export_total"
+            - "tibber/pulse/energy_export_t1"
+            - "tibber/pulse/energy_export_t2"
+            - "tibber/pulse/voltage_l1"
+            - "tibber/pulse/voltage_l2"
+            - "tibber/pulse/voltage_l3"
+            - "tibber/pulse/current_l1"
+            - "tibber/pulse/current_l2"
+            - "tibber/pulse/current_l3"
+            - "tibber/pulse/frequency"
+          data_format: "value"
+          data_type: "float"
+          topic_parsing:
+            - topic: "tibber/pulse/+"
+              tags: "_/_/metric"
+
+    processors:
+      - pivot:
+          tag_key: "metric"
+          value_key: "value"
+          namepass: ["tibber_pulse"]
 
   args:
     - --config
