@@ -8,21 +8,6 @@ spec:
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
-  mountOptions:
-    - nfsvers=4.1
-    - rsize=1048576
-    - wsize=1048576
-    - hard
-    - timeo=600
-    - retrans=2
-    - noatime
-    # sync: forces NFS to acknowledge writes only after the server has committed them to disk.
-    # This prevents SQLite WAL corruption when the Home Assistant pod is killed abruptly
-    # (e.g. by a failing liveness probe) before pending writes are flushed. Without this,
-    # async buffering can leave the WAL in an inconsistent state that corrupts the database
-    # on the next purge run. Benchmarks on this loopback-NFS setup show no measurable
-    # performance impact since client and server run on the same node.
-    - sync
   nfs:
     server: {{ .Values.nfs.server }}
     path: {{ .Values.nfs.path }}
