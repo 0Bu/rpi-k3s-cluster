@@ -6,7 +6,7 @@ telegraf:
   envFromSecret: telegraf-influxdb-token
   env:
     - name: VICTORIA_METRICS_URL
-      value: "http://victoria-metrics-server:8428"
+      value: "http://vmsingle-vm:8428"
     - name: INFLUXDB_URL
       value: "http://influxdb"
     - name: MODBUS_CONTROLLER

@@ -3,29 +3,83 @@ nfs:
   path: /nfs/victoria-metrics
 
 victoria-metrics:
-  server:
-    retentionPeriod: "100y"
-    persistentVolume:
-      existingClaim: victoria-metrics
+  fullnameOverride: vm
+
+  # Operator + CRDs werden vom Stack installiert
+  victoria-metrics-operator:
+    enabled: true
+    crds:
+      plain: true
+      cleanup:
+        enabled: true
+        image:
+          repository: registry.k8s.io/kubectl
+          pullPolicy: IfNotPresent
+
+  # Eigener Grafana-Chart bleibt bestehen → Dashboards/DS hier deaktivieren
+  grafana:
+    enabled: false
+  defaultDashboards:
+    enabled: false
+  defaultRules:
+    create: false
+
+  # Eigene Aggregationen / Alerting deaktiviert (analog zur bisherigen Setup ohne alertmanager)
+  vmalert:
+    enabled: false
+  alertmanager:
+    enabled: false
+  vmauth:
+    enabled: false
+
+  # k3s exponiert diese Komponenten nicht standardmäßig → Scrapes deaktivieren
+  kubeControllerManager:
+    enabled: false
+  kubeScheduler:
+    enabled: false
+  kubeEtcd:
+    enabled: false
+  kubeProxy:
+    enabled: false
+
+  prometheus-node-exporter:
+    enabled: true
+  kube-state-metrics:
+    enabled: true
+
+  vmsingle:
+    enabled: true
+    spec:
+      retentionPeriod: "100y"
+      replicaCount: 1
+      # Wiederverwendung des bestehenden NFS-PV `victoria-metrics`.
+      # Voraussetzung beim Cutover: alte PVC gelöscht und PV-claimRef bereinigt.
+      storage:
+        accessModes:
+          - ReadWriteMany
+        storageClassName: ""
+        volumeName: victoria-metrics
+        resources:
+          requests:
+            storage: 20Gi
     ingress:
       enabled: true
+      ingressClassName: traefik
       annotations:
         traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
-      ingressClassName: "traefik"
       hosts:
-        - name: victoria-metrics.burau.dev
-          path:
-            - /
-          port: http
-        - name: vm.burau.dev
-          path:
-            - /
-          port: http       
+        - victoria-metrics.burau.dev
+        - vm.burau.dev
       tls:
         - secretName: ingress-tls
           hosts:
             - victoria-metrics.burau.dev
             - vm.burau.dev
-    service:
-      clusterIP: ""
 
+  vmagent:
+    enabled: true
+    spec:
+      replicaCount: 1
+      selectAllByDefault: true
+      extraArgs:
+        promscrape.streamParse: "true"
