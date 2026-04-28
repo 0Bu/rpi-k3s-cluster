@@ -4,6 +4,7 @@ metadata:
   name: {{ .Release.Name }}
 spec:
   storageClassName: ""
+  volumeName: evcc
   accessModes:
     - ReadWriteOnce
   resources:

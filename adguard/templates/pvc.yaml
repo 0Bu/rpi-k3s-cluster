@@ -4,6 +4,7 @@ metadata:
   name: {{ .Release.Name }}
 spec:
   storageClassName: ""
+  volumeName: adguard
   accessModes:
     - ReadWriteOnce
   resources:
