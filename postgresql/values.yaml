@@ -19,3 +19,5 @@ postgresql:
       existingClaim: "postgresql"
     metrics:
       enabled: true
+  volumePermissions:
+    enabled: true
