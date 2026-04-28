@@ -11,6 +11,8 @@ postgresql:
       adminPasswordKey: postgres-password
       userPasswordKey: password
   primary:
+    podSecurityContext:
+      fsGroupChangePolicy: OnRootMismatch
     service:
       type: LoadBalancer
       annotations:
@@ -36,4 +38,4 @@ postgresql:
       failureThreshold: 10
       timeoutSeconds: 10
   volumePermissions:
-    enabled: true
+    enabled: false
