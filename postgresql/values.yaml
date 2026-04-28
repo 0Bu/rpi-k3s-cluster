@@ -19,6 +19,14 @@ postgresql:
         metallb.io/loadBalancerIPs: 192.168.1.26
     persistence:
       existingClaim: "postgresql"
+    resourcesPreset: "none"
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: "2"
+        memory: 1Gi
     metrics:
       enabled: true
     startupProbe:
