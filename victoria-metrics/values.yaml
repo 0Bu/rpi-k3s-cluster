@@ -5,16 +5,16 @@ nfs:
 victoria-metrics:
   fullnameOverride: vm
 
-  # Operator + CRDs werden vom Stack installiert
+  # Operator + CRDs werden vom Stack installiert.
+  # crds.cleanup deaktiviert: Pre-Delete-Hook würde sonst bei einer
+  # versehentlichen Application-Löschung (z.B. Helm-Hook-Race) alle
+  # VictoriaMetrics-CRs (vmsingle, vmagent, scrapes…) wegräumen.
   victoria-metrics-operator:
     enabled: true
     crds:
       plain: true
       cleanup:
-        enabled: true
-        image:
-          repository: registry.k8s.io/kubectl
-          pullPolicy: IfNotPresent
+        enabled: false
 
   # Eigener Grafana-Chart bleibt bestehen → Dashboards/DS hier deaktivieren
   grafana:
