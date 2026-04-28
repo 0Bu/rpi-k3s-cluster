@@ -20,17 +20,17 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
-    - RespectIgnoreDifferences=true
+      - RespectIgnoreDifferences=true
+      - ServerSideApply=true
   ignoreDifferences:
     - group: ""
       kind: Secret
-      name: <fullname>-validation
-      namespace: <k8s-stack-namespace>
+      name: victoria-metrics-victoria-metrics-operator-validation
+      namespace: default
       jsonPointers:
         - /data
     - group: admissionregistration.k8s.io
       kind: ValidatingWebhookConfiguration
-      name: <fullname>-admission
+      name: victoria-metrics-victoria-metrics-operator-admission
       jqPathExpressions:
-      - '.webhooks[]?.clientConfig.caBundle'
-
+        - '.webhooks[]?.clientConfig.caBundle'
