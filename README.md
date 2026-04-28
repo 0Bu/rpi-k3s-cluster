@@ -22,7 +22,7 @@ sudo chown -R nobody:nogroup /nfs
 sudo vim /etc/exports
 /nfs 192.168.1.0/24(rw,async,no_subtree_check,no_root_squash)
 ```
-> `async` statt `sync`: nötig wegen ~370 ms fsync-Latenz der DRAM-less NVMe (sonst initdb >15 min). Datenverlust-Fenster ~5–30 s bei Stromausfall — `pg_dump` CronJob deckt das ab.
+> `async` instead of `sync`: required due to ~370 ms fsync latency of the DRAM-less NVMe (otherwise initdb takes >15 min). Data-loss window ~5–30 s on power failure — covered by the hourly `pg_dump` CronJob.
 ```
 sudo systemctl restart nfs-kernel-server
 ```
