@@ -56,7 +56,7 @@ victoria-metrics:
       # Voraussetzung beim Cutover: alte PVC gelöscht und PV-claimRef bereinigt.
       storage:
         accessModes:
-          - ReadWriteMany
+          - ReadWriteOnce
         storageClassName: ""
         volumeName: victoria-metrics
         resources:
