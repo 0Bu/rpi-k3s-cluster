@@ -3,12 +3,9 @@ telegraf:
     enabled: false
   pdb:
     create: false
-  envFromSecret: telegraf-influxdb-token
   env:
     - name: VICTORIA_METRICS_URL
       value: "http://vmsingle-vm:8428"
-    - name: INFLUXDB_URL
-      value: "http://influxdb"
     - name: MODBUS_CONTROLLER
       value: "tcp://192.168.107.186:502"
 
@@ -35,24 +32,6 @@ telegraf:
           skip_database_creation: true
           exclude_retention_policy_tag: true
           content_encoding: "gzip"
-      - influxdb_v2:
-          urls: ["${INFLUXDB_URL}"]
-          token: "${INFLUXDB_TOKEN}"
-          organization: "influxdata"
-          bucket: "power"
-          namepass: ["shelly", "tibber_pulse"]
-      - influxdb_v2:
-          urls: ["${INFLUXDB_URL}"]
-          token: "${INFLUXDB_TOKEN}"
-          organization: "influxdata"
-          bucket: "ems-esp"
-          namepass: ["ems-esp"]
-      - influxdb_v2:
-          urls: ["${INFLUXDB_URL}"]
-          token: "${INFLUXDB_TOKEN}"
-          organization: "influxdata"
-          bucket: "foxess"
-          namepass: ["foxess_grid", "foxess_grid_meter", "foxess_inverter", "foxess_energy", "foxess_pv", "foxess_battery", "foxess_battery_bms"]
 #      - file:
 #          files: ["stdout"]
 #          namepass: ["foxess_grid", "foxess_grid_meter", "foxess_energy", "foxess_pv", "foxess_battery", "foxess_battery_bms"]
