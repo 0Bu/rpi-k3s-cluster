@@ -1,0 +1,21 @@
+nfs:
+  server: 192.168.1.5
+  path: /nfs/postgresql
+
+postgresql:
+  auth:
+    username: homeassistant
+    database: homeassistant
+    existingSecret: postgresql-credentials
+    secretKeys:
+      adminPasswordKey: postgres-password
+      userPasswordKey: password
+  primary:
+    service:
+      type: LoadBalancer
+      annotations:
+        metallb.io/loadBalancerIPs: 192.168.1.26
+    persistence:
+      existingClaim: "postgresql"
+    metrics:
+      enabled: true
