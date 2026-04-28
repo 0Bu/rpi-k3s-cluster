@@ -20,8 +20,9 @@ sudo chown -R nobody:nogroup /nfs
 #### NFS export config
 ```
 sudo vim /etc/exports
-/nfs 192.168.1.0/24(rw,sync,no_subtree_check,no_root_squash)
+/nfs 192.168.1.0/24(rw,async,no_subtree_check,no_root_squash)
 ```
+> `async` statt `sync`: nötig wegen ~370 ms fsync-Latenz der DRAM-less NVMe (sonst initdb >15 min). Datenverlust-Fenster ~5–30 s bei Stromausfall — `pg_dump` CronJob deckt das ab.
 ```
 sudo systemctl restart nfs-kernel-server
 ```
