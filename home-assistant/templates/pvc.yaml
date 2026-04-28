@@ -4,6 +4,7 @@ metadata:
   name: {{ .Chart.Name }}
 spec:
   storageClassName: ""
+  volumeName: home-assistant
   accessModes:
     - ReadWriteOnce
   resources:
