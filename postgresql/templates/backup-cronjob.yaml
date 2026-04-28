@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgresql-backup
+spec:
+  schedule: "0 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsUser: 1001
+            runAsGroup: 1001
+            fsGroup: 1001
+            fsGroupChangePolicy: OnRootMismatch
+          containers:
+            - name: pg-dump
+              image: bitnami/postgresql:18.3.0
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: PGHOST
+                  value: postgresql.default.svc.cluster.local
+                - name: PGPORT
+                  value: "5432"
+                - name: PGUSER
+                  value: postgres
+                - name: PGDATABASE
+                  value: homeassistant
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgresql-credentials
+                      key: postgres-password
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  TS=$(date +%Y%m%d-%H%M)
+                  OUT=/backup/pg_dump_${PGDATABASE}_${TS}.sql.gz
+                  echo "[$(date -Is)] dumping ${PGDATABASE} -> ${OUT}"
+                  pg_dump --format=plain --no-owner --no-privileges "${PGDATABASE}" \
+                    | gzip -6 > "${OUT}.tmp"
+                  mv "${OUT}.tmp" "${OUT}"
+                  echo "[$(date -Is)] dump done: $(du -h "${OUT}" | cut -f1)"
+                  echo "[$(date -Is)] pruning dumps older than 7 days"
+                  find /backup -maxdepth 1 -name 'pg_dump_*.sql.gz' -type f -mtime +7 -print -delete
+                  echo "[$(date -Is)] retained dumps:"
+                  ls -1t /backup/pg_dump_*.sql.gz | head -n 5
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: postgresql-backup
