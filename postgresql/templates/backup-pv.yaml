@@ -10,7 +10,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   nfs:
     server: {{ .Values.nfs.server }}
-    path: /nfs/postgresql-backup
+    path: /nfs/postgresql/backup
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
