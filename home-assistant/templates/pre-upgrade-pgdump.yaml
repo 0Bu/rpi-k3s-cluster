@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ha-pre-upgrade-pgdump
+  annotations:
+    # Helm hook: fires on each `helm upgrade` of this chart
+    helm.sh/hook: pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    # ArgoCD-native equivalent: fires on every PreSync of this Application
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: pg-dump
+          image: bitnami/postgresql:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PGHOST
+              value: postgresql.default.svc.cluster.local
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              value: postgres
+            - name: PGDATABASE
+              value: homeassistant
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-credentials
+                  key: postgres-password
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              TS=$(date +%Y%m%d-%H%M)
+              OUT=/backup/pg_dump_${PGDATABASE}_pre-ha-upgrade_${TS}.sql.gz
+              echo "[$(date -Is)] HA pre-upgrade dump: ${PGDATABASE} -> ${OUT}"
+              pg_dump --format=plain --no-owner --no-privileges "${PGDATABASE}" \
+                | gzip -6 > "${OUT}.tmp"
+              mv "${OUT}.tmp" "${OUT}"
+              echo "[$(date -Is)] dump done: $(du -h "${OUT}" | cut -f1)"
+              echo "[$(date -Is)] retaining all pre-ha-upgrade dumps (no auto-prune)"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+      volumes:
+        - name: backup
+          persistentVolumeClaim:
+            claimName: postgresql-backup
