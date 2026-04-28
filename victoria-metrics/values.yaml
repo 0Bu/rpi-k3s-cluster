@@ -15,6 +15,11 @@ victoria-metrics:
       plain: true
       cleanup:
         enabled: false
+    # prometheus-operator CRDs (ServiceMonitor, PodMonitor, Probe,
+    # AlertmanagerConfig, ScrapeConfig) sind im Cluster nicht installiert.
+    # Ohne disable bleibt der Operator beim Cache-Sync hängen → CrashLoop.
+    operator:
+      disable_prometheus_converter: true
 
   # Eigener Grafana-Chart bleibt bestehen → Dashboards/DS hier deaktivieren
   grafana:
