@@ -20,7 +20,7 @@ spec:
             fsGroupChangePolicy: OnRootMismatch
           containers:
             - name: pg-dump
-              image: bitnami/postgresql:18.3.0
+              image: bitnami/postgresql:latest
               imagePullPolicy: IfNotPresent
               env:
                 - name: PGHOST
