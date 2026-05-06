@@ -9,10 +9,10 @@ spec:
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
-      backoffLimit: 1
+      backoffLimit: 2
       template:
         spec:
-          restartPolicy: OnFailure
+          restartPolicy: Never
           securityContext:
             runAsUser: 1001
             runAsGroup: 1001
@@ -41,6 +41,7 @@ spec:
                 - -c
                 - |
                   set -euo pipefail
+                  find /backup -maxdepth 1 -name 'pg_dump_*.sql.gz.tmp' -type f -delete 2>/dev/null || true
                   TS=$(date +%Y%m%d-%H%M)
                   OUT=/backup/pg_dump_${PGDATABASE}_${TS}.sql.gz
                   echo "[$(date -Is)] dumping ${PGDATABASE} -> ${OUT}"
