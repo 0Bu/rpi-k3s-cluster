@@ -2,6 +2,10 @@ nfs:
   server: 192.168.1.5
   path: /nfs/postgresql
 
+backup:
+  schedule: "0 0 * * *"
+  retentionCount: 10
+
 postgresql:
   auth:
     username: homeassistant
