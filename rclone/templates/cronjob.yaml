@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rclone
+  namespace: default
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  timeZone: "Europe/Berlin"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+          containers:
+            - name: rclone
+              image: {{ .Values.rclone.image }}
+              command: ["/bin/sh", "/scripts/backup.sh"]
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  memory: 512Mi
+              volumeMounts:
+                - name: rclone-config
+                  mountPath: /config
+                  readOnly: true
+                - name: backup-script
+                  mountPath: /scripts
+                  readOnly: true
+                {{- range .Values.volumes }}
+                - name: {{ .name }}
+                  mountPath: /data/{{ .name }}
+                  readOnly: true
+                {{- end }}
+          volumes:
+            - name: rclone-config
+              secret:
+                secretName: {{ .Values.rclone.configSecret }}
+            - name: backup-script
+              configMap:
+                name: rclone-script
+                defaultMode: 0755
+            {{- range .Values.volumes }}
+            - name: {{ .name }}
+              nfs:
+                server: {{ $.Values.nfs.server }}
+                path: {{ .path }}
+                readOnly: true
+            {{- end }}
