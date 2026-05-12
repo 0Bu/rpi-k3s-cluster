@@ -8,8 +8,12 @@ data:
     #!/bin/sh
     set -eu
 
-    RCLONE_CONFIG=/config/rclone.conf
+    # Secret-Mount ist read-only; Kopie in beschreibbares Verzeichnis
+    cp /config/rclone.conf /tmp/rclone.conf
+    RCLONE_CONFIG=/tmp/rclone.conf
     DESTINATION="{{ .Values.rclone.destination }}"
+    VM_API="http://vmsingle-vm.default.svc.cluster.local:8428"
+
     run_backup() {
       local name="$1"
       local src="/data/${name}"
@@ -25,9 +29,39 @@ data:
       echo "==> [$(date -u +%Y-%m-%dT%H:%M:%SZ)] Done: ${name}"
     }
 
+    backup_victoria_metrics() {
+      echo "==> [$(date -u +%Y-%m-%dT%H:%M:%SZ)] Starting backup: victoria-metrics"
+
+      RESPONSE=$(wget -qO- "${VM_API}/snapshot/create")
+      SNAPSHOT=$(echo "${RESPONSE}" | sed -n 's/.*"snapshot":"\([^"]*\)".*/\1/p')
+      if [ -z "${SNAPSHOT}" ]; then
+        echo "ERROR: Failed to create victoria-metrics snapshot: ${RESPONSE}"
+        return 1
+      fi
+      echo "==> Snapshot created: ${SNAPSHOT}"
+
+      SYNC_STATUS=0
+      rclone sync "/data/victoria-metrics/snapshots/${SNAPSHOT}" "${DESTINATION}victoria-metrics" \
+        --config "${RCLONE_CONFIG}" \
+        --checksum \
+        --transfers 4 \
+        --retries 3 \
+        --log-level INFO || SYNC_STATUS=$?
+
+      wget -qO- "${VM_API}/snapshot/delete?snapshot=${SNAPSHOT}" > /dev/null || true
+      echo "==> Snapshot deleted: ${SNAPSHOT}"
+      echo "==> [$(date -u +%Y-%m-%dT%H:%M:%SZ)] Done: victoria-metrics"
+
+      return ${SYNC_STATUS}
+    }
+
     FAILED=""
     {{- range .Values.volumes }}
+    {{- if eq .name "victoria-metrics" }}
+    backup_victoria_metrics || FAILED="${FAILED} victoria-metrics"
+    {{- else }}
     run_backup "{{ .name }}" || FAILED="${FAILED} {{ .name }}"
+    {{- end }}
     {{- end }}
 
     if [ -n "${FAILED}" ]; then
