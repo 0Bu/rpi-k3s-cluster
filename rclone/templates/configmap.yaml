@@ -23,8 +23,10 @@ data:
       rclone sync "${src}" "${dst}" \
         --config "${RCLONE_CONFIG}" \
         --checksum \
-        --transfers 4 \
-        --retries 3 \
+        --transfers 2 \
+        --tpslimit 5 \
+        --retries 5 \
+        --retries-sleep 60s \
         --log-level INFO
       echo "==> [$(date -u +%Y-%m-%dT%H:%M:%SZ)] Done: ${name}"
     }
@@ -44,8 +46,10 @@ data:
       rclone sync "/data/victoria-metrics/snapshots/${SNAPSHOT}" "${DESTINATION}victoria-metrics" \
         --config "${RCLONE_CONFIG}" \
         --checksum \
-        --transfers 4 \
-        --retries 3 \
+        --transfers 2 \
+        --tpslimit 5 \
+        --retries 5 \
+        --retries-sleep 60s \
         --log-level INFO || SYNC_STATUS=$?
 
       wget -qO- "${VM_API}/snapshot/delete?snapshot=${SNAPSHOT}" > /dev/null || true
