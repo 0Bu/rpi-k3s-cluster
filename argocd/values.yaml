@@ -66,4 +66,4 @@ argocd:
       extraTls:
       - hosts:
           - argocd.burau.dev
-        secretName: ingress-tls
+        secretName: cloudflare-tls

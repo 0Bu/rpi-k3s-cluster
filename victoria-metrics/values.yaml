@@ -76,7 +76,7 @@ victoria-metrics:
         - victoria-metrics.burau.dev
         - vm.burau.dev
       tls:
-        - secretName: ingress-tls
+        - secretName: cloudflare-tls
           hosts:
             - victoria-metrics.burau.dev
             - vm.burau.dev
