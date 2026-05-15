@@ -12,7 +12,7 @@ grafana:
     tls:
       - hosts:
           - grafana.burau.dev
-        secretName: ingress-tls
+        secretName: cloudflare-tls
   persistence:
     enabled: true
     existingClaim: grafana
