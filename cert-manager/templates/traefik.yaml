@@ -44,7 +44,7 @@ spec:
         mode: Terminate
         certificateRefs:
           - kind: Secret
-            name: ingress-tls
+            name: cloudflare-tls
       allowedRoutes:
         namespaces:
           from: Same
