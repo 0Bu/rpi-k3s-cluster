@@ -2,6 +2,6 @@ apiVersion: v2
 name: adguard
 description: https://github.com/AdguardTeam/AdGuardHome
 type: application
-version: 1.0.4
+version: 1.0.5
 # renovate: image=adguard/adguardhome
-appVersion: "v0.107.75"
+appVersion: "v0.107.76"
