@@ -1,9 +1,9 @@
 apiVersion: v2
 name: victoria-metrics
 type: application
-version: 1.1.17
+version: 1.1.18
 # renovate: image=victoriametrics/victoria-metrics
-appVersion: "v1.144.0"
+appVersion: "v1.145.0"
 dependencies:
   - name: victoria-metrics-k8s-stack
     alias: victoria-metrics
