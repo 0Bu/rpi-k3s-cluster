@@ -1,7 +1,7 @@
 apiVersion: v2
 name: home-assistant
-version: 1.0.20
+version: 1.0.21
 home: https://www.home-assistant.io/
 type: application
 # renovate: image=ghcr.io/home-assistant/home-assistant
-appVersion: "2026.6.3"
+appVersion: "2026.6.4"
