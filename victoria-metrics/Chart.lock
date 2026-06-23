@@ -1,6 +1,6 @@
 dependencies:
 - name: victoria-metrics-k8s-stack
   repository: https://victoriametrics.github.io/helm-charts/
-  version: 0.85.1
-digest: sha256:96e9261bedbeec94c74c9c6642ff976995e2c3fddb18d2b41d0218f7a4fbaaf7
-generated: "2026-06-23T20:49:36.348115513Z"
+  version: 0.85.2
+digest: sha256:ceab4f463686048d9202efe35ce864bb3c01360fbc7a054eb34f3fda33eb6834
+generated: "2026-06-23T22:32:22.483304162Z"
