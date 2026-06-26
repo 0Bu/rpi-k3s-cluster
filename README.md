@@ -85,7 +85,7 @@ flannel-ipv6-masq: true
 ```
 
 ```
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.36.1+k3s1" sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.36.2+k3s1" sh -
 ```
 
 ### Node installation
@@ -105,7 +105,7 @@ node-ip: "192.168.1.5,fd7c:3b4a:5f1d::5a"
 ```
 
 ```
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.36.1+k3s1" sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.36.2+k3s1" sh -
 ```
 
 ## High availability cluster installation
@@ -128,7 +128,7 @@ flannel-ipv6-masq: true
 ```
 
 ```
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.36.1+k3s1" sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.36.2+k3s1" sh -
 ```
 
 ### High availability node installation
@@ -150,14 +150,14 @@ flannel-ipv6-masq: true
 ```
 
 ```
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.36.1+k3s1" sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.36.2+k3s1" sh -
 ```
 
 ## Single stack installation
 k3s docs: <https://docs.k3s.io/installation>
 ```
 export K3S_KUBECONFIG_MODE="644"
-export INSTALL_K3S_VERSION="v1.36.1+k3s1"
+export INSTALL_K3S_VERSION="v1.36.2+k3s1"
 export INSTALL_K3S_EXEC="--disable servicelb"
 curl -sfL https://get.k3s.io | sh -
 ```
@@ -170,7 +170,7 @@ sudo cat /var/lib/rancher/k3s/server/node-token
 
 ```
 export K3S_KUBECONFIG_MODE="644"
-export INSTALL_K3S_VERSION="v1.36.1+k3s1"
+export INSTALL_K3S_VERSION="v1.36.2+k3s1"
 export K3S_URL="https://192.168.1.5:6443"
 export K3S_TOKEN="TOKEN"
 curl -sfL https://get.k3s.io | sh -
