@@ -10,5 +10,8 @@ data:
     listener 8083
     protocol websockets
     allow_anonymous true
+    persistence true
+    persistence_location /mosquitto/data/
+    autosave_interval 60
     log_timestamp true
     log_timestamp_format %Y-%m-%d %H:%M:%S
