@@ -14,20 +14,18 @@ data:
     DESTINATION="{{ .Values.rclone.destination }}"
     VM_API="http://vmsingle-vm.default.svc.cluster.local:8428"
 
+    # Gemeinsame rclone-Optionen. --max-delete bricht den Sync ab, falls eine
+    # (versehentlich) geleerte Quelle sonst das Remote-Backup loeschen wuerde.
+    RCLONE_OPTS="--config ${RCLONE_CONFIG} --checksum --max-delete 25 --transfers 2 --tpslimit 5 --retries 5 --retries-sleep 60s --log-level INFO"
+
     run_backup() {
       local name="$1"
       local src="/data/${name}"
       local dst="${DESTINATION}${name}"
 
       echo "==> [$(date -u +%Y-%m-%dT%H:%M:%SZ)] Starting backup: ${name}"
-      rclone sync "${src}" "${dst}" \
-        --config "${RCLONE_CONFIG}" \
-        --checksum \
-        --transfers 2 \
-        --tpslimit 5 \
-        --retries 5 \
-        --retries-sleep 60s \
-        --log-level INFO
+      # RCLONE_OPTS bewusst unquoted (Word-Splitting der Flags gewuenscht)
+      rclone sync "${src}" "${dst}" ${RCLONE_OPTS}
       echo "==> [$(date -u +%Y-%m-%dT%H:%M:%SZ)] Done: ${name}"
     }
 
@@ -43,14 +41,7 @@ data:
       echo "==> Snapshot created: ${SNAPSHOT}"
 
       SYNC_STATUS=0
-      rclone sync "/data/victoria-metrics/snapshots/${SNAPSHOT}" "${DESTINATION}victoria-metrics" \
-        --config "${RCLONE_CONFIG}" \
-        --checksum \
-        --transfers 2 \
-        --tpslimit 5 \
-        --retries 5 \
-        --retries-sleep 60s \
-        --log-level INFO || SYNC_STATUS=$?
+      rclone sync "/data/victoria-metrics/snapshots/${SNAPSHOT}" "${DESTINATION}victoria-metrics" ${RCLONE_OPTS} || SYNC_STATUS=$?
 
       wget -qO- "${VM_API}/snapshot/delete?snapshot=${SNAPSHOT}" > /dev/null || true
       echo "==> Snapshot deleted: ${SNAPSHOT}"

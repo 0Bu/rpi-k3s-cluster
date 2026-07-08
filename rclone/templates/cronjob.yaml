@@ -11,9 +11,11 @@ spec:
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
+      activeDeadlineSeconds: 14400
+      backoffLimit: 2
       template:
         spec:
-          restartPolicy: OnFailure
+          restartPolicy: Never
           securityContext:
             runAsNonRoot: false
             runAsUser: 0

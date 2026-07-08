@@ -2,6 +2,6 @@ apiVersion: v2
 name: rclone
 description: Encrypted backup to Google Drive
 type: application
-version: 0.1.5
+version: 0.1.6
 # renovate: image=rclone/rclone
 appVersion: "1.74.4"

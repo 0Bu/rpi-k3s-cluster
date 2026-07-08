@@ -20,6 +20,8 @@ volumes:
   - name: home-assistant
     path: /nfs/home-assistant
   - name: postgresql
-    path: /nfs/postgresql
+    # Nur die konsistenten logischen pg_dump-Backups sichern, nicht das
+    # live laufende PGDATA (inkonsistent/nicht zuverlaessig wiederherstellbar).
+    path: /nfs/postgresql/backup
   - name: victoria-metrics
     path: /nfs/victoria-metrics
