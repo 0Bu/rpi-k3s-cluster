@@ -14,23 +14,64 @@ data:
     DESTINATION="{{ .Values.rclone.destination }}"
     VM_API="http://vmsingle-vm.default.svc.cluster.local:8428"
 
-    # Gemeinsame rclone-Optionen. --max-delete bricht den Sync ab, falls eine
-    # (versehentlich) geleerte Quelle sonst das Remote-Backup loeschen wuerde.
-    RCLONE_OPTS="--config ${RCLONE_CONFIG} --checksum --max-delete 25 --transfers 2 --tpslimit 5 --retries 5 --retries-sleep 60s --log-level INFO"
+    # Gemeinsame rclone-Optionen.
+    # - Kein --checksum: das Crypt-Remote liefert keinen mit der Quelle
+    #   vergleichbaren Klartext-Hash; der Default (Groesse + mtime) ist
+    #   zuverlaessiger und guenstiger als naechtliches Hashen der Quelle.
+    # - --fast-list reduziert die Anzahl der Drive-API-Aufrufe.
+    # - --max-delete bricht den Sync ab, falls eine (versehentlich) geleerte
+    #   Quelle sonst das Remote-Backup loeschen wuerde.
+    RCLONE_OPTS="--config ${RCLONE_CONFIG} --fast-list --max-delete {{ .Values.rclone.maxDelete }} --transfers 2 --tpslimit 5 --retries 5 --retries-sleep 60s --log-level INFO"
+
+    ts() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+    # Status-Metrik nach VictoriaMetrics pushen (best-effort, nie fatal).
+    push_metric() {
+      wget -q -O- --post-data="$1" "${VM_API}/api/v1/import/prometheus" >/dev/null 2>&1 \
+        || echo "WARN: [$(ts)] failed to push metric to VictoriaMetrics"
+    }
+
+    # Ergebnis eines Volumes festhalten: Metrik pushen + FAILED pflegen.
+    record() {
+      vol="$1"
+      status="$2"
+      if [ "${status}" -eq 0 ]; then
+        push_metric "rclone_backup_success{volume=\"${vol}\"} 1"
+        push_metric "rclone_backup_last_success_timestamp_seconds{volume=\"${vol}\"} $(date +%s)"
+      else
+        push_metric "rclone_backup_success{volume=\"${vol}\"} 0"
+        FAILED="${FAILED} ${vol}"
+      fi
+      return 0
+    }
 
     run_backup() {
       local name="$1"
       local src="/data/${name}"
       local dst="${DESTINATION}${name}"
 
-      echo "==> [$(date -u +%Y-%m-%dT%H:%M:%SZ)] Starting backup: ${name}"
+      echo "==> [$(ts)] Starting backup: ${name}"
       # RCLONE_OPTS bewusst unquoted (Word-Splitting der Flags gewuenscht)
       rclone sync "${src}" "${dst}" ${RCLONE_OPTS}
-      echo "==> [$(date -u +%Y-%m-%dT%H:%M:%SZ)] Done: ${name}"
+    {{- if .Values.rclone.verify }}
+      echo "==> [$(ts)] Verifying: ${name}"
+      rclone cryptcheck "${src}" "${dst}" --config "${RCLONE_CONFIG}" --fast-list --one-way \
+        || echo "WARN: [$(ts)] verification reported differences for ${name}"
+    {{- end }}
+      echo "==> [$(ts)] Done: ${name}"
     }
 
     backup_victoria_metrics() {
-      echo "==> [$(date -u +%Y-%m-%dT%H:%M:%SZ)] Starting backup: victoria-metrics"
+      echo "==> [$(ts)] Starting backup: victoria-metrics"
+
+      # Verwaiste Snapshots aus abgebrochenen Laeufen aufraeumen (z.B. wenn der
+      # Pod per SIGKILL/OOM zwischen create und delete beendet wurde).
+      STALE=$(wget -qO- "${VM_API}/snapshot/list" 2>/dev/null \
+        | tr ',' '\n' | sed -n 's/.*"\([0-9][^"]*\)".*/\1/p')
+      for s in ${STALE}; do
+        echo "==> [$(ts)] Deleting stale snapshot: ${s}"
+        wget -qO- "${VM_API}/snapshot/delete?snapshot=${s}" >/dev/null 2>&1 || true
+      done
 
       RESPONSE=$(wget -qO- "${VM_API}/snapshot/create")
       SNAPSHOT=$(echo "${RESPONSE}" | sed -n 's/.*"snapshot":"\([^"]*\)".*/\1/p')
@@ -38,14 +79,21 @@ data:
         echo "ERROR: Failed to create victoria-metrics snapshot: ${RESPONSE}"
         return 1
       fi
-      echo "==> Snapshot created: ${SNAPSHOT}"
+      echo "==> [$(ts)] Snapshot created: ${SNAPSHOT}"
 
       SYNC_STATUS=0
       rclone sync "/data/victoria-metrics/snapshots/${SNAPSHOT}" "${DESTINATION}victoria-metrics" ${RCLONE_OPTS} || SYNC_STATUS=$?
+    {{- if .Values.rclone.verify }}
+      if [ "${SYNC_STATUS}" -eq 0 ]; then
+        rclone cryptcheck "/data/victoria-metrics/snapshots/${SNAPSHOT}" "${DESTINATION}victoria-metrics" \
+          --config "${RCLONE_CONFIG}" --fast-list --one-way \
+          || echo "WARN: [$(ts)] verification reported differences for victoria-metrics"
+      fi
+    {{- end }}
 
       wget -qO- "${VM_API}/snapshot/delete?snapshot=${SNAPSHOT}" > /dev/null || true
-      echo "==> Snapshot deleted: ${SNAPSHOT}"
-      echo "==> [$(date -u +%Y-%m-%dT%H:%M:%SZ)] Done: victoria-metrics"
+      echo "==> [$(ts)] Snapshot deleted: ${SNAPSHOT}"
+      echo "==> [$(ts)] Done: victoria-metrics"
 
       return ${SYNC_STATUS}
     }
@@ -53,9 +101,11 @@ data:
     FAILED=""
     {{- range .Values.volumes }}
     {{- if eq .name "victoria-metrics" }}
-    backup_victoria_metrics || FAILED="${FAILED} victoria-metrics"
+    st=0; backup_victoria_metrics || st=$?
+    record "victoria-metrics" "${st}"
     {{- else }}
-    run_backup "{{ .name }}" || FAILED="${FAILED} {{ .name }}"
+    st=0; run_backup "{{ .name }}" || st=$?
+    record "{{ .name }}" "${st}"
     {{- end }}
     {{- end }}
 
