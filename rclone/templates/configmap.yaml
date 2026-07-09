@@ -8,31 +8,77 @@ data:
     #!/bin/sh
     set -eu
 
-    # Secret-Mount ist read-only; Kopie in beschreibbares Verzeichnis
+    # Secret mount is read-only; copy to a writable location.
     cp /config/rclone.conf /tmp/rclone.conf
     RCLONE_CONFIG=/tmp/rclone.conf
     DESTINATION="{{ .Values.rclone.destination }}"
     VM_API="http://vmsingle-vm.default.svc.cluster.local:8428"
 
+    # Shared rclone options.
+    # - No --checksum: the crypt remote exposes no plaintext hash comparable
+    #   to the source, so it degrades to a size-only check; the default
+    #   (size + mtime) is more reliable and cheaper than hashing the source
+    #   every night.
+    # - --fast-list reduces the number of Drive API calls.
+    # - --max-delete aborts the sync if an (accidentally) emptied source would
+    #   otherwise wipe the remote backup.
+    RCLONE_OPTS="--config ${RCLONE_CONFIG} --fast-list --max-delete {{ .Values.rclone.maxDelete }} --transfers 2 --tpslimit 5 --retries 5 --retries-sleep 60s --log-level INFO"
+
+    ts() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+    # Push a status metric to VictoriaMetrics (best-effort, never fatal).
+    push_metric() {
+      wget -q -O- --post-data="$1" "${VM_API}/api/v1/import/prometheus" >/dev/null 2>&1 \
+        || echo "WARN: [$(ts)] failed to push metric to VictoriaMetrics"
+    }
+
+    # Record a volume result: push the metric and update FAILED.
+    record() {
+      vol="$1"
+      status="$2"
+      if [ "${status}" -eq 0 ]; then
+        push_metric "rclone_backup_success{volume=\"${vol}\"} 1"
+        push_metric "rclone_backup_last_success_timestamp_seconds{volume=\"${vol}\"} $(date +%s)"
+      else
+        push_metric "rclone_backup_success{volume=\"${vol}\"} 0"
+        FAILED="${FAILED} ${vol}"
+      fi
+      return 0
+    }
+
     run_backup() {
       local name="$1"
       local src="/data/${name}"
       local dst="${DESTINATION}${name}"
+      local rc=0
 
-      echo "==> [$(date -u +%Y-%m-%dT%H:%M:%SZ)] Starting backup: ${name}"
-      rclone sync "${src}" "${dst}" \
-        --config "${RCLONE_CONFIG}" \
-        --checksum \
-        --transfers 2 \
-        --tpslimit 5 \
-        --retries 5 \
-        --retries-sleep 60s \
-        --log-level INFO
-      echo "==> [$(date -u +%Y-%m-%dT%H:%M:%SZ)] Done: ${name}"
+      echo "==> [$(ts)] Starting backup: ${name}"
+      # RCLONE_OPTS is intentionally unquoted (flag word-splitting is wanted).
+      # Capture the exit code explicitly: set -e is disabled while this
+      # function runs as the left side of `|| st=$?`, so a failing sync would
+      # otherwise fall through and the function would still return 0.
+      rclone sync "${src}" "${dst}" ${RCLONE_OPTS} || rc=$?
+    {{- if .Values.rclone.verify }}
+      if [ "${rc}" -eq 0 ]; then
+        echo "==> [$(ts)] Verifying: ${name}"
+        rclone cryptcheck "${src}" "${dst}" --config "${RCLONE_CONFIG}" --fast-list --one-way || rc=$?
+      fi
+    {{- end }}
+      echo "==> [$(ts)] Done: ${name}"
+      return ${rc}
     }
 
     backup_victoria_metrics() {
-      echo "==> [$(date -u +%Y-%m-%dT%H:%M:%SZ)] Starting backup: victoria-metrics"
+      echo "==> [$(ts)] Starting backup: victoria-metrics"
+
+      # Clean up snapshots orphaned by aborted runs (e.g. when the pod was
+      # killed via SIGKILL/OOM between create and delete) before creating one.
+      STALE=$(wget -qO- "${VM_API}/snapshot/list" 2>/dev/null \
+        | tr ',' '\n' | sed -n 's/.*"\([0-9][^"]*\)".*/\1/p')
+      for s in ${STALE}; do
+        echo "==> [$(ts)] Deleting stale snapshot: ${s}"
+        wget -qO- "${VM_API}/snapshot/delete?snapshot=${s}" >/dev/null 2>&1 || true
+      done
 
       RESPONSE=$(wget -qO- "${VM_API}/snapshot/create")
       SNAPSHOT=$(echo "${RESPONSE}" | sed -n 's/.*"snapshot":"\([^"]*\)".*/\1/p')
@@ -40,21 +86,21 @@ data:
         echo "ERROR: Failed to create victoria-metrics snapshot: ${RESPONSE}"
         return 1
       fi
-      echo "==> Snapshot created: ${SNAPSHOT}"
+      echo "==> [$(ts)] Snapshot created: ${SNAPSHOT}"
 
       SYNC_STATUS=0
-      rclone sync "/data/victoria-metrics/snapshots/${SNAPSHOT}" "${DESTINATION}victoria-metrics" \
-        --config "${RCLONE_CONFIG}" \
-        --checksum \
-        --transfers 2 \
-        --tpslimit 5 \
-        --retries 5 \
-        --retries-sleep 60s \
-        --log-level INFO || SYNC_STATUS=$?
+      rclone sync "/data/victoria-metrics/snapshots/${SNAPSHOT}" "${DESTINATION}victoria-metrics" ${RCLONE_OPTS} || SYNC_STATUS=$?
+    {{- if .Values.rclone.verify }}
+      if [ "${SYNC_STATUS}" -eq 0 ]; then
+        rclone cryptcheck "/data/victoria-metrics/snapshots/${SNAPSHOT}" "${DESTINATION}victoria-metrics" \
+          --config "${RCLONE_CONFIG}" --fast-list --one-way || SYNC_STATUS=$?
+      fi
+    {{- end }}
 
+      # Always delete the snapshot we created, regardless of the sync result.
       wget -qO- "${VM_API}/snapshot/delete?snapshot=${SNAPSHOT}" > /dev/null || true
-      echo "==> Snapshot deleted: ${SNAPSHOT}"
-      echo "==> [$(date -u +%Y-%m-%dT%H:%M:%SZ)] Done: victoria-metrics"
+      echo "==> [$(ts)] Snapshot deleted: ${SNAPSHOT}"
+      echo "==> [$(ts)] Done: victoria-metrics"
 
       return ${SYNC_STATUS}
     }
@@ -62,9 +108,11 @@ data:
     FAILED=""
     {{- range .Values.volumes }}
     {{- if eq .name "victoria-metrics" }}
-    backup_victoria_metrics || FAILED="${FAILED} victoria-metrics"
+    st=0; backup_victoria_metrics || st=$?
+    record "victoria-metrics" "${st}"
     {{- else }}
-    run_backup "{{ .name }}" || FAILED="${FAILED} {{ .name }}"
+    st=0; run_backup "{{ .name }}" || st=$?
+    record "{{ .name }}" "${st}"
     {{- end }}
     {{- end }}
 

@@ -77,3 +77,26 @@ rclone sync google-drive-crypt:home-assistant /nfs/home-assistant \
   --progress \
   --transfers 4
 ```
+
+## Monitoring
+
+The CronJob pushes per-volume status metrics to VictoriaMetrics after every run:
+
+| Metric | Meaning |
+| --- | --- |
+| `rclone_backup_success{volume}` | `1` on success, `0` on failure of the last run |
+| `rclone_backup_last_success_timestamp_seconds{volume}` | Unix time of the last successful backup |
+
+Import [`dashboards/rclone-backup.json`](dashboards/rclone-backup.json) into Grafana
+(**Dashboards → New → Import**) and pick the VictoriaMetrics/Prometheus data source
+when prompted.
+
+`vmalert`/`alertmanager` are disabled in this cluster, so there is no active
+notification path. Once one is enabled, alert on:
+
+```promql
+# a volume has not been backed up successfully for > 26h
+time() - max by (volume) (rclone_backup_last_success_timestamp_seconds) > 93600
+# or the last run failed
+min by (volume) (rclone_backup_success) == 0
+```
