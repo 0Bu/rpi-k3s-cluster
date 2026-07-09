@@ -2,12 +2,26 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: {{ .Release.Name }}
+  annotations:
+    pv.kubernetes.io/provisioned-by: rclone.csi.veloxpack.io
 spec:
   capacity:
     storage: 5Gi
   accessModes:
     - ReadWriteOnce
+  # Retain: deleting the PVC must never trigger a delete against the rclone
+  # remote (that would wipe AdGuard's live data on Google Drive).
   persistentVolumeReclaimPolicy: Retain
-  nfs:
-    server: {{ .Values.nfs.server }}
-    path: {{ .Values.nfs.path }}
+  mountOptions:
+    {{- toYaml .Values.rclone.mountOptions | nindent 4 }}
+  csi:
+    driver: rclone.csi.veloxpack.io
+    volumeHandle: {{ .Release.Name }}
+    # Credentials (rclone.conf) come from the sealed secret; the non-sensitive
+    # remote/path are set here (volumeAttributes have highest precedence).
+    nodePublishSecretRef:
+      name: {{ .Release.Name }}-rclone
+      namespace: default
+    volumeAttributes:
+      remote: {{ .Values.rclone.remote | quote }}
+      remotePath: {{ .Values.rclone.remotePath | quote }}

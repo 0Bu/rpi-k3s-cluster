@@ -3,6 +3,28 @@ image:
   tag: v0.107.77@sha256:e6f2b8bcda06064ab055b44933a4f0e983c35558b9cdb8d2e7ab1efcee36d890
 service:
   loadBalancerIPs: 192.168.1.20, fd7c:3b4a:5f1d::20
-nfs:
-  server: 192.168.1.5
-  path: /nfs/adguard
+
+# Live storage via csi-driver-rclone (FUSE) instead of NFS.
+#
+# ⚠️ WARNING: AdGuard Home stores bbolt databases (work/data/stats.db,
+# sessions.db) and rewrites AdGuardHome.yaml via atomic rename. Cloud/object
+# storage over FUSE supports neither mmap+locking nor atomic renames, so this
+# carries a real data-corruption/-loss risk. See issue #2272. The mount options
+# below (full VFS cache + fast write-back) reduce, but do not eliminate, it.
+rclone:
+  # rclone remote + path. `google-drive-crypt:adguard` is the same encrypted
+  # location the nightly rclone backup already syncs to, so the remote already
+  # holds AdGuard's current data.
+  remote: google-drive-crypt
+  remotePath: adguard
+  # rclone mount flags passed via PV.spec.mountOptions.
+  mountOptions:
+    - vfs-cache-mode=full
+    - vfs-write-back=1s
+    - dir-cache-time=5s
+    - vfs-cache-max-age=168h
+  # Sealed rclone.conf (INI) exposed to the driver under the `configData` key.
+  # It must contain the [google-drive-crypt] remote and the [google-drive]
+  # remote it wraps. This is the SAME plaintext as the existing `rclone-config`
+  # secret — re-seal it under this SealedSecret's name/key (see README.md).
+  sealedConfig: "REPLACE_ME__run_kubeseal__see_adguard_README"

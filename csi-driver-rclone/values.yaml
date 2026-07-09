@@ -1,0 +1,13 @@
+# Upstream csi-driver-rclone configuration.
+#
+# NOTE: the node plugin is a privileged DaemonSet (FUSE mounts, SYS_ADMIN,
+# hostPath onto the kubelet dir, bidirectional mount propagation). This is
+# inherent to the driver and cannot be avoided.
+csi-driver-rclone:
+  # k3s uses the standard kubelet directory.
+  kubeletDir: /var/lib/kubelet
+
+  # No StorageClass — consumers bind a static PV that pins the rclone remote
+  # and path (see adguard/templates/pv.yaml).
+  storageClass:
+    create: false

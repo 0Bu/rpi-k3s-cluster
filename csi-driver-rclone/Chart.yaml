@@ -1,0 +1,11 @@
+apiVersion: v2
+name: csi-driver-rclone
+description: CSI driver to mount rclone remotes (cloud storage) as PersistentVolumes
+type: application
+version: 1.0.0
+# renovate: image=ghcr.io/veloxpack/charts/csi-driver-rclone
+appVersion: "0.4.11"
+dependencies:
+  - name: csi-driver-rclone
+    version: "0.4.11"
+    repository: oci://ghcr.io/veloxpack/charts
