@@ -1,0 +1,90 @@
+{{- /*
+  SCAFFOLD — Daikin Altherma 3 R (Home Hub EKRHH) Modbus input for Telegraf.
+
+  Renders ONLY when `daikin.enabled: true` is set (default: false).
+  This keeps it inert after a merge, until the heat pump is installed and the
+  registers are filled in from the EKRHH / Daikin Modbus documentation.
+
+  Activation (after commissioning, see telegraf/DAIKIN-MODBUS.md):
+    1. Fill in the real registers below (slave_id/address/type/scale/byte_order)
+    2. In values.yaml: set daikin.enabled=true and uncomment DAIKIN_MODBUS_CONTROLLER,
+       the volume, the mountPoint and `--config-directory /etc/telegraf/daikin.d`
+    3. Test against the unit first (debug/file output), then write to VictoriaMetrics
+*/ -}}
+{{- if .Values.daikin.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telegraf-modbus-daikin
+  labels:
+    app.kubernetes.io/name: telegraf
+data:
+  daikin.conf: |
+    # =====================================================================
+    # Daikin Altherma 3 R — ERGA04-08E / ETBH12E / EKHWSP via Home Hub EKRHH
+    # PLACEHOLDERS: fill slave_id, address, type, scale, byte_order from the
+    # EKRHH / Daikin Modbus documentation. Metric names are chosen to match
+    # analyse/vergleich_run.py in the WP project
+    # (daikin_energy_input, daikin_heat_output, daikin_compressor_starts, ...).
+    # =====================================================================
+    [[inputs.modbus]]
+      name = "daikin"
+      # RTU (RS485):  file:///dev/ttyUSB0   |  TCP:  tcp://<home-hub-ip>:502
+      controller = "${DAIKIN_MODBUS_CONTROLLER}"
+      configuration_type = "request"
+      interval = "30s"
+      timeout = "5s"
+      busy_retries = 3
+      busy_retries_wait = "500ms"
+      # RTU parameters only needed for a serial connection (TODO: verify):
+      # baud_rate = 9600
+      # data_bits = 8
+      # parity = "N"
+      # stop_bits = 1
+      [inputs.modbus.tags]
+        device = "daikin_altherma_3r"
+
+      # -- Energy (lifetime counters, kWh) ------------------------------
+      # -> daikin_energy_input (electricity in), daikin_energy_heat_output (heat out)
+      #    Basis for COP/SCOP = heat_output / energy_input.
+      [[inputs.modbus.request]]
+        slave_id = 1              # TODO: real slave ID (Daikin address)
+        byte_order = "ABCD"       # TODO: verify (AB | BA | ABCD | CDAB | DCBA)
+        register = "holding"      # TODO: holding | input
+        measurement = "daikin"
+        # TODO: fill in real registers, then uncomment:
+        fields = [
+          # {name = "energy_input",  address = 0, type = "UINT32", scale = 0.1},  # kWh electricity
+          # {name = "heat_output",   address = 0, type = "UINT32", scale = 0.1},  # kWh heat
+          # {name = "energy_dhw",    address = 0, type = "UINT32", scale = 0.1},  # kWh DHW share
+        ]
+
+      # -- Temperatures (deg C) -----------------------------------------
+      # -> daikin_flow_temp, daikin_return_temp, daikin_outdoor_temp, daikin_dhw_tank_temp
+      [[inputs.modbus.request]]
+        slave_id = 1              # TODO
+        byte_order = "AB"         # TODO
+        register = "holding"      # TODO
+        measurement = "daikin"
+        fields = [
+          # {name = "flow_temp",     address = 0, type = "INT16", scale = 0.1},
+          # {name = "return_temp",   address = 0, type = "INT16", scale = 0.1},
+          # {name = "outdoor_temp",  address = 0, type = "INT16", scale = 0.1},
+          # {name = "dhw_tank_temp", address = 0, type = "INT16", scale = 0.1},
+        ]
+
+      # -- Status / operation -------------------------------------------
+      # -> daikin_power_input (W), daikin_compressor_modulation (%),
+      #    daikin_compressor_starts (n), daikin_defrost_active (0/1)
+      [[inputs.modbus.request]]
+        slave_id = 1              # TODO
+        byte_order = "ABCD"       # TODO
+        register = "holding"      # TODO
+        measurement = "daikin"
+        fields = [
+          # {name = "power_input",           address = 0, type = "INT32",  scale = 1.0},
+          # {name = "compressor_modulation", address = 0, type = "UINT16", scale = 1.0},
+          # {name = "compressor_starts",     address = 0, type = "UINT32", scale = 1.0},
+          # {name = "defrost_active",        address = 0, type = "UINT16", scale = 1.0},
+        ]
+{{- end }}
