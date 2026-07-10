@@ -87,9 +87,9 @@ The CronJob pushes per-volume status metrics to VictoriaMetrics after every run:
 | `rclone_backup_success{volume}` | `1` on success, `0` on failure of the last run |
 | `rclone_backup_last_success_timestamp_seconds{volume}` | Unix time of the last successful backup |
 
-Import [`dashboards/rclone-backup.json`](dashboards/rclone-backup.json) into Grafana
-(**Dashboards → New → Import**) and pick the VictoriaMetrics/Prometheus data source
-when prompted.
+The **rclone Backups** dashboard (uid `rclone-backups`) is maintained directly in
+Grafana via its API and wired to the VictoriaMetrics data source — see the root
+`CLAUDE.md` (*Grafana Dashboards*) for how dashboards are managed in this cluster.
 
 `vmalert`/`alertmanager` are disabled in this cluster, so there is no active
 notification path. Once one is enabled, alert on:
