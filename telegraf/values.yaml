@@ -1,3 +1,9 @@
+# Daikin heat pump (Modbus) — flip to true once the heat pump is installed and
+# the connection to the Home Hub EKRHH is verified. Registers are already mapped
+# in templates/configmap-daikin.yaml. Step-by-step activation: telegraf/DAIKIN-MODBUS.md
+daikin:
+  enabled: false
+
 telegraf:
   service:
     enabled: false
@@ -8,6 +14,9 @@ telegraf:
       value: "http://vmsingle-vm:8428"
     - name: MODBUS_CONTROLLER
       value: "tcp://192.168.107.186:502"
+    # Daikin Home Hub EKRHH — uncomment on activation (TCP port 502, or RTU serial):
+    # - name: DAIKIN_MODBUS_CONTROLLER
+    #   value: "tcp://<home-hub-ip>:502"   # or RTU: file:///dev/ttyUSB0
 
   config:
     agent:
@@ -91,12 +100,22 @@ telegraf:
     - /etc/telegraf/telegraf.conf
     - --config-directory
     - /etc/telegraf/conf.d
+    # Daikin — uncomment on activation:
+    # - --config-directory
+    # - /etc/telegraf/daikin.d
 
   volumes:
     - name: telegraf-modbus
       configMap:
         name: telegraf-modbus
+    # Daikin — uncomment on activation:
+    # - name: telegraf-modbus-daikin
+    #   configMap:
+    #     name: telegraf-modbus-daikin
 
   mountPoints:
     - name: telegraf-modbus
       mountPath: /etc/telegraf/conf.d
+    # Daikin — uncomment on activation:
+    # - name: telegraf-modbus-daikin
+    #   mountPath: /etc/telegraf/daikin.d
