@@ -57,6 +57,11 @@ victoria-metrics:
     spec:
       retentionPeriod: "100y"
       replicaCount: 1
+      # Deduplizierung: kollabiert exakt gleiche Zeitstempel pro Serie auf einen
+      # Wert (verlustfrei für Scrapes ≥1s). Nötig, damit Re-Imports der
+      # historischen InfluxDB-ems-esp-Daten idempotent sind (kein Doppelzählen).
+      extraArgs:
+        dedup.minScrapeInterval: "1ms"
       # Wiederverwendung des bestehenden NFS-PV `victoria-metrics`.
       # Voraussetzung beim Cutover: alte PVC gelöscht und PV-claimRef bereinigt.
       storage:
