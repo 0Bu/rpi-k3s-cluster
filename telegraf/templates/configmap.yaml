@@ -130,8 +130,9 @@ data:
           {name = "temp_min",      address = 37618, type = "INT16",  scale = 0.1},
           {name = "cell_v_max",    address = 37619, type = "UINT16", scale = 1.0},
           {name = "cell_v_min",    address = 37620, type = "UINT16", scale = 1.0},
-          # Verbleibende Energie / Kapazität (Wh; gain=0.1 → scale=10.0)
-          {name = "remain_energy", address = 37632, type = "UINT16", scale = 10.0},
+          # remain_energy (37632) entfernt: BMS meldet konstant design_energy
+          # unabhängig vom SoC → keine Aussagekraft (Restenergie via soc/100 * design_energy ableiten)
+          # Full Charge Capacity (Ah; gain=10 → scale=0.1)
           {name = "fcc_capacity",  address = 37633, type = "UINT16", scale = 0.1},
           # Design-Energie (Wh; gain=0.1 → scale=10.0)
           {name = "design_energy", address = 37635, type = "UINT16", scale = 10.0}
@@ -139,7 +140,8 @@ data:
 
       # ── Batterie Wechselrichter-seitig (39xxx) ────────────────────────────
       # Tab. 3-5: Spannung, Strom, Leistung vom Wechselrichter gemessen
-      # Vorzeichen: positiv = Laden, negativ = Entladen
+      # Vorzeichen (WR-seitig, Protokoll 39228/39237): positiv = Entladen, negativ = Laden
+      #   Achtung: Gegenkonvention zur BMS-Strommessung (37610: positiv = Laden)
       [[inputs.modbus.request]]
         slave_id = 247
         byte_order = "ABCD"
