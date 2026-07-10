@@ -45,18 +45,33 @@ Related analysis project: `~/Projects/waermepumpe-vs-gas/`
 
 ## Mapped metrics
 
-Input registers (`daikin_*`): `abnormality`, `abnormality_code`,
-`abnormality_sub`, `circulation_pump`, `compressor`, `booster_heater`,
-`disinfection`, `defrost`, `hot_start`, `three_way_valve`, `operation_mode`,
-`leaving_water_phe`, `leaving_water_buh`, `return_water`, `domestic_hot_water`,
-`outside_air`, `liquid_refrigerant`, `flow_rate` (L/min), `room_temperature`,
-`power_consumption` (kW), `dhw_operation`, `space_operation`, `dhw_upper`,
-`dhw_lower`.
+**All 36 input registers (§9.2.2) and all 23 holding registers (§9.2.1) are
+read** — 59 fields total, in 8 request blocks.
 
-Holding registers (`daikin_set_*`, read for monitoring): main leaving-water /
-room / DHW setpoints, operation mode, quiet mode, weather-dependent mode +
-offsets, smart-grid mode, and power limits. The additional (Add) zone block is
-commented out — it returns `32766` on single-zone systems.
+Input registers (`daikin_*`):
+
+- Status/operation: `abnormality`, `abnormality_code`, `abnormality_sub`,
+  `circulation_pump`, `compressor`, `booster_heater`, `disinfection`, `defrost`,
+  `hot_start`, `three_way_valve`, `operation_mode`, `dhw_operation`,
+  `space_operation`.
+- Sensors: `leaving_water_phe`, `leaving_water_buh`, `return_water`,
+  `domestic_hot_water`, `outside_air`, `liquid_refrigerant`, `flow_rate` (L/min),
+  `room_temperature`, `power_consumption` (kW), `dhw_upper`, `dhw_lower`.
+- Setpoint limits (field-setting ranges): `limit_lwt_{heat,cool}_{main,add}_{lower,upper}`,
+  `limit_room_{heat,cool}_{lower,upper}`.
+
+Holding registers (`daikin_set_*` / `daikin_thermostat_*`, read for monitoring):
+main + Add-zone leaving-water / room / DHW setpoints, operation mode, quiet mode,
+weather-dependent mode + offsets, smart-grid mode, power limits, and the two
+external thermostat inputs.
+
+> Registers for features that aren't fitted return **special values** (§9.2.3),
+> not Modbus errors, so reading everything is safe: the Add-zone `set_*_add` /
+> `limit_*_add` registers read `32766` on single-zone systems, cooling registers
+> read `32766` on heating-only setups, and `thermostat_main_input` /
+> `thermostat_add_input` (holding 59/61) are **not operational** on Altherma 3 R
+> indoor units (Micon ID 20002203) — expect `0`. Filter these out downstream
+> (drop `> 300` after Temp16/Pow16 scaling, or `32765..32767` raw).
 
 ### ⚠️ Not available over EKRHH Modbus
 
