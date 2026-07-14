@@ -1,0 +1,58 @@
+{{- if .Values.mcp.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: victoria-metrics-mcp
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: victoria-metrics-mcp
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.mcp.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: victoria-metrics-mcp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: victoria-metrics-mcp
+    spec:
+      containers:
+        - name: mcp
+          image: "{{ .Values.mcp.image.repository }}:{{ .Values.mcp.image.tag }}"
+          imagePullPolicy: {{ .Values.mcp.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: VM_INSTANCE_ENTRYPOINT
+              value: "http://vmsingle-vm:8428"
+            - name: VM_INSTANCE_TYPE
+              value: "{{ .Values.mcp.vmInstanceType }}"
+            - name: MCP_SERVER_MODE
+              value: "{{ .Values.mcp.serverMode }}"
+            - name: MCP_LISTEN_ADDR
+              value: "{{ .Values.mcp.listenAddr }}"
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /health/readiness
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+{{- end }}

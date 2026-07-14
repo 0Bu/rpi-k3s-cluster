@@ -1,0 +1,19 @@
+{{- if .Values.mcp.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: victoria-metrics-mcp
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: victoria-metrics-mcp
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: victoria-metrics-mcp
+{{- end }}
