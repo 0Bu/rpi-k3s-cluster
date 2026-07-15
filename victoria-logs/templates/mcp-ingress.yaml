@@ -1,0 +1,30 @@
+{{- if and .Values.mcp.enabled .Values.mcp.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: victoria-logs-mcp
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- toYaml .Values.mcp.ingress.annotations | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.mcp.ingress.ingressClassName }}
+  rules:
+    {{- range .Values.mcp.ingress.hosts }}
+    - host: {{ .host }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: victoria-logs-mcp
+                port:
+                  number: 8080
+          {{- end }}
+    {{- end }}
+  {{- if .Values.mcp.ingress.tls }}
+  tls:
+    {{- toYaml .Values.mcp.ingress.tls | nindent 4 }}
+  {{- end }}
+{{- end }}
