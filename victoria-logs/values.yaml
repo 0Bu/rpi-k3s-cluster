@@ -62,6 +62,8 @@ victoria-logs:
     service:
       enabled: true
       type: LoadBalancer
+      annotations:
+        metallb.io/loadBalancerIPs: 192.168.1.22
       ports:
         - name: syslog-udp
           port: 514
