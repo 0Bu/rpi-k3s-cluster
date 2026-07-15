@@ -1,0 +1,36 @@
+nfs:
+  server: 192.168.1.5
+  path: /nfs/victoria-logs
+
+victoria-logs:
+  server:
+    fullnameOverride: vlogs
+    retentionPeriod: 1 # 1 month retention
+    
+    persistentVolume:
+      enabled: true
+      existingClaim: "victoria-logs"
+      
+    ingress:
+      enabled: true
+      ingressClassName: traefik
+      annotations:
+        traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
+      hosts:
+        - name: victoria-logs.burau.dev
+          path:
+            - /
+          port: http
+        - name: logs.burau.dev
+          path:
+            - /
+          port: http
+      tls:
+        - secretName: cloudflare-tls
+          hosts:
+            - victoria-logs.burau.dev
+            - logs.burau.dev
+
+  # Enable log collection via vector
+  vector:
+    enabled: true
