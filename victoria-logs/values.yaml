@@ -49,6 +49,77 @@ victoria-logs:
       limits:
         cpu: 200m
         memory: 128Mi
+    containerPorts:
+      - name: prom-exporter
+        containerPort: 9090
+        protocol: TCP
+      - name: syslog-udp
+        containerPort: 1514
+        protocol: UDP
+      - name: syslog-tcp
+        containerPort: 1514
+        protocol: TCP
+    service:
+      enabled: true
+      type: LoadBalancer
+      ports:
+        - name: prom-exporter
+          port: 9090
+          protocol: TCP
+          targetPort: 9090
+        - name: syslog-udp
+          port: 514
+          protocol: UDP
+          targetPort: 1514
+        - name: syslog-tcp
+          port: 514
+          protocol: TCP
+          targetPort: 1514
+    customConfig:
+      data_dir: /vector-data-dir
+      api:
+        enabled: false
+        address: 0.0.0.0:8686
+      sources:
+        k8s:
+          type: kubernetes_logs
+        internal_metrics:
+          type: internal_metrics
+        syslog_udp:
+          type: syslog
+          address: 0.0.0.0:1514
+          mode: udp
+        syslog_tcp:
+          type: syslog
+          address: 0.0.0.0:1514
+          mode: tcp
+      transforms:
+        parser:
+          type: remap
+          inputs: [k8s]
+          source: |
+            .log = parse_json(.message) ?? .message
+            del(.message)
+      sinks:
+        exporter:
+          type: prometheus_exporter
+          address: 0.0.0.0:9090
+          inputs: [internal_metrics]
+        vlogs:
+          type: elasticsearch
+          inputs: [parser, syslog_udp, syslog_tcp]
+          mode: bulk
+          api_version: v8
+          compression: gzip
+          healthcheck:
+            enabled: false
+          request:
+            headers:
+              VL-Time-Field: timestamp
+              VL-Stream-Fields: stream,kubernetes.pod_name,kubernetes.container_name,kubernetes.pod_namespace,hostname,appname,facility,severity,source_type
+              VL-Msg-Field: message,msg,_msg,log.msg,log.message,log
+              AccountID: "0"
+              ProjectID: "0"
 
 mcp:
   enabled: true
