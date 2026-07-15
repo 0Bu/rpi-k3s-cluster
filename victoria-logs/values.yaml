@@ -6,11 +6,11 @@ victoria-logs:
   server:
     fullnameOverride: vlogs
     retentionPeriod: 1 # 1 month retention
-    
+
     persistentVolume:
       enabled: true
       existingClaim: "victoria-logs"
-      
+
     resources:
       requests:
         cpu: 100m
@@ -18,7 +18,7 @@ victoria-logs:
       limits:
         cpu: "1"
         memory: 512Mi
-      
+
     ingress:
       enabled: true
       ingressClassName: traefik
@@ -63,10 +63,6 @@ victoria-logs:
       enabled: true
       type: LoadBalancer
       ports:
-        - name: prom-exporter
-          port: 9090
-          protocol: TCP
-          targetPort: 9090
         - name: syslog-udp
           port: 514
           protocol: UDP
