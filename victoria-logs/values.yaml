@@ -11,6 +11,14 @@ victoria-logs:
       enabled: true
       existingClaim: "victoria-logs"
       
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: "1"
+        memory: 512Mi
+      
     ingress:
       enabled: true
       ingressClassName: traefik
@@ -34,3 +42,10 @@ victoria-logs:
   # Enable log collection via vector
   vector:
     enabled: true
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
