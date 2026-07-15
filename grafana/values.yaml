@@ -18,3 +18,13 @@ grafana:
     existingClaim: grafana
   plugins:
     - volkovlabs-echarts-panel
+    - victoriametrics-logs-datasource
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: VictoriaLogs
+          type: victoriametrics-logs-datasource
+          access: proxy
+          url: http://vlogs:9428
+          isDefault: false
