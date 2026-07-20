@@ -54,6 +54,7 @@ telegraf:
             - "shelly1pmminig4-ccba97c4e854/status/#"
             - "shelly1pmminig4-ccba97c65f18/status/#"
             - "shellypill-d885ac1a6284/status/#"
+            - "shelly3em63g3-e4b063f32e48/status/#"
           data_format: "json"
       # Tibber Pulse Bridge — meter readings published by tibber-pulse-bot.
       # Listed topics are float-only; text fields (manufacturer, device_id,
