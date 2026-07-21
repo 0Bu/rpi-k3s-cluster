@@ -61,9 +61,8 @@ telegraf:
           servers: ["tcp://mosquitto:1883"]
           topics:
             - "tibber/#"
-          data_format: "value"
-          data_type: "float"
           topic_tag: "topic"
+          data_format: "json"
 
   args:
     - --config
