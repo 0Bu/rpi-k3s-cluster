@@ -63,6 +63,33 @@ telegraf:
             - "tibber/#"
           topic_tag: "topic"
           data_format: "json"
+      # ── Daikin Altherma ESP32 (X10A-Bridge) ──────────────────────────────
+      # Firmware daikin-altherma-esp32 publiziert zwei JSON-Topics unter
+      # <base> = "daikin-altherma-esp32" (CONFIG_DAIKIN_MQTT_BASE_TOPIC):
+      #   <base>/state     - gruppiertes Wärmepumpen-JSON, on-change (retained)
+      #   <base>/heartbeat - flache Board-/Link-Diagnose, fester 10s-Takt
+      # /status (LWT online/offline) und /crash sind kein Metrik-JSON und
+      # werden bewusst nicht abonniert (Parser würde fehlschlagen).
+      #
+      # Der json-Parser übernimmt nur numerische Felder; verschachtelte Objekte
+      # im state-Topic werden mit "_" zu flachen Feldnamen verkettet, z.B.
+      # outdoor_sensors.leaving_water_temp -> outdoor_sensors_leaving_water.
+      # Enum-/Text-/Boolean-Felder verwirft der Parser (Metrik-Store ist
+      # numerisch); Bus-/Heap-/RSSI-Zähler decken die Diagnose numerisch ab.
+      - mqtt_consumer:
+          name_override: "daikin_altherma"
+          servers: ["tcp://mosquitto:1883"]
+          topics: ["daikin-altherma-esp32/state"]
+          data_format: "json"
+          tags:
+            device: "daikin-altherma-esp32"
+      - mqtt_consumer:
+          name_override: "daikin_heartbeat"
+          servers: ["tcp://mosquitto:1883"]
+          topics: ["daikin-altherma-esp32/heartbeat"]
+          data_format: "json"
+          tags:
+            device: "daikin-altherma-esp32"
 
   args:
     - --config
