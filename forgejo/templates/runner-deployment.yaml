@@ -17,6 +17,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: forgejo-runner
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/runner-configmap.yaml") . | sha256sum }}
     spec:
       # The runner image runs as uid 1000 and writes .runner into its /data
       # workdir, which an emptyDir would otherwise create as root-owned.
@@ -83,8 +85,9 @@ spec:
               forgejo-runner create-runner-file \
                 --instance "$FORGEJO_URL" \
                 --name "$RUNNER_NAME" \
-                --secret "$RUNNER_SECRET"
-              exec forgejo-runner daemon
+                --secret "$RUNNER_SECRET" \
+                --config /config/config.yaml
+              exec forgejo-runner daemon --config /config/config.yaml
           resources:
             {{- toYaml .Values.runner.resources.runner | nindent 12 }}
           volumeMounts:
@@ -92,6 +95,9 @@ spec:
               mountPath: /data
             - name: docker-socket
               mountPath: /shared
+            - name: config
+              mountPath: /config
+              readOnly: true
       volumes:
         - name: docker-storage
           emptyDir: {}
@@ -99,4 +105,7 @@ spec:
           emptyDir: {}
         - name: docker-socket
           emptyDir: {}
+        - name: config
+          configMap:
+            name: forgejo-runner
 {{- end }}

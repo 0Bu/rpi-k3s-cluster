@@ -14,11 +14,14 @@ runner:
     image:
       repository: docker
       tag: "29.6.2-dind"
-  # Labels are owned by the server-side registration, not by the runner. Keep
-  # this in sync with the `forgejo-cli actions register --labels` call in
-  # README.md. `ubuntu-latest` is mapped so workflows written for GitHub find a
-  # matching runner.
-  labels: docker:docker://node:22-bookworm,ubuntu-latest:docker://node:22-bookworm
+  # The daemon declares these on every start and overwrites whatever the server
+  # has, so this is the only place labels are defined. `ubuntu-latest` is mapped
+  # so workflows written for GitHub find a matching runner.
+  labels:
+    - docker:docker://node:22-bookworm
+    - ubuntu-latest:docker://node:22-bookworm
+  # Concurrent jobs. One is plenty for a single Pi.
+  capacity: 1
   resources:
     runner:
       requests:

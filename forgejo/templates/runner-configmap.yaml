@@ -1,0 +1,28 @@
+{{- if .Values.runner.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forgejo-runner
+  labels:
+    app.kubernetes.io/name: forgejo-runner
+data:
+  config.yaml: |
+    log:
+      level: info
+    runner:
+      file: /data/.runner
+      capacity: {{ .Values.runner.capacity }}
+      timeout: 1h
+      # The daemon reports these to the server on every start, overwriting the
+      # server side. Registering with `--labels` alone is not enough.
+      labels:
+        {{- range .Values.runner.labels }}
+        - {{ . | quote }}
+        {{- end }}
+    container:
+      # Empty means "take it from DOCKER_HOST".
+      docker_host: ""
+      network: bridge
+      privileged: false
+      force_pull: false
+{{- end }}
