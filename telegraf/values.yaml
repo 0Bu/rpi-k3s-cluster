@@ -1,3 +1,11 @@
+# Daikin heat pump (Modbus) — ACTIVE. Home Hub EKRHH reachable at 192.168.1.131:502
+# (slave_id 1); the full §9.2 register map in templates/configmap-daikin.yaml was
+# verified live against the unit (all 8 request blocks read, no IllegalDataAddress).
+# Registers currently return the §9.2.3 "wait for value"/"unsupported" sentinels
+# until the heat pump delivers live data — filter downstream (see telegraf/DAIKIN-MODBUS.md).
+daikin:
+  enabled: true
+
 telegraf:
   service:
     enabled: false
@@ -8,6 +16,9 @@ telegraf:
       value: "http://vmsingle-vm:8428"
     - name: MODBUS_CONTROLLER
       value: "tcp://192.168.107.186:502"
+    # Daikin Home Hub EKRHH (TCP port 502 plain / 802 TLS, or RTU serial file://):
+    - name: DAIKIN_MODBUS_CONTROLLER
+      value: "tcp://192.168.1.131:502"
 
   config:
     agent:
@@ -96,12 +107,20 @@ telegraf:
     - /etc/telegraf/telegraf.conf
     - --config-directory
     - /etc/telegraf/conf.d
+    # Daikin Home Hub EKRHH Modbus input:
+    - --config-directory
+    - /etc/telegraf/daikin.d
 
   volumes:
     - name: telegraf-modbus
       configMap:
         name: telegraf-modbus
+    - name: telegraf-modbus-daikin
+      configMap:
+        name: telegraf-modbus-daikin
 
   mountPoints:
     - name: telegraf-modbus
       mountPath: /etc/telegraf/conf.d
+    - name: telegraf-modbus-daikin
+      mountPath: /etc/telegraf/daikin.d

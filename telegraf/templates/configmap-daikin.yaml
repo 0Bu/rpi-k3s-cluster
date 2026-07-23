@@ -1,0 +1,202 @@
+{{- /*
+  Daikin Altherma 3 R (Home Hub EKRHH) Modbus input for Telegraf.
+
+  Renders ONLY when `daikin.enabled: true` is set (default: false), so merging
+  this stays inert until the heat pump is installed and the connection is
+  verified. Every register documented in the EKRHH installer reference guide
+  (4P744838-1E), "9.2 Modbus registers", is read: all 36 input registers
+  (§9.2.2) and all 23 holding registers (§9.2.1).
+
+  Register addressing (doc 9.2): the data model offset is 1-based, the Modbus
+  PDU address is 0-based -> address = offset - 1. Telegraf sends the PDU
+  address, so every `address` here is (documented offset - 1); the offset is
+  noted in the trailing comment.
+
+  Data formats (doc 9.2, p.40):
+    Temp16  signed 16-bit, value / 100  -> type INT16, scale 0.01  (deg C)
+    Pow16   signed 16-bit, value / 100  -> type INT16, scale 0.01  (kW)
+    Int16   signed 16-bit, no scaling   -> type INT16, scale 1
+    Text16  unsigned 16-bit, 2 ASCII    -> type UINT16 (raw; decode 2 ASCII bytes)
+
+  Special return values (doc 9.2.3) that can appear on any register:
+    32767 register unsupported, 32766 register unavailable, 32765 wait for value.
+    Registers for features not fitted (2nd/Add zone, cooling, external
+    thermostat...) return these instead of raising a Modbus exception, so
+    reading them is safe; filter the special values downstream (drop > 300 for
+    Temp16/Pow16, and 32765..32767 for Int16).
+
+  Activation: see telegraf/DAIKIN-MODBUS.md.
+*/ -}}
+{{- if .Values.daikin.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telegraf-modbus-daikin
+  labels:
+    app.kubernetes.io/name: telegraf
+data:
+  daikin.conf: |
+    # =====================================================================
+    # Daikin Altherma 3 R — ERGA04-08E / ETBH12E / EKHWSP via Home Hub EKRHH
+    # Full register map from EKRHH installer reference guide 4P744838-1E, §9.2.
+    # All registers are single 16-bit words -> byte_order = "AB" (big-endian).
+    # measurement = "daikin" => metrics arrive in VictoriaMetrics as daikin_<field>.
+    # =====================================================================
+    [[inputs.modbus]]
+      name = "daikin"
+      # Modbus TCP:  tcp://<home-hub-ip>:502   (port 502 plain / 802 TLS, doc §9.1)
+      # Modbus RTU:  file:///dev/ttyUSB0       (RS-485, 9600 8N1, doc §9.1)
+      controller = "${DAIKIN_MODBUS_CONTROLLER}"
+      configuration_type = "request"
+      interval = "30s"
+      timeout = "5s"
+      busy_retries = 3
+      busy_retries_wait = "500ms"
+      # Serial (RTU) only — uncomment for a file:// controller (doc §9.1):
+      # baud_rate = 9600
+      # data_bits = 8
+      # parity = "N"
+      # stop_bits = 1
+      [inputs.modbus.tags]
+        device = "daikin_altherma_3r"
+
+      # ── Input registers: unit status & operation (read-only, doc §9.2.2) ──
+      # Enum/boolean states; INT16 without scaling.
+      [[inputs.modbus.request]]
+        slave_id = 1                 # Daikin default RTU address (ONECTA-configurable)
+        byte_order = "AB"
+        register = "input"
+        measurement = "daikin"
+        fields = [
+          {name = "abnormality",       address = 20, type = "INT16",  scale = 1.0},  # off 21: 0 none/1 fault/2 warning
+          {name = "abnormality_code",  address = 21, type = "UINT16", scale = 1.0},  # off 22: Text16, 2 ASCII bytes
+          {name = "abnormality_sub",   address = 22, type = "INT16",  scale = 1.0},  # off 23: 32766 none else 0..99
+          {name = "circulation_pump",  address = 29, type = "INT16",  scale = 1.0},  # off 30: 0/1
+          {name = "compressor",        address = 30, type = "INT16",  scale = 1.0},  # off 31: 0/1
+          {name = "booster_heater",    address = 31, type = "INT16",  scale = 1.0},  # off 32: 0/1
+          {name = "disinfection",      address = 32, type = "INT16",  scale = 1.0},  # off 33: 0/1
+          {name = "defrost",           address = 34, type = "INT16",  scale = 1.0},  # off 35: 0/1
+          {name = "hot_start",         address = 35, type = "INT16",  scale = 1.0},  # off 36: 0/1
+          {name = "three_way_valve",   address = 36, type = "INT16",  scale = 1.0},  # off 37: 0 space heating/1 DHW
+          {name = "operation_mode",    address = 37, type = "INT16",  scale = 1.0}   # off 38: 1 heating/2 cooling
+        ]
+
+      # ── Input registers: temperatures, flow, power (read-only, doc §9.2.2) ──
+      [[inputs.modbus.request]]
+        slave_id = 1
+        byte_order = "AB"
+        register = "input"
+        measurement = "daikin"
+        fields = [
+          {name = "leaving_water_phe", address = 39, type = "INT16", scale = 0.01},  # off 40: Temp16 °C (heat pump PHE)
+          {name = "leaving_water_buh", address = 40, type = "INT16", scale = 0.01},  # off 41: Temp16 °C (after backup heater = flow temp)
+          {name = "return_water",      address = 41, type = "INT16", scale = 0.01},  # off 42: Temp16 °C
+          {name = "domestic_hot_water",address = 42, type = "INT16", scale = 0.01},  # off 43: Temp16 °C (DHW tank)
+          {name = "outside_air",       address = 43, type = "INT16", scale = 0.01},  # off 44: Temp16 °C
+          {name = "liquid_refrigerant",address = 44, type = "INT16", scale = 0.01},  # off 45: Temp16 °C
+          {name = "flow_rate",         address = 48, type = "INT16", scale = 0.01},  # off 49: Int16 L/min (×100)
+          {name = "room_temperature",  address = 49, type = "INT16", scale = 0.01},  # off 50: Temp16 °C (remote controller Main)
+          {name = "power_consumption", address = 50, type = "INT16", scale = 0.01},  # off 51: Pow16 kW (heat pump, 0..20)
+          {name = "dhw_operation",     address = 51, type = "INT16", scale = 1.0},   # off 52: 0 idle/1 operating
+          {name = "space_operation",   address = 52, type = "INT16", scale = 1.0}    # off 53: 0 idle/1 operating
+        ]
+
+      # ── Input registers: leaving-water setpoint limits, Main + Add (doc §9.2.2) ──
+      # Temp16 field-setting ranges; Add-zone entries read 32766 on single-zone systems.
+      [[inputs.modbus.request]]
+        slave_id = 1
+        byte_order = "AB"
+        register = "input"
+        measurement = "daikin"
+        fields = [
+          {name = "limit_lwt_heat_main_lower", address = 53, type = "INT16", scale = 0.01},  # off 54: °C
+          {name = "limit_lwt_heat_main_upper", address = 54, type = "INT16", scale = 0.01},  # off 55: °C
+          {name = "limit_lwt_cool_main_lower", address = 55, type = "INT16", scale = 0.01},  # off 56: °C
+          {name = "limit_lwt_cool_main_upper", address = 56, type = "INT16", scale = 0.01},  # off 57: °C
+          {name = "limit_lwt_heat_add_lower",  address = 57, type = "INT16", scale = 0.01},  # off 58: °C (Add zone)
+          {name = "limit_lwt_heat_add_upper",  address = 58, type = "INT16", scale = 0.01},  # off 59: °C (Add zone)
+          {name = "limit_lwt_cool_add_lower",  address = 59, type = "INT16", scale = 0.01},  # off 60: °C (Add zone)
+          {name = "limit_lwt_cool_add_upper",  address = 60, type = "INT16", scale = 0.01}   # off 61: °C (Add zone)
+        ]
+
+      # ── Input registers: DHW tank top/bottom temperatures (EKHWSP), doc §9.2.2 ──
+      [[inputs.modbus.request]]
+        slave_id = 1
+        byte_order = "AB"
+        register = "input"
+        measurement = "daikin"
+        fields = [
+          {name = "dhw_upper", address = 75, type = "INT16", scale = 0.01},  # off 76: Temp16 °C (tank upper)
+          {name = "dhw_lower", address = 76, type = "INT16", scale = 0.01}   # off 77: Temp16 °C (tank lower)
+        ]
+
+      # ── Input registers: room setpoint limits (doc §9.2.2) ──────────────────
+      [[inputs.modbus.request]]
+        slave_id = 1
+        byte_order = "AB"
+        register = "input"
+        measurement = "daikin"
+        fields = [
+          {name = "limit_room_heat_lower", address = 83, type = "INT16", scale = 0.01},  # off 84: °C
+          {name = "limit_room_heat_upper", address = 84, type = "INT16", scale = 0.01},  # off 85: °C
+          {name = "limit_room_cool_lower", address = 85, type = "INT16", scale = 0.01},  # off 86: °C
+          {name = "limit_room_cool_upper", address = 86, type = "INT16", scale = 0.01}   # off 87: °C
+        ]
+
+      # ── Holding registers: main setpoints & control state (R/W, doc §9.2.1) ──
+      # Read here for monitoring only; Telegraf never writes.
+      [[inputs.modbus.request]]
+        slave_id = 1
+        byte_order = "AB"
+        register = "holding"
+        measurement = "daikin"
+        fields = [
+          {name = "set_lwt_heating_main",  address = 0,  type = "INT16", scale = 1.0},  # off 1:  °C (field-setting range)
+          {name = "set_lwt_cooling_main",  address = 1,  type = "INT16", scale = 1.0},  # off 2:  °C (field-setting range)
+          {name = "set_operation_mode",    address = 2,  type = "INT16", scale = 1.0},  # off 3:  0 auto/1 heat/2 cool (32766 heating-only)
+          {name = "set_space_onoff",       address = 3,  type = "INT16", scale = 1.0},  # off 4:  0/1
+          {name = "set_room_heating_main", address = 5,  type = "INT16", scale = 1.0},  # off 6:  12..30 °C
+          {name = "set_room_cooling_main", address = 6,  type = "INT16", scale = 1.0},  # off 7:  15..35 °C
+          {name = "set_quiet_mode",        address = 8,  type = "INT16", scale = 1.0},  # off 9:  0/1
+          {name = "set_dhw_reheat",        address = 9,  type = "INT16", scale = 1.0},  # off 10: 30..60 °C
+          {name = "set_dhw_reheat_onoff",  address = 11, type = "INT16", scale = 1.0},  # off 12: 0/1
+          {name = "set_dhw_booster_onoff", address = 12, type = "INT16", scale = 1.0}   # off 13: 0/1 (powerful)
+        ]
+
+      # ── Holding registers: weather-dependent, smart grid, power limits,
+      #    external thermostat inputs (R/W, doc §9.2.1) ──
+      # Thermostat inputs (off 59/61) are documented as NOT operational on
+      # Altherma 3 R indoor units (Micon ID 20002203) and only valid with
+      # external SW-contact thermostat control ([C-07]=1, [C-05]=0) — read for
+      # completeness; expect 0.
+      [[inputs.modbus.request]]
+        slave_id = 1
+        byte_order = "AB"
+        register = "holding"
+        measurement = "daikin"
+        fields = [
+          {name = "set_wd_mode_main",       address = 52, type = "INT16", scale = 1.0},   # off 53: 0 fixed/1 WD/2 fixed+sched/3 WD+sched
+          {name = "set_wd_heat_offset_main",address = 53, type = "INT16", scale = 1.0},   # off 54: -10..10 °C
+          {name = "set_wd_cool_offset_main",address = 54, type = "INT16", scale = 1.0},   # off 55: -10..10 °C
+          {name = "set_smart_grid_mode",    address = 55, type = "INT16", scale = 1.0},   # off 56: 0 free/1 forced off/2 recommended on/3 forced on
+          {name = "set_power_limit_buffer", address = 56, type = "INT16", scale = 0.01},  # off 57: Pow16 kW 0..20 (recommended-on / buffering)
+          {name = "set_general_power_limit",address = 57, type = "INT16", scale = 0.01},  # off 58: Pow16 kW 0..20
+          {name = "thermostat_main_input",  address = 58, type = "INT16", scale = 1.0},   # off 59: 0/1 (not operational on Altherma 3 R)
+          {name = "thermostat_add_input",   address = 60, type = "INT16", scale = 1.0}    # off 61: 0/1 (not operational on Altherma 3 R)
+        ]
+
+      # ── Holding registers: additional (Add) zone setpoints & WD mode (doc §9.2.1) ──
+      # Present only on 2-zone systems; single-zone installs return 32766.
+      [[inputs.modbus.request]]
+        slave_id = 1
+        byte_order = "AB"
+        register = "holding"
+        measurement = "daikin"
+        fields = [
+          {name = "set_lwt_heating_add",   address = 62, type = "INT16", scale = 1.0},  # off 63: °C
+          {name = "set_lwt_cooling_add",   address = 63, type = "INT16", scale = 1.0},  # off 64: °C
+          {name = "set_wd_mode_add",       address = 64, type = "INT16", scale = 1.0},  # off 65: 0..3
+          {name = "set_wd_heat_offset_add",address = 65, type = "INT16", scale = 1.0},  # off 66: -10..10 °C
+          {name = "set_wd_cool_offset_add",address = 66, type = "INT16", scale = 1.0}   # off 67: -10..10 °C
+        ]
+{{- end }}
