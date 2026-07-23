@@ -48,7 +48,7 @@ forgejo:
   gitea:
     admin:
       existingSecret: forgejo-admin
-      email: forgejo@burau.dev
+      email: oleg@burau.dev
       passwordMode: keepUpdated
 
     config:
