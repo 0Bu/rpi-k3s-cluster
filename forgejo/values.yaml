@@ -1,0 +1,95 @@
+nfs:
+  server: 192.168.1.5
+  path: /nfs/forgejo
+
+forgejo:
+  service:
+    http:
+      type: ClusterIP
+      port: 3000
+    # Git over SSH is disabled, see gitea.config.server below. The subchart
+    # always renders this Service, so keep it cluster-internal.
+    ssh:
+      type: ClusterIP
+
+  ingress:
+    enabled: true
+    className: traefik
+    annotations:
+      traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
+    hosts:
+      - host: git.burau.dev
+        paths:
+          - path: /
+            pathType: Prefix
+            port: http
+    tls:
+      - secretName: cloudflare-tls
+        hosts:
+          - git.burau.dev
+
+  # NFS-backed PV/PVC from templates/, not the chart's own claim.
+  persistence:
+    enabled: true
+    create: false
+    claimName: forgejo
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 384Mi
+    limits:
+      cpu: "2"
+      memory: 1Gi
+
+  test:
+    enabled: false
+
+  gitea:
+    admin:
+      existingSecret: forgejo-admin
+      email: forgejo@burau.dev
+      passwordMode: keepUpdated
+
+    config:
+      APP_NAME: Forgejo
+
+      # HTTPS only — no git over SSH, so the built-in SSH server stays off and
+      # the UI does not advertise SSH clone URLs.
+      server:
+        DOMAIN: git.burau.dev
+        ROOT_URL: https://git.burau.dev/
+        START_SSH_SERVER: false
+        DISABLE_SSH: true
+        LFS_START_SERVER: true
+
+      # Shares the cluster PostgreSQL; database and role are created manually,
+      # see README.md. The password comes from the sealed secret below.
+      database:
+        DB_TYPE: postgres
+        HOST: postgresql.default.svc.cluster.local:5432
+        NAME: forgejo
+        USER: forgejo
+
+      # Private instance: no self-service signup, no anonymous browsing.
+      service:
+        DISABLE_REGISTRATION: true
+        REQUIRE_SIGNIN_VIEW: true
+
+      # Sessions in the database survive pod restarts (default is memory).
+      session:
+        PROVIDER: db
+
+      repository:
+        DEFAULT_BRANCH: main
+
+      # Forgejo Actions needs runners that are not deployed here.
+      actions:
+        ENABLED: false
+
+    additionalConfigFromEnvs:
+      - name: FORGEJO__DATABASE__PASSWD
+        valueFrom:
+          secretKeyRef:
+            name: forgejo-postgresql
+            key: password
