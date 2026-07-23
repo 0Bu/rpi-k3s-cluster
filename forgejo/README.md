@@ -85,21 +85,26 @@ Runner and server share a 40-character hex secret (`forgejo-runner` sealed
 secret). The runner derives its `.runner` file from that secret on every start,
 so it needs no persistent volume and re-registration is idempotent.
 
-**Labels are owned by the server side**, not by the runner. After changing
-`runner.labels` in `values.yaml`, re-run the registration:
-
-```bash
-kubectl -n default get secret forgejo-runner -o jsonpath='{.data.secret}' | base64 -d | kubectl -n default exec -i deployment/forgejo -- sh -c '
-  read -r S
-  forgejo forgejo-cli actions register --name k3s --secret "$S" \
-    --labels "docker:docker://node:22-bookworm,ubuntu-latest:docker://node:22-bookworm"'
-kubectl -n default rollout restart deployment/forgejo-runner
-```
+**Labels live on the runner side**, in `runner.labels` of `values.yaml`, which
+renders into the `forgejo-runner` ConfigMap. The daemon reports them to the
+server on every start and overwrites whatever is stored there — registering
+server-side with `--labels` alone is not enough, the server value gets wiped on
+the next runner restart. Changing labels therefore only needs a commit; the
+config checksum annotation rolls the pod automatically.
 
 `ubuntu-latest` is mapped so workflows written for GitHub find a matching
 runner. Note that `actions/*` steps resolve against `DEFAULT_ACTIONS_URL`
 (`https://code.forgejo.org`), so GitHub workflows pinning actions to a GitHub
 commit SHA will not resolve — use a tag, or mirror the action.
+
+The one-off server-side registration (only needed when the shared secret
+changes):
+
+```bash
+kubectl -n default get secret forgejo-runner -o jsonpath='{.data.secret}' | base64 -d | kubectl -n default exec -i deployment/forgejo -- sh -c '
+  read -r S
+  forgejo forgejo-cli actions register --name k3s --secret "$S"'
+```
 
 ## Configuration notes
 
