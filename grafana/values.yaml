@@ -3,6 +3,19 @@ nfs:
   path: /nfs/grafana
 
 grafana:
+  # Der Chart erzeugt ohne existingSecret bei JEDEM Render ein neues
+  # randAlphaNum-40-Passwort. Das Secret driftet damit bei jedem ArgoCD-Sync
+  # von der SQLite-DB weg (Grafana setzt das Admin-Passwort nur beim ersten
+  # DB-Init) -> API-Logins liefen wiederkehrend in 401.
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  # Plugins werden beim Start in das NFS-PVC entpackt. Bei RollingUpdate haelt
+  # der alte Pod die Plugin-Dateien offen, der neue scheitert am
+  # ".nfs...: device or resource busy" und der Rollout bleibt haengen.
+  deploymentStrategy:
+    type: Recreate
   ingress:
     enabled: true
     annotations:
