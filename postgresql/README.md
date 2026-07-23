@@ -23,7 +23,9 @@ recorder:
 
 ### Backup
 
-A CronJob runs daily at midnight and writes compressed dumps to the NFS volume (`postgresql-backup` PVC). The 10 most recent dumps are retained.
+A CronJob runs daily at midnight and writes compressed dumps to the NFS volume (`postgresql-backup` PVC), one per database listed in `backup.databases` (`homeassistant`, `forgejo`). Files are named `pg_dump_<database>_<timestamp>.sql.gz` and the 10 most recent dumps **per database** are retained.
+
+Add a database by appending it to `backup.databases` in `values.yaml` — no other change is needed.
 
 **Trigger a manual backup:**
 ```bash
@@ -48,11 +50,12 @@ kubectl scale deployment home-assistant --replicas=0 -n default
 kubectl wait --for=condition=available=false deployment/home-assistant -n default --timeout=60s
 ```
 
-**2. Drop and recreate the database:**
+**2. Drop and recreate the database** (local `psql` needs the superuser password, which the pod already mounts as a file):
 ```bash
-kubectl exec -i postgresql-0 -n default -- psql -U postgres \
-  -c "DROP DATABASE homeassistant;" \
-  -c "CREATE DATABASE homeassistant OWNER homeassistant;"
+kubectl exec -i postgresql-0 -n default -- sh -c '
+  PGPASSWORD=$(cat "$POSTGRES_POSTGRES_PASSWORD_FILE") psql -U postgres \
+    -c "DROP DATABASE homeassistant;" \
+    -c "CREATE DATABASE homeassistant OWNER homeassistant;"'
 ```
 
 **3. Restore from a backup file** (replace filename as needed):
@@ -79,3 +82,11 @@ kubectl run pg-restore --rm -i --restart=Never -n default \
 ```bash
 kubectl scale deployment home-assistant --replicas=1 -n default
 ```
+
+#### Restoring another database
+
+The same four steps apply, with the deployment, database name, owner and backup
+file swapped. For Forgejo that is `kubectl scale deployment forgejo`,
+`CREATE DATABASE forgejo OWNER forgejo;` and `pg_dump_forgejo_<timestamp>.sql.gz`.
+The `forgejo` role itself is not part of the dump — recreate it first if it is
+missing, see [../forgejo/README.md](../forgejo/README.md).

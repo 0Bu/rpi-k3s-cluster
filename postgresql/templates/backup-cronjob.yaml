@@ -29,8 +29,6 @@ spec:
                   value: "5432"
                 - name: PGUSER
                   value: postgres
-                - name: PGDATABASE
-                  value: homeassistant
                 - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef:
@@ -43,16 +41,20 @@ spec:
                   set -euo pipefail
                   find /backup -maxdepth 1 -name 'pg_dump_*.sql.gz.tmp' -type f -delete 2>/dev/null || true
                   TS=$(date +%Y%m%d-%H%M)
-                  OUT=/backup/pg_dump_${PGDATABASE}_${TS}.sql.gz
-                  echo "[$(date -Is)] dumping ${PGDATABASE} -> ${OUT}"
-                  pg_dump --format=plain --no-owner --no-privileges "${PGDATABASE}" \
-                    | gzip -6 > "${OUT}.tmp"
-                  mv "${OUT}.tmp" "${OUT}"
-                  echo "[$(date -Is)] dump done: $(du -h "${OUT}" | cut -f1)"
-                  echo "[$(date -Is)] pruning old dumps (keeping 10)"
-                  ls -1t /backup/pg_dump_*.sql.gz 2>/dev/null | tail -n +{{ add1 .Values.backup.retentionCount }} | xargs -r rm --
+                  for DB in {{ .Values.backup.databases | join " " }}; do
+                    OUT=/backup/pg_dump_${DB}_${TS}.sql.gz
+                    echo "[$(date -Is)] dumping ${DB} -> ${OUT}"
+                    pg_dump --format=plain --no-owner --no-privileges "${DB}" \
+                      | gzip -6 > "${OUT}.tmp"
+                    mv "${OUT}.tmp" "${OUT}"
+                    echo "[$(date -Is)] dump done: $(du -h "${OUT}" | cut -f1)"
+                    # Prune per database, otherwise the retention count would be
+                    # shared across all of them.
+                    echo "[$(date -Is)] pruning old ${DB} dumps (keeping {{ .Values.backup.retentionCount }})"
+                    ls -1t /backup/pg_dump_${DB}_*.sql.gz 2>/dev/null | tail -n +{{ add1 .Values.backup.retentionCount }} | xargs -r rm --
+                  done
                   echo "[$(date -Is)] retained dumps:"
-                  ls -1t /backup/pg_dump_*.sql.gz | head -n 5
+                  ls -1t /backup/pg_dump_*.sql.gz | head -n 10
               resources:
                 requests:
                   cpu: 50m
