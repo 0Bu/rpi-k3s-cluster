@@ -2,6 +2,39 @@ nfs:
   server: 192.168.1.5
   path: /nfs/forgejo
 
+# Forgejo Actions runner. k3s runs containerd, so jobs get their container
+# backend from a dind sidecar rather than a host docker socket.
+runner:
+  enabled: true
+  name: k3s
+  image:
+    repository: code.forgejo.org/forgejo/runner
+    tag: "12.13.2"
+  dind:
+    image:
+      repository: docker
+      tag: "29.6.2-dind"
+  # Labels are owned by the server-side registration, not by the runner. Keep
+  # this in sync with the `forgejo-cli actions register --labels` call in
+  # README.md. `ubuntu-latest` is mapped so workflows written for GitHub find a
+  # matching runner.
+  labels: docker:docker://node:22-bookworm,ubuntu-latest:docker://node:22-bookworm
+  resources:
+    runner:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+    dind:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: "2"
+        memory: 1Gi
+
 forgejo:
   service:
     http:
@@ -83,9 +116,9 @@ forgejo:
       repository:
         DEFAULT_BRANCH: main
 
-      # Forgejo Actions needs runners that are not deployed here.
+      # Runner is deployed by templates/runner-*.yaml.
       actions:
-        ENABLED: false
+        ENABLED: true
 
     additionalConfigFromEnvs:
       - name: FORGEJO__DATABASE__PASSWD

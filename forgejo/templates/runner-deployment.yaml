@@ -1,0 +1,92 @@
+{{- if .Values.runner.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forgejo-runner
+  labels:
+    app.kubernetes.io/name: forgejo-runner
+spec:
+  replicas: 1
+  # The dind sidecar owns a single docker state directory.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: forgejo-runner
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: forgejo-runner
+    spec:
+      # The runner image runs as uid 1000 and writes .runner into its /data
+      # workdir, which an emptyDir would otherwise create as root-owned.
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: dind
+          image: {{ .Values.runner.dind.image.repository }}:{{ .Values.runner.dind.image.tag }}
+          # k3s uses containerd, so there is no host docker socket to share.
+          # dind listens on localhost only, which is why TLS is turned off.
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          args:
+            - --host=tcp://127.0.0.1:2375
+          securityContext:
+            privileged: true
+          resources:
+            {{- toYaml .Values.runner.resources.dind | nindent 12 }}
+          volumeMounts:
+            - name: docker-storage
+              mountPath: /var/lib/docker
+          livenessProbe:
+            exec:
+              command: ["docker", "-H", "tcp://127.0.0.1:2375", "info"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+
+        - name: runner
+          image: {{ .Values.runner.image.repository }}:{{ .Values.runner.image.tag }}
+          env:
+            - name: DOCKER_HOST
+              value: tcp://127.0.0.1:2375
+            - name: FORGEJO_URL
+              value: {{ .Values.forgejo.gitea.config.server.ROOT_URL | quote }}
+            - name: RUNNER_NAME
+              value: {{ .Values.runner.name | quote }}
+            - name: RUNNER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-runner
+                  key: secret
+          # The runner is registered server-side with the same shared secret,
+          # so .runner is derived from the secret on every start and needs no
+          # persistence. Waiting for dind avoids a crash loop on cold start.
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              # The runner image ships no docker client, so probe the API port.
+              until nc -z 127.0.0.1 2375; do
+                echo "waiting for dind..."
+                sleep 2
+              done
+              forgejo-runner create-runner-file \
+                --instance "$FORGEJO_URL" \
+                --name "$RUNNER_NAME" \
+                --secret "$RUNNER_SECRET"
+              exec forgejo-runner daemon
+          resources:
+            {{- toYaml .Values.runner.resources.runner | nindent 12 }}
+          volumeMounts:
+            - name: runner-data
+              mountPath: /data
+      volumes:
+        - name: docker-storage
+          emptyDir: {}
+        - name: runner-data
+          emptyDir: {}
+{{- end }}
