@@ -26,12 +26,15 @@ spec:
         - name: dind
           image: {{ .Values.runner.dind.image.repository }}:{{ .Values.runner.dind.image.tag }}
           # k3s uses containerd, so there is no host docker socket to share.
-          # dind listens on localhost only, which is why TLS is turned off.
-          env:
-            - name: DOCKER_TLS_CERTDIR
-              value: ""
+          # The daemon is reached over a unix socket in a shared emptyDir; a TCP
+          # listener would be reachable from every pod in the cluster and grants
+          # unauthenticated root. `dockerd` must be args[0] — the image's
+          # entrypoint appends --host=tcp://0.0.0.0:2375 to anything that starts
+          # with a dash.
           args:
-            - --host=tcp://127.0.0.1:2375
+            - dockerd
+            - --host=unix:///shared/docker.sock
+            - --group=1000
           securityContext:
             privileged: true
           resources:
@@ -39,9 +42,11 @@ spec:
           volumeMounts:
             - name: docker-storage
               mountPath: /var/lib/docker
+            - name: docker-socket
+              mountPath: /shared
           livenessProbe:
             exec:
-              command: ["docker", "-H", "tcp://127.0.0.1:2375", "info"]
+              command: ["docker", "-H", "unix:///shared/docker.sock", "info"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
@@ -51,7 +56,7 @@ spec:
           image: {{ .Values.runner.image.repository }}:{{ .Values.runner.image.tag }}
           env:
             - name: DOCKER_HOST
-              value: tcp://127.0.0.1:2375
+              value: unix:///shared/docker.sock
             - name: FORGEJO_URL
               value: {{ .Values.forgejo.gitea.config.server.ROOT_URL | quote }}
             - name: RUNNER_NAME
@@ -69,8 +74,9 @@ spec:
             - -c
             - |
               set -eu
-              # The runner image ships no docker client, so probe the API port.
-              until nc -z 127.0.0.1 2375; do
+              # The runner image ships no docker client; dockerd creates the
+              # socket once it is ready to serve.
+              until [ -S /shared/docker.sock ]; do
                 echo "waiting for dind..."
                 sleep 2
               done
@@ -84,9 +90,13 @@ spec:
           volumeMounts:
             - name: runner-data
               mountPath: /data
+            - name: docker-socket
+              mountPath: /shared
       volumes:
         - name: docker-storage
           emptyDir: {}
         - name: runner-data
+          emptyDir: {}
+        - name: docker-socket
           emptyDir: {}
 {{- end }}
