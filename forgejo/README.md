@@ -74,6 +74,33 @@ kubectl -n default get secret forgejo-admin -o jsonpath='{.data.username}' | bas
 kubectl -n default get secret forgejo-admin -o jsonpath='{.data.password}' | base64 -d; echo
 ```
 
+## Actions runner
+
+Forgejo Actions is enabled and served by a single runner (`forgejo-runner`
+Deployment). k3s runs containerd, so there is no host docker socket to share —
+jobs get their container backend from a privileged `dind` sidecar that listens
+on `127.0.0.1:2375` inside the pod only.
+
+Runner and server share a 40-character hex secret (`forgejo-runner` sealed
+secret). The runner derives its `.runner` file from that secret on every start,
+so it needs no persistent volume and re-registration is idempotent.
+
+**Labels are owned by the server side**, not by the runner. After changing
+`runner.labels` in `values.yaml`, re-run the registration:
+
+```bash
+kubectl -n default get secret forgejo-runner -o jsonpath='{.data.secret}' | base64 -d | kubectl -n default exec -i deployment/forgejo -- sh -c '
+  read -r S
+  forgejo forgejo-cli actions register --name k3s --secret "$S" \
+    --labels "docker:docker://node:22-bookworm,ubuntu-latest:docker://node:22-bookworm"'
+kubectl -n default rollout restart deployment/forgejo-runner
+```
+
+`ubuntu-latest` is mapped so workflows written for GitHub find a matching
+runner. Note that `actions/*` steps resolve against `DEFAULT_ACTIONS_URL`
+(`https://code.forgejo.org`), so GitHub workflows pinning actions to a GitHub
+commit SHA will not resolve — use a tag, or mirror the action.
+
 ## Configuration notes
 
 - `DISABLE_REGISTRATION` and `REQUIRE_SIGNIN_VIEW` keep the instance private.
