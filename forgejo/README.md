@@ -55,8 +55,11 @@ from the file the pod already mounts, so neither ends up in the shell history.
 Rotating means resealing `templates/sealed-secret.yaml` and running
 `ALTER ROLE forgejo PASSWORD ...` the same way.
 
-> The `postgresql-backup` CronJob dumps only the `homeassistant` database, so
-> the `forgejo` database is **not** covered by it yet.
+The `postgresql-backup` CronJob covers the `forgejo` database — it is listed in
+`backup.databases` of the postgresql chart. Note that a `pg_dump` does not
+include the `forgejo` role, so a restore onto a fresh cluster needs the
+`CREATE ROLE` above first. See [../postgresql/README.md](../postgresql/README.md)
+for the restore procedure.
 
 ## Admin user
 

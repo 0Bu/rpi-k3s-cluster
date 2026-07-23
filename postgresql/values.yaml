@@ -4,7 +4,11 @@ nfs:
 
 backup:
   schedule: "0 0 * * *"
+  # Retained dumps per database, not in total.
   retentionCount: 10
+  databases:
+    - homeassistant
+    - forgejo
 
 postgresql:
   auth:
