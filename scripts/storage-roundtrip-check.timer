@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily storage round-trip integrity check
+
+[Timer]
+# Off-peak, and deliberately off the full hour so it does not pile up with the
+# backup CronJob (00:00 UTC) or the rclone sync (02:00 local).
+OnCalendar=*-*-* 03:23:00
+RandomizedDelaySec=10m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
