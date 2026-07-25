@@ -49,6 +49,17 @@ victoria-metrics:
 
   prometheus-node-exporter:
     enabled: true
+    # Textfile-Collector: liest .prom-Dateien vom Host ein. Wird vom
+    # storage-roundtrip-Check auf pi5a befüllt, der stille Datenkorruption
+    # aufdeckt (Kernel-6.18-Readahead-Bug, Juli 2026) — SMART, PCIe-AER und
+    # ext4 waren dafür allesamt blind.
+    extraArgs:
+      - --collector.textfile.directory=/host/textfile
+    extraHostVolumeMounts:
+      - name: textfile
+        hostPath: /var/lib/node_exporter/textfile_collector
+        mountPath: /host/textfile
+        readOnly: true
   kube-state-metrics:
     enabled: true
 
