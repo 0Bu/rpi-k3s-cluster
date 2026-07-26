@@ -51,7 +51,8 @@ victoria-metrics:
           memory: 48Mi
         limits:
           memory: 96Mi
-      # Wird nach /etc/alertmanager/secrets/<name>/ gemountet. Enthält die
+      # Wird vom VM-Operator nach /etc/vm/secrets/<name>/ gemountet (nicht der
+      # Prometheus-Pfad /etc/alertmanager/secrets/). Enthält die
       # HA-Webhook-URL, deren ID nicht ins öffentliche Repo darf.
       secrets:
         - alertmanager-ha-webhook
@@ -82,7 +83,7 @@ victoria-metrics:
         - name: "null"
         - name: home-assistant
           webhook_configs:
-            - url_file: /etc/alertmanager/secrets/alertmanager-ha-webhook/url
+            - url_file: /etc/vm/secrets/alertmanager-ha-webhook/url
               send_resolved: true
   vmauth:
     enabled: false
