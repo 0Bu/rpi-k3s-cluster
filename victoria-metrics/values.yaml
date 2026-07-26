@@ -209,6 +209,17 @@ victoria-metrics:
       selectAllByDefault: true
       extraArgs:
         promscrape.streamParse: "true"
+      # Kein CPU-Limit: vmagent braucht im Scrape-Takt kurze Spitzen. Mit dem
+      # Chart-Default (200m) wurde es zu ~31 % vom CFS gedrosselt, obwohl es im
+      # Mittel nur ~77m zieht — das verzögert Scrapes ohne Not. CPU ist
+      # komprimierbar, die Requests reichen zur Priorisierung.
+      # Das Memory-Limit bleibt: Speicher ist nicht komprimierbar (OOM-Schutz).
+      resources:
+        requests:
+          cpu: 50m
+          memory: 200Mi
+        limits:
+          memory: 500Mi
 
 mcp:
   enabled: true
