@@ -2,7 +2,7 @@ apiVersion: v2
 name: grafana
 description: A Helm chart for Kubernetes
 type: application
-version: 1.0.223
+version: 1.0.224
 # renovate: image=grafana/grafana
 appVersion: "13.1.1"
 dependencies: 

@@ -41,3 +41,14 @@ grafana:
           access: proxy
           url: http://vlogs:9428
           isDefault: false
+        # Surfaces firing/silenced alerts under Grafana's Alerting section.
+        # Rules live in victoria-metrics/templates/vmrule-*.yaml and are
+        # evaluated by vmalert, not by Grafana.
+        - name: Alertmanager
+          type: alertmanager
+          access: proxy
+          url: http://vmalertmanager-vm.default.svc.cluster.local:9093
+          jsonData:
+            implementation: prometheus
+            handleGrafanaManagedAlerts: false
+          isDefault: false

@@ -29,11 +29,53 @@ victoria-metrics:
   defaultRules:
     create: false
 
-  # Eigene Aggregationen / Alerting deaktiviert (analog zur bisherigen Setup ohne alertmanager)
+  # Alerting: vmalert wertet die VMRule-Objekte aus templates/vmrule-*.yaml aus
+  # und meldet an den Alertmanager, der an Home Assistant zustellt.
+  # Ressourcen bewusst eng — der Node liegt bei ~70 % Speicherauslastung.
   vmalert:
-    enabled: false
+    enabled: true
+    spec:
+      evaluationInterval: 30s
+      resources:
+        requests:
+          cpu: 20m
+          memory: 64Mi
+        limits:
+          memory: 128Mi
   alertmanager:
-    enabled: false
+    enabled: true
+    spec:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 48Mi
+        limits:
+          memory: 96Mi
+      # Wird nach /etc/alertmanager/secrets/<name>/ gemountet. Enthält die
+      # HA-Webhook-URL, deren ID nicht ins öffentliche Repo darf.
+      secrets:
+        - alertmanager-ha-webhook
+    config:
+      route:
+        receiver: home-assistant
+        # component trennt die Domänen (storage, heating, …), damit neue
+        # Alert-Quellen ohne Routing-Umbau dazukommen können.
+        group_by: [alertname, component]
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 12h
+        routes:
+          # Kritisches sofort und öfter erinnern.
+          - matchers:
+              - severity = "critical"
+            receiver: home-assistant
+            group_wait: 0s
+            repeat_interval: 1h
+      receivers:
+        - name: home-assistant
+          webhook_configs:
+            - url_file: /etc/alertmanager/secrets/alertmanager-ha-webhook/url
+              send_resolved: true
   vmauth:
     enabled: false
 

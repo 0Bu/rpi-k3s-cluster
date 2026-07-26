@@ -1,0 +1,71 @@
+{{/*
+Storage integrity alerts, fed by scripts/storage-roundtrip-check.sh via the
+node_exporter textfile collector.
+
+Note: alert templates use Go template syntax ({{ $labels }}) which collides with
+Helm's. Wrap those in backticks so Helm passes them through verbatim.
+*/}}
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: storage-integrity
+  namespace: {{ .Release.Namespace }}
+spec:
+  groups:
+    - name: storage-integrity
+      interval: 5m
+      rules:
+        # The one that matters: data did not survive the write-read cycle.
+        # Guarded by valid == 1 so a check that read from cache never alerts.
+        - alert: StorageSilentCorruption
+          expr: node_storage_roundtrip_valid == 1 and node_storage_roundtrip_ok == 0
+          for: 0m
+          labels:
+            severity: critical
+            component: storage
+          annotations:
+            summary: {{ `"Silent data corruption on {{ $labels.instance }} ({{ $labels.device }})"` }}
+            description: {{ `"The write-read round-trip returned different data than was written ({{ $value }} mismatching rounds). SMART and dmesg stay silent for this failure class — do not dismiss it. Check the kernel version first (see scripts/README.md)."` }}
+
+        # A check that cannot prove it read from disk is worthless — and its
+        # silence would look exactly like success.
+        - alert: StorageRoundtripInconclusive
+          expr: node_storage_roundtrip_valid == 0 and node_storage_roundtrip_skipped == 0
+          for: 30m
+          labels:
+            severity: warning
+            component: storage
+          annotations:
+            summary: {{ `"Storage integrity check inconclusive on {{ $labels.instance }}"` }}
+            description: "Reads were likely served from the page cache, so a clean result proves nothing. The check is not currently protecting against silent corruption."
+
+        # Timer stopped, script broken, or textfile no longer written.
+        - alert: StorageRoundtripStale
+          expr: time() - node_storage_roundtrip_last_run_timestamp_seconds > 129600
+          for: 1h
+          labels:
+            severity: warning
+            component: storage
+          annotations:
+            summary: {{ `"Storage integrity check has not run on {{ $labels.instance }}"` }}
+            description: "Expected daily at 03:23. Check: systemctl status storage-roundtrip-check.timer"
+
+        - alert: StorageRoundtripMissing
+          expr: absent(node_storage_roundtrip_ok)
+          for: 2h
+          labels:
+            severity: warning
+            component: storage
+          annotations:
+            summary: "Storage integrity metrics have disappeared"
+            description: "node_storage_roundtrip_* is no longer being scraped. Either the textfile collector or the check itself is gone."
+
+        - alert: StorageRoundtripSkipped
+          expr: node_storage_roundtrip_skipped == 1
+          for: 25h
+          labels:
+            severity: info
+            component: storage
+          annotations:
+            summary: {{ `"Storage integrity check keeps skipping ({{ $labels.reason }})"` }}
+            description: "Preconditions have not been met for over a day, so no integrity checking is happening."
