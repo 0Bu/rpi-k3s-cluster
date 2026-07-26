@@ -65,6 +65,13 @@ victoria-metrics:
         group_interval: 5m
         repeat_interval: 12h
         routes:
+          # Watchdog und InfoInhibitor feuern konstruktionsbedingt dauerhaft
+          # (Dead-Man-Switch bzw. Hilfsregel). Sie stammen aus den mitgelieferten
+          # Default-Rules und dürfen HA nicht erreichen — sonst geht der erste
+          # echte Alarm im Dauerrauschen unter.
+          - matchers:
+              - alertname =~ "Watchdog|InfoInhibitor"
+            receiver: "null"
           # Kritisches sofort und öfter erinnern.
           - matchers:
               - severity = "critical"
@@ -72,6 +79,7 @@ victoria-metrics:
             group_wait: 0s
             repeat_interval: 1h
       receivers:
+        - name: "null"
         - name: home-assistant
           webhook_configs:
             - url_file: /etc/alertmanager/secrets/alertmanager-ha-webhook/url
