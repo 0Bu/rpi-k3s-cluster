@@ -1,0 +1,86 @@
+{{/*
+Heat pump alerts (daikin-altherma-esp32 -> MQTT -> telegraf -> VictoriaMetrics).
+
+Serves as the worked example for adding new alert sources: copy this file,
+change the `component` label, and the routing in values.yaml picks it up
+unchanged.
+
+Thresholds marked "assumption" are starting points, not manufacturer specs —
+adjust once you know the normal operating range.
+*/}}
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: daikin-altherma
+  namespace: {{ .Release.Namespace }}
+spec:
+  groups:
+    - name: daikin-altherma
+      interval: 1m
+      rules:
+        # Nothing arriving at all: ESP32 down, WiFi/MQTT gone, or telegraf broken.
+        # The connected-flags cannot cover this — if MQTT is down, no metric ships.
+        - alert: DaikinEsp32NoData
+          expr: absent(daikin_heartbeat_uptime_s)
+          for: 10m
+          labels:
+            severity: warning
+            component: heating
+          annotations:
+            summary: "No data from daikin-altherma-esp32"
+            description: "No heartbeat for 10 minutes. Heat pump monitoring is blind — check the ESP32, WiFi, Mosquitto and telegraf."
+
+        # The heat pump itself signals a fault. 0 = no error (verified 2026-07-25).
+        - alert: DaikinErrorCode
+          expr: daikin_altherma_hydronic_error_code != 0 or daikin_altherma_outdoor_state_error_code != 0
+          for: 5m
+          labels:
+            severity: warning
+            component: heating
+          annotations:
+            summary: {{ `"Daikin reports error code {{ $value }}"` }}
+            description: "The heat pump set a non-zero error code. Look it up in the Altherma service manual."
+
+        - alert: DaikinAlarmOutput
+          expr: daikin_altherma_hydronic_state_alarm_output == 1
+          for: 5m
+          labels:
+            severity: critical
+            component: heating
+          annotations:
+            summary: "Daikin alarm output is active"
+            description: "The unit asserted its dedicated alarm signal — usually a fault that stops operation."
+
+        # ESP32 reaches the pump but not its Modbus/serial bus.
+        - alert: DaikinBusDisconnected
+          expr: daikin_heartbeat_bus_connected == 0
+          for: 15m
+          labels:
+            severity: warning
+            component: heating
+          annotations:
+            summary: "daikin-altherma-esp32 lost its bus connection"
+            description: "The ESP32 is online but not talking to the heat pump, so all daikin_altherma_* values are stale."
+
+        # Assumption: below 1.0 bar most hydronic systems need topping up.
+        - alert: DaikinWaterPressureLow
+          expr: daikin_altherma_hydronic_state_water_pressure < 1.0
+          for: 30m
+          labels:
+            severity: warning
+            component: heating
+          annotations:
+            summary: {{ `"Heating water pressure low: {{ $value }} bar"` }}
+            description: "Normal operating pressure was 1.8 bar when this alert was written. Sustained loss suggests a leak or a tired expansion vessel."
+
+        # Assumption: ~40 KB. Observed idle 179 KB, low-water mark 109 KB.
+        # A steady decline here is the classic ESP32 leak signature.
+        - alert: DaikinEsp32LowHeap
+          expr: daikin_heartbeat_free_heap < 40000
+          for: 15m
+          labels:
+            severity: warning
+            component: heating
+          annotations:
+            summary: {{ `"daikin-altherma-esp32 low on heap: {{ $value }} bytes"` }}
+            description: "Free heap dropped far below the usual ~179 KB. The ESP32 will likely reboot soon."
