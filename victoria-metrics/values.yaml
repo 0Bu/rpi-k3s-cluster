@@ -26,8 +26,62 @@ victoria-metrics:
     enabled: false
   defaultDashboards:
     enabled: false
+  # Mitgelieferte Regeln: bewusst kuratiert statt alles-oder-nichts. Der Node ist
+  # gut ausgelastet, jede Gruppe kostet Auswertungen gegen vmsingle.
+  # Deaktiviert wird, was in diesem Cluster nichts überwachen kann.
   defaultRules:
-    create: false
+    create: true
+    groups:
+      # k3s: kein externes etcd, Scheduler/Controller-Manager werden nicht
+      # gescrapt (siehe kubeScheduler/kubeControllerManager unten). Regeln
+      # darauf wären dauerhaft blind oder falsch-positiv.
+      etcd:
+        enabled: false
+      kube-scheduler.rules:
+        enabled: false
+      kubernetes-system-scheduler:
+        enabled: false
+      kubernetes-system-controller-manager:
+        enabled: false
+      # API-Server-SLO/Burnrate: ~30 Regeln für Fehlerbudget-Betrachtungen.
+      # Sinnvoll im Produktivbetrieb mit SLOs, Overkill für einen Heimcluster.
+      kube-apiserver-burnrate.rules:
+        enabled: false
+      kube-apiserver-histogram.rules:
+        enabled: false
+      kube-apiserver-slos:
+        enabled: false
+      # vmsingle im Einsatz, nicht vmcluster.
+      vmcluster:
+        enabled: false
+      # Recording-Rules, die ausschließlich die mitgelieferten Dashboards
+      # füttern — und die sind via defaultDashboards deaktiviert.
+      # Achtung: node.rules, node-exporter.rules und kubelet.rules bleiben an,
+      # deren Serien werden von aktiven Alert-Regeln verwendet.
+      k8s.rules.container_cpu_limits:
+        enabled: false
+      k8s.rules.container_cpu_requests:
+        enabled: false
+      k8s.rules.container_cpu_usage_seconds_total:
+        enabled: false
+      k8s.rules.container_memory_limits:
+        enabled: false
+      k8s.rules.container_memory_requests:
+        enabled: false
+      k8s.rules.container_memory_rss:
+        enabled: false
+      k8s.rules.container_memory_cache:
+        enabled: false
+      k8s.rules.container_memory_working_set_bytes:
+        enabled: false
+      k8s.rules.container_memory_swap:
+        enabled: false
+      k8s.rules.pod_owner:
+        enabled: false
+      kube-prometheus-general.rules:
+        enabled: false
+      kube-prometheus-node-recording.rules:
+        enabled: false
 
   # Alerting: vmalert wertet die VMRule-Objekte aus templates/vmrule-*.yaml aus
   # und meldet an den Alertmanager, der an Home Assistant zustellt.
