@@ -39,7 +39,8 @@ data:
     # =====================================================================
     # Daikin Altherma 3 R — ERGA04-08E / ETBH12E / EKHWSP via Home Hub EKRHH
     # Full register map from EKRHH installer reference guide 4P744838-1E, §9.2.
-    # All registers are single 16-bit words -> byte_order = "AB" (big-endian).
+    # All registers are single 16-bit words. Telegraf's request mode requires a
+    # four-character byte order -> "ABCD" for big-endian (CD is unused here).
     # measurement = "daikin" => metrics arrive in VictoriaMetrics as daikin_<field>.
     # =====================================================================
     [[inputs.modbus]]
@@ -64,7 +65,7 @@ data:
       # Enum/boolean states; INT16 without scaling.
       [[inputs.modbus.request]]
         slave_id = 1                 # Daikin default RTU address (ONECTA-configurable)
-        byte_order = "AB"
+        byte_order = "ABCD"
         register = "input"
         measurement = "daikin"
         fields = [
@@ -84,7 +85,7 @@ data:
       # ── Input registers: temperatures, flow, power (read-only, doc §9.2.2) ──
       [[inputs.modbus.request]]
         slave_id = 1
-        byte_order = "AB"
+        byte_order = "ABCD"
         register = "input"
         measurement = "daikin"
         fields = [
@@ -105,7 +106,7 @@ data:
       # Temp16 field-setting ranges; Add-zone entries read 32766 on single-zone systems.
       [[inputs.modbus.request]]
         slave_id = 1
-        byte_order = "AB"
+        byte_order = "ABCD"
         register = "input"
         measurement = "daikin"
         fields = [
@@ -122,7 +123,7 @@ data:
       # ── Input registers: DHW tank top/bottom temperatures (EKHWSP), doc §9.2.2 ──
       [[inputs.modbus.request]]
         slave_id = 1
-        byte_order = "AB"
+        byte_order = "ABCD"
         register = "input"
         measurement = "daikin"
         fields = [
@@ -133,7 +134,7 @@ data:
       # ── Input registers: room setpoint limits (doc §9.2.2) ──────────────────
       [[inputs.modbus.request]]
         slave_id = 1
-        byte_order = "AB"
+        byte_order = "ABCD"
         register = "input"
         measurement = "daikin"
         fields = [
@@ -147,7 +148,7 @@ data:
       # Read here for monitoring only; Telegraf never writes.
       [[inputs.modbus.request]]
         slave_id = 1
-        byte_order = "AB"
+        byte_order = "ABCD"
         register = "holding"
         measurement = "daikin"
         fields = [
@@ -171,7 +172,7 @@ data:
       # completeness; expect 0.
       [[inputs.modbus.request]]
         slave_id = 1
-        byte_order = "AB"
+        byte_order = "ABCD"
         register = "holding"
         measurement = "daikin"
         fields = [
@@ -189,7 +190,7 @@ data:
       # Present only on 2-zone systems; single-zone installs return 32766.
       [[inputs.modbus.request]]
         slave_id = 1
-        byte_order = "AB"
+        byte_order = "ABCD"
         register = "holding"
         measurement = "daikin"
         fields = [

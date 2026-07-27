@@ -29,7 +29,10 @@ Related analysis project: `~/Projects/waermepumpe-vs-gas/`
   offset is in the trailing comment.
 - **Register type**: telemetry lives in **input** registers (read-only, §9.2.2);
   setpoints/control in **holding** registers (R/W, §9.2.1). Telegraf only reads.
-- **Data types** (§9.2, p.40) — all values are single 16-bit words, `byte_order = "AB"`:
+- **Data types** (§9.2, p.40) — all values are single 16-bit words. Telegraf's
+  request configuration requires a four-character byte order, so EKRHH
+  big-endian values use `byte_order = "ABCD"` (the `CD` part is irrelevant for
+  a single 16-bit register):
 
   | Doc type | Meaning                    | Telegraf         |
   |----------|----------------------------|------------------|
