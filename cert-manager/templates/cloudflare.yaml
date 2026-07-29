@@ -14,8 +14,10 @@ kind: ClusterIssuer
 metadata:
   name: cloudflare-issuer
   annotations:
-    helm.sh/hook: post-install
-    helm.sh/hook-weight: "1000"
+    # Not a Helm hook: ArgoCD deletes hook resources before recreating them
+    # (BeforeHookCreation), which would re-register the ACME account on every
+    # sync. Sync waves order this after the cert-manager webhook is healthy.
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
@@ -33,8 +35,12 @@ kind: Certificate
 metadata:
   name: cloudflare-cert
   annotations:
-    helm.sh/hook: post-install
-    helm.sh/hook-weight: "2000"
+    # Not a Helm hook: ArgoCD's BeforeHookCreation delete policy dropped this
+    # Certificate on every sync, and because cert-manager runs with
+    # --enable-certificate-owner-ref the cloudflare-tls Secret was garbage
+    # collected with it. Every sync therefore forced a full ACME re-issuance
+    # plus a ~3 min window in which Traefik served its self-signed default.
+    argocd.argoproj.io/sync-wave: "2"
     helm.sh/resource-policy: keep
 spec:
   secretName: cloudflare-tls
