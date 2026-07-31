@@ -12,3 +12,7 @@ helm install telegraf .
 ```
 helm uninstall telegraf
 ```
+
+## Integrationen
+- [Daikin Altherma (Modbus)](DAIKIN-MODBUS.md)
+- [Meross MTS200 (lokales HTTP)](MEROSS-MTS200.md)

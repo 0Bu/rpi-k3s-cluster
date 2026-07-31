@@ -6,6 +6,24 @@
 daikin:
   enabled: true
 
+# Meross MTS200 (WLAN-Thermostat) — INAKTIV, lokal per HTTP, ohne Meross-Cloud.
+# Aktivierung (Geräte-IP, Device-Key, enabled): telegraf/MEROSS-MTS200.md.
+# Solange enabled: false bleibt, rendert nur eine leere ConfigMap
+# `telegraf-meross` — der Mount unten läuft ins Leere, sonst passiert nichts.
+meross:
+  enabled: false
+  # Ein Poller bedient alle Geräte; `name` wird zum Tag `device`.
+  devices: []
+  #  - name: wohnzimmer
+  #    host: 192.168.1.60
+  interval: "30s"
+  # Device-Key, mit kubeseal verschlüsselt (siehe MEROSS-MTS200.md).
+  sealedKey: ""
+  # Poller-Image: offizielles python-Image, das Skript kommt aus der ConfigMap.
+  image:
+    repository: python
+    tag: 3.13-alpine@sha256:399babc8b49529dabfd9c922f2b5eea81d611e4512e3ed250d75bd2e7683f4b0
+
 telegraf:
   service:
     enabled: false
@@ -122,6 +140,9 @@ telegraf:
     # Daikin Home Hub EKRHH Modbus input:
     - --config-directory
     - /etc/telegraf/daikin.d
+    # Meross MTS200 HTTP input (leer solange meross.enabled: false):
+    - --config-directory
+    - /etc/telegraf/meross.d
 
   volumes:
     - name: telegraf-modbus
@@ -130,9 +151,14 @@ telegraf:
     - name: telegraf-modbus-daikin
       configMap:
         name: telegraf-modbus-daikin
+    - name: telegraf-meross
+      configMap:
+        name: telegraf-meross
 
   mountPoints:
     - name: telegraf-modbus
       mountPath: /etc/telegraf/conf.d
     - name: telegraf-modbus-daikin
       mountPath: /etc/telegraf/daikin.d
+    - name: telegraf-meross
+      mountPath: /etc/telegraf/meross.d

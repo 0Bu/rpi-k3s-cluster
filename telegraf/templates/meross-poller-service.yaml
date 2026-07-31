@@ -1,0 +1,15 @@
+{{- if .Values.meross.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: telegraf-meross-poller
+  labels:
+    app.kubernetes.io/name: telegraf-meross-poller
+spec:
+  selector:
+    app: telegraf-meross-poller
+  ports:
+    - name: http
+      port: 9110
+      targetPort: http
+{{- end }}

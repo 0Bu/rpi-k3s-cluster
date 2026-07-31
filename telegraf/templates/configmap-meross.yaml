@@ -1,0 +1,121 @@
+{{- /*
+  Meross MTS200 (WLAN-Thermostat) — lokale Abfrage ohne Meross-Cloud.
+
+  Telegraf holt die Werte nicht direkt vom Thermostat: Meross verlangt einen
+  signierten Header (sign = md5(messageId + device_key + timestamp)), den
+  inputs.http nicht bilden kann. Dazwischen steht der Poller
+  (templates/meross-poller-deployment.yaml), der die Signatur baut und die
+  Geräteantwort unverändert als JSON ausliefert. Hier wird nur geparst,
+  umbenannt und skaliert.
+
+  Die ConfigMap wird IMMER gerendert (values.yaml mountet sie unbedingt nach
+  /etc/telegraf/meross.d); ohne `meross.enabled` bleibt sie leer, das
+  --config-directory ist dann schlicht ohne Inhalt.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telegraf-meross
+  labels:
+    app.kubernetes.io/name: telegraf
+{{- if and .Values.meross.enabled .Values.meross.devices }}
+data:
+  meross.conf: |
+{{- range .Values.meross.devices }}
+    # ── {{ .name }} ({{ .host }}) ────────────────────────────────────────
+    # Appliance.System.All liefert den kompletten Gerätezustand inklusive
+    # digest.thermostat — ein Request pro Intervall reicht für alle Werte.
+    [[inputs.http]]
+      urls = ["http://telegraf-meross-poller:9110/poll?host={{ .host }}&namespace=Appliance.System.All"]
+      method = "GET"
+      interval = "{{ $.Values.meross.interval }}"
+      timeout = "15s"
+      data_format = "json_v2"
+      [inputs.http.tags]
+        device = "{{ .name }}"
+      # digest.thermostat.mode ist ein Array (ein Element je Kanal); json_v2
+      # macht daraus je eine Zeile, `channel` wird zum Tag.
+      #   onoff  0/1  Thermostat ein/aus
+      #   mode   0=heat 1=cool 2=eco 3=auto(Zeitplan) 4=manual
+      #   state  0/1  Heizkreis gerade aktiv (Relais)
+      #   warning 0=ok 1=Überhitzung 2=Fühler nicht verbunden
+      # lmTime/min/max sind Konstanten bzw. ein Änderungszeitstempel —
+      # als Zeitreihe wertlos, deshalb ausgeschlossen.
+      [[inputs.http.json_v2]]
+        measurement_name = "meross_mts200"
+        [[inputs.http.json_v2.object]]
+          path = "all.digest.thermostat.mode"
+          disable_prepend_keys = true
+          tags = ["channel"]
+          excluded_keys = ["lmTime", "min", "max"]
+      # Fenster-offen-Erkennung: status = erkannt, detect = Funktion aktiv.
+      [[inputs.http.json_v2]]
+        measurement_name = "meross_mts200_window"
+        [[inputs.http.json_v2.object]]
+          path = "all.digest.thermostat.windowOpened"
+          disable_prepend_keys = true
+          tags = ["channel"]
+          excluded_keys = ["lmTime"]
+
+    # WLAN-Signalstärke (%). Eigener Namespace, eigener Request — deshalb
+    # bewusst seltener als der Gerätezustand.
+    [[inputs.http]]
+      urls = ["http://telegraf-meross-poller:9110/poll?host={{ .host }}&namespace=Appliance.System.Runtime"]
+      method = "GET"
+      interval = "5m"
+      timeout = "15s"
+      data_format = "json_v2"
+      [inputs.http.tags]
+        device = "{{ .name }}"
+      [[inputs.http.json_v2]]
+        measurement_name = "meross_mts200_runtime"
+        [[inputs.http.json_v2.object]]
+          path = "runtime"
+          disable_prepend_keys = true
+{{- end }}
+
+    # ── Aufbereitung ─────────────────────────────────────────────────────
+    # Prozessoren greifen global, deshalb überall namepass. `order` fixiert
+    # die Reihenfolge: erst umbenennen (1), dann skalieren (2) — die scale-
+    # Filter unten arbeiten bereits mit den neuen Feldnamen.
+    [[processors.rename]]
+      order = 1
+      namepass = ["meross_mts200"]
+      [[processors.rename.replace]]
+        field = "currentTemp"
+        dest = "temperature"
+      [[processors.rename.replace]]
+        field = "targetTemp"
+        dest = "target_temp"
+      [[processors.rename.replace]]
+        field = "heatTemp"
+        dest = "heat_temp"
+      [[processors.rename.replace]]
+        field = "coolTemp"
+        dest = "cool_temp"
+      [[processors.rename.replace]]
+        field = "ecoTemp"
+        dest = "eco_temp"
+      [[processors.rename.replace]]
+        field = "manualTemp"
+        dest = "manual_temp"
+
+    [[processors.rename]]
+      order = 1
+      namepass = ["meross_mts200_window"]
+      [[processors.rename.replace]]
+        field = "status"
+        dest = "open"
+      [[processors.rename.replace]]
+        field = "detect"
+        dest = "detection_enabled"
+
+    # Alle Temperaturen kommen in Zehntelgrad (210 = 21,0 °C).
+    [[processors.scale]]
+      order = 2
+      namepass = ["meross_mts200"]
+      [[processors.scale.scaling]]
+        factor = 0.1
+        offset = 0.0
+        fields = ["temperature", "target_temp", "heat_temp", "cool_temp", "eco_temp", "manual_temp"]
+{{- end }}

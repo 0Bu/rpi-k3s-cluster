@@ -1,0 +1,82 @@
+{{- /*
+  Poller für die lokalen Meross-Geräte (siehe configmap-meross-poller.yaml).
+
+  Eigenes Deployment statt Sidecar: der Telegraf-Chart bietet keinen Haken für
+  zusätzliche Container, und ein separater Pod lässt sich unabhängig neu
+  starten und einzeln per curl testen.
+
+  Das offizielle python-Image wird unverändert benutzt, das Skript kommt aus
+  der ConfigMap — kein eigenes Image, kein Registry-Betrieb.
+*/}}
+{{- if .Values.meross.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telegraf-meross-poller
+  labels:
+    app.kubernetes.io/name: telegraf-meross-poller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telegraf-meross-poller
+  template:
+    metadata:
+      labels:
+        app: telegraf-meross-poller
+      annotations:
+        checksum/script: {{ include (print $.Template.BasePath "/configmap-meross-poller.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: poller
+          image: "{{ .Values.meross.image.repository }}:{{ .Values.meross.image.tag }}"
+          command: ["python3", "-u", "/opt/meross/poller.py"]
+          env:
+            # Der Device-Key ist bei einem cloud-gekoppelten Gerät Pflicht;
+            # optional: true lässt ein nie gekoppeltes Gerät (leerer Key)
+            # auch ohne SealedSecret laufen.
+            - name: MEROSS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: telegraf-meross
+                  key: device-key
+                  optional: true
+            - name: MEROSS_HOSTS
+              value: "{{- range $index, $device := .Values.meross.devices }}{{ if $index }},{{ end }}{{ $device.host }}{{- end }}"
+          ports:
+            - name: http
+              containerPort: 9110
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 60
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 96Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: script
+              mountPath: /opt/meross
+      volumes:
+        - name: script
+          configMap:
+            name: telegraf-meross-poller
+            defaultMode: 0444
+{{- end }}
