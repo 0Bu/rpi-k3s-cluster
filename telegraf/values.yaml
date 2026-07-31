@@ -82,22 +82,27 @@ telegraf:
           topic_tag: "topic"
           data_format: "json"
       # ── Daikin Altherma ESP32 (X10A-Bridge) ──────────────────────────────
-      # Firmware daikin-altherma-esp32 publiziert zwei JSON-Topics unter
+      # Firmware daikin-altherma-esp32 publiziert drei JSON-Topics unter
       # <base> = "daikin-altherma-esp32" (CONFIG_DAIKIN_MQTT_BASE_TOPIC):
-      #   <base>/state     - gruppiertes Wärmepumpen-JSON, on-change (retained)
+      #   <base>/x10a      - gruppiertes X10A-JSON, on-change (retained)
+      #   <base>/modbus    - HomeHub-Modbus-JSON, on-change (retained)
       #   <base>/heartbeat - flache Board-/Link-Diagnose, fester 10s-Takt
-      # /status (LWT online/offline) und /crash sind kein Metrik-JSON und
+      # /status, /modbus/status (Verfügbarkeit) und /crash sind kein Metrik-JSON und
       # werden bewusst nicht abonniert (Parser würde fehlschlagen).
       #
+      # Ausschließlich /x10a wird hier konsumiert. /modbus bleibt bewusst außen vor:
+      # Telegraf liest dieselben HomeHub-Register bereits direkt über inputs.modbus
+      # (/etc/telegraf/daikin.d) und würde sie über MQTT doppelt nach VictoriaMetrics senden.
+      #
       # Der json-Parser übernimmt nur numerische Felder; verschachtelte Objekte
-      # im state-Topic werden mit "_" zu flachen Feldnamen verkettet, z.B.
+      # im x10a-Topic werden mit "_" zu flachen Feldnamen verkettet, z.B.
       # outdoor_sensors.leaving_water_temp -> outdoor_sensors_leaving_water.
       # Enum-/Text-/Boolean-Felder verwirft der Parser (Metrik-Store ist
       # numerisch); Bus-/Heap-/RSSI-Zähler decken die Diagnose numerisch ab.
       - mqtt_consumer:
           name_override: "daikin_altherma"
           servers: ["tcp://mosquitto:1883"]
-          topics: ["daikin-altherma-esp32/state"]
+          topics: ["daikin-altherma-esp32/x10a"]
           data_format: "json"
           tags:
             device: "daikin-altherma-esp32"
