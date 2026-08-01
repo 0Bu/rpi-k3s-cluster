@@ -1,8 +1,8 @@
 # Daikin heat pump (Modbus) — ACTIVE. Home Hub EKRHH reachable at 192.168.1.131:502
 # (slave_id 1); the full §9.2 register map in templates/configmap-daikin.yaml was
-# verified live against the unit (all 8 request blocks read, no IllegalDataAddress).
-# Registers currently return the §9.2.3 "wait for value"/"unsupported" sentinels
-# until the heat pump delivers live data — filter downstream (see telegraf/DAIKIN-MODBUS.md).
+# verified live against the unit. All 59 fields remain enabled across five
+# priority classes (10 s / 30 s / 60 s / 5 min / 1 h); see DAIKIN-MODBUS.md.
+# Unsupported equipment can return §9.2.3 sentinel values; filter downstream.
 daikin:
   enabled: true
 
