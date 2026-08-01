@@ -29,8 +29,10 @@ All previous 57 metric names remain unchanged. Seven safety metrics were added:
 - `foxess_battery_bms_fault_1` through `_fault_6` — registers 37626–37631.
 
 Every request explicitly sets `optimization = "none"`, so Telegraf never fills
-gaps with reserved or otherwise unselected registers. Per-input
-`collection_jitter` spreads the Modbus traffic.
+gaps with reserved or otherwise unselected registers. Fixed per-input
+`collection_offset` values place the five pollers at 0, 2, 4, 6 and 8 seconds
+within their interval. This is required because random jitter still allowed
+simultaneous requests and the FoxESS connection responded with sporadic `EOF`.
 
 ## Expected load
 

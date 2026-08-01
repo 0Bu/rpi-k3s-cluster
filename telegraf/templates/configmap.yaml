@@ -21,7 +21,7 @@ data:
       controller = "${MODBUS_CONTROLLER}"
       configuration_type = "request"
       interval = "10s"
-      collection_jitter = "1s"
+      collection_offset = "0s"
       timeout = "5s"
       busy_retries = 3
       busy_retries_wait = "500ms"
@@ -76,7 +76,7 @@ data:
       controller = "${MODBUS_CONTROLLER}"
       configuration_type = "request"
       interval = "10s"
-      collection_jitter = "2s"
+      collection_offset = "2s"
       timeout = "5s"
       busy_retries = 3
       busy_retries_wait = "500ms"
@@ -157,7 +157,7 @@ data:
       controller = "${MODBUS_CONTROLLER}"
       configuration_type = "request"
       interval = "30s"
-      collection_jitter = "5s"
+      collection_offset = "4s"
       timeout = "5s"
       busy_retries = 3
       busy_retries_wait = "500ms"
@@ -217,7 +217,7 @@ data:
       controller = "${MODBUS_CONTROLLER}"
       configuration_type = "request"
       interval = "60s"
-      collection_jitter = "10s"
+      collection_offset = "6s"
       timeout = "5s"
       busy_retries = 3
       busy_retries_wait = "500ms"
@@ -248,7 +248,7 @@ data:
       controller = "${MODBUS_CONTROLLER}"
       configuration_type = "request"
       interval = "5m"
-      collection_jitter = "30s"
+      collection_offset = "8s"
       timeout = "5s"
       busy_retries = 3
       busy_retries_wait = "500ms"
