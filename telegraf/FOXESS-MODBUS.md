@@ -1,9 +1,7 @@
 # FoxESS H3 Smart — Modbus integration
 
-Telegraf reads the FoxESS H3 Smart through the cluster-local evcc Modbus proxy
-at `tcp://evcc:502`, logical device/slave ID `247`. evcc owns and serializes the
-physical inverter connection; Telegraf must not open five independent direct
-connections to the inverter. The mapping follows FoxESS *Modbus definition
+Telegraf reads the FoxESS H3 Smart directly at `tcp://192.168.107.186:502`,
+logical device/slave ID `247`. The mapping follows FoxESS *Modbus definition
 V1.05.04.00*, tables 3-3 through 3-6. All configured registers are documented
 `RO`; Telegraf uses FC03 only and has no write path.
 
@@ -33,6 +31,11 @@ gaps with reserved or otherwise unselected registers. Fixed per-input
 `collection_offset` values place the five pollers at 0, 2, 4, 6 and 8 seconds
 within their interval. This is required because random jitter still allowed
 simultaneous requests and the FoxESS connection responded with sporadic `EOF`.
+Each tier also sets `close_connection_after_gather = true`, so the five inputs
+do not hold five direct TCP connections open. At most one Telegraf connection
+is active at a time. The evcc Modbus proxy is deliberately not used: live
+rollout tests still produced upstream `EOF` responses after Telegraf's own
+requests had been serialized.
 
 ## Expected load
 
@@ -71,8 +74,9 @@ Before merging:
 2. Render and parse `modbus.conf` with Telegraf's config checker.
 3. Assert five inputs, 13 request definitions and 64 unique fields.
 4. Compare the 57 established field names with the previous revision.
-5. Run all five inputs read-only against `tcp://evcc:502`; a direct parallel
-   test against the inverter is invalid because of its TCP-client limit.
+5. Assert fixed offsets and `close_connection_after_gather = true` on all five
+   inputs; direct parallel one-shot tests are invalid because they ignore the
+   runtime offsets and exceed the inverter's TCP-client budget.
 
 After ArgoCD sync:
 
