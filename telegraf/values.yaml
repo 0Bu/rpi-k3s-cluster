@@ -10,7 +10,7 @@ telegraf:
   # The upstream chart only hashes its primary ConfigMap. Keep this annotation
   # equal to the rendered modbus.conf SHA-256 so FoxESS changes also roll the pod.
   podAnnotations:
-    checksum/foxess-modbus-config: "857da7a20b619b3c03922d7f6aa5c67140c8a659d4930573623eccc97de9cc90"
+    checksum/foxess-modbus-config: "6f34f73681e91e5e1595add7c7a8525a241c977c3b4b6928e55c87a4424dcea5"
 
   service:
     enabled: false
