@@ -4,9 +4,9 @@ Telegraf Modbus input for the heat pump (Daikin Altherma 3 R: ERGA04-08E /
 ETBH12E / EKHWSP, Home Hub **EKRHH**). The registers are **mapped** from the
 EKRHH installer reference guide `4P744838-1E`, section *"9.2 Modbus registers"*.
 
-The input stays **inactive** while `daikin.enabled: false` (default) — merging
-changes nothing in the running cluster. It is enabled once the heat pump is
-installed and the connection to the Home Hub is verified.
+The input is active for the Home Hub at `192.168.1.131:502` (`slave_id = 1`).
+All documented registers remain available, but Telegraf polls them in priority
+classes instead of reading the complete map every 30 seconds.
 
 Related analysis project: `~/Projects/waermepumpe-vs-gas/`
 (`analyse/vergleich_run.py`).
@@ -17,9 +17,8 @@ Related analysis project: `~/Projects/waermepumpe-vs-gas/`
   `daikin.conf`. Registers mapped from the EKRHH docs, gated by
   `{{ if .Values.daikin.enabled }}`. `measurement = "daikin"` → metrics land in
   VictoriaMetrics as `daikin_<field>`.
-- `values.yaml` — `daikin.enabled: false` plus commented-out activation blocks
-  (env `DAIKIN_MODBUS_CONTROLLER`, `--config-directory /etc/telegraf/daikin.d`,
-  volume, mountPoint).
+- `values.yaml` — `daikin.enabled: true`, controller environment variable,
+  config directory, volume and mount point.
 
 ## Addressing & data formats (EKRHH doc §9.2)
 
@@ -49,7 +48,24 @@ Related analysis project: `~/Projects/waermepumpe-vs-gas/`
 ## Mapped metrics
 
 **All 36 input registers (§9.2.2) and all 23 holding registers (§9.2.1) are
-read** — 59 fields total, in 8 request blocks.
+read** — 59 fields total, distributed over five poll classes and 12 request
+definitions. Metric and field names are unchanged.
+
+### Polling priorities
+
+| Priority | Interval | Register groups | Rationale |
+|----------|----------|-----------------|-----------|
+| P0 alarm | 10 s | input offsets 21–23 | Faults and warnings must become visible quickly. |
+| P1 process / ML | 30 s | input offsets 30–53; holding offsets 53–58 | Dynamic operating state, temperatures, flow, power, heating-curve mode/offsets and limits. |
+| P2 operator state | 60 s | holding offsets 1–4, 9–10, 12–13 | User-facing setpoints and switches change occasionally. |
+| P3 active configuration | 5 min | input offsets 54–57, 76–77 | Installed main-zone limits and tank sensors normally stay constant. |
+| P4 inventory / optional features | 1 h | remaining Add-zone, room-limit and thermostat registers | Preserve the complete manufacturer map without continuously polling unused features. |
+
+Each `[[inputs.modbus]]` instance has `collection_jitter` so the classes do not
+all hit the Home Hub at the same instant. Every request explicitly uses
+`optimization = "none"`: Telegraf reads only the listed addresses and does not
+fill address gaps with undocumented registers. The integration remains strictly
+read-only, including all holding registers.
 
 Input registers (`daikin_*`):
 
@@ -98,16 +114,14 @@ The only power/energy-related signal is the instantaneous **`power_consumption`*
 - `analyse/vergleich_run.py` must be aligned to the real field names above; the
   `daikin_energy_input` / `daikin_heat_output` inputs it expects have no source.
 
-## Activation (after commissioning)
+## Configuration
 
-1. **Set the controller.** In `values.yaml` uncomment `DAIKIN_MODBUS_CONTROLLER`
-   and point it at the Home Hub — Modbus **TCP** `tcp://<home-hub-ip>:502`
-   (port 802 for TLS) or **RTU/RS485** `file:///dev/ttyUSB0` (9600 8N1, then
-   uncomment the serial params in `daikin.conf`). Confirm the `slave_id`
-   (default `1`, set in the ONECTA app).
-2. **Uncomment in `values.yaml`:** the env var, `--config-directory
-   /etc/telegraf/daikin.d`, the volume and the mountPoint.
-3. **Set `daikin.enabled: true`.**
+The production values currently select Modbus TCP
+`tcp://192.168.1.131:502`; `slave_id = 1` is set in every request. To disable
+the integration, set `daikin.enabled: false`. For another Home Hub, change only
+`DAIKIN_MODBUS_CONTROLLER`. Port 802 is reserved for TLS; RTU/RS485 uses a
+`file:///dev/ttyUSB0` controller and the serial parameters documented in the
+ConfigMap.
 
 ## Testing
 
@@ -119,7 +133,7 @@ The `[[inputs.modbus]]` path is already proven in production (FoxESS →
    helm template telegraf ./telegraf --set daikin.enabled=true \
      -s templates/configmap-daikin.yaml
    ```
-2. **Dry run against the unit** (before writing to VM): temporarily enable the
+2. **Dry run against the unit** (without writing to VM): temporarily enable the
    `file` output (stdout) with `namepass = ["daikin"]` and `config.agent.debug: true`,
    then:
    ```bash
@@ -134,10 +148,10 @@ The `[[inputs.modbus]]` path is already proven in production (FoxESS →
      "curl -s 'http://vmsingle-vm:8428/api/v1/query' --data-urlencode 'query=daikin_power_consumption' -G"
    ```
 
-## Afterwards
+## Follow-up consumers
 
 - Align the metric names in `waermepumpe-vs-gas/analyse/vergleich_run.py` with
   the real fields above (and drop the unavailable energy/COP inputs, or feed them
   from the external meters).
-- Create a Grafana dashboard "Wärmepumpe" analogous to `ems-esp-heizung`.
-- Merge `daikin.enabled: true` to main → ArgoCD deploys the input.
+- Keep dashboards and ML feature queries tolerant of the slower P2–P4 cadence;
+  P1 remains the authoritative 30-second process stream.
