@@ -6,162 +6,230 @@ metadata:
     app.kubernetes.io/name: telegraf
 data:
   modbus.conf: |
+    # FoxESS H3 Smart via Modbus TCP. All registers below are documented RO
+    # registers from FoxESS Modbus definition V1.05.04.00. Telegraf only uses
+    # FC03 reads; it has no Modbus write configuration.
+    #
+    # Polling is tiered by operational relevance and observed change rate.
+    # Every request explicitly disables gap filling so reserved registers are
+    # never read implicitly.
+
+    # P0 — safety and connectivity. Rare changes must be visible quickly.
     [[inputs.modbus]]
+      alias = "foxess_safety"
       name = "foxess"
       controller = "${MODBUS_CONTROLLER}"
       configuration_type = "request"
       interval = "10s"
+      collection_jitter = "1s"
       timeout = "5s"
       busy_retries = 3
       busy_retries_wait = "500ms"
       [inputs.modbus.tags]
         inverter = "foxess_h3_smart"
 
-      # ── Netz / Meter CT1 (38xxx) ─────────────────────────────────────────
-      # Tab. 3-4: Meter1/CT1 Ströme, Wirkleistung, Blindleistung
-      # Vorzeichen-Konvention: negativ = Einspeisung, positiv = Bezug
-      [[inputs.modbus.request]]
-        slave_id = 247
-        byte_order = "ABCD"
-        register = "holding"
-        measurement = "foxess_grid_meter"
-        fields = [
-          # Ströme (A; gain=1000)
-          {name = "current_l1",    address = 38808, type = "INT32",  scale = 0.001},
-          {name = "current_l2",    address = 38810, type = "INT32",  scale = 0.001},
-          {name = "current_l3",    address = 38812, type = "INT32",  scale = 0.001},
-          # Kombinierte Wirkleistung (W; gain=10)
-          {name = "meter_active",  address = 38814, type = "INT32",  scale = -0.1},
-          # Phasenwirkleistungen (W; gain=10, invertiertes Vorzeichen)
-          {name = "l1",            address = 38816, type = "INT32",  scale = -0.1},
-          {name = "l2",            address = 38818, type = "INT32",  scale = -0.1},
-          {name = "l3",            address = 38820, type = "INT32",  scale = -0.1},
-          # Blindleistung (Var; gain=10)
-          {name = "reactive_power",address = 38822, type = "INT32",  scale = 0.1}
-        ]
-
-      # ── Netz / Wechselrichter-seitig (39xxx) ─────────────────────────────
-      # Tab. 3-5: Netzspannungen, Ströme, Frequenz vom Wechselrichter
-      [[inputs.modbus.request]]
-        slave_id = 247
-        byte_order = "ABCD"
-        register = "holding"
-        measurement = "foxess_grid"
-        fields = [
-          # Netzspannungen (V; gain=10)
-          {name = "voltage_l1",         address = 39123, type = "INT16",  scale = 0.1},
-          {name = "voltage_l2",         address = 39124, type = "INT16",  scale = 0.1},
-          {name = "voltage_l3",         address = 39125, type = "INT16",  scale = 0.1},
-          # Wechselrichter-Ausgangsströme (A; gain=1000)
-          {name = "inverter_current_l1",address = 39126, type = "INT32",  scale = 0.001},
-          {name = "inverter_current_l2",address = 39128, type = "INT32",  scale = 0.001},
-          {name = "inverter_current_l3",address = 39130, type = "INT32",  scale = 0.001},
-          # Netzfrequenz (Hz; gain=100)
-          {name = "frequency",          address = 39139, type = "INT16",  scale = 0.01}
-        ]
-
-      # ── Wechselrichter-AC-Ausgang ────────────────────────────────────────
-      # Tab. 3-5 (39xxx): Status, Leistung, Last
+      # Inverter operation, off-grid state and alarms (table 3-5).
       [[inputs.modbus.request]]
         slave_id = 247
         byte_order = "ABCD"
         register = "holding"
         measurement = "foxess_inverter"
+        optimization = "none"
         fields = [
-          # Status (Bitfield: Bit0=Standby, Bit2=Operation, Bit6=Fault)
-          {name = "status",         address = 39063, type = "UINT16", scale = 1.0},
-          # Alarm-Register
-          {name = "alarm_1",        address = 39067, type = "UINT16", scale = 1.0},
-          {name = "alarm_2",        address = 39068, type = "UINT16", scale = 1.0},
-          {name = "alarm_3",        address = 39069, type = "UINT16", scale = 1.0},
-          # Wirkleistung (W; gain=1000)
-          {name = "active_power",   address = 39134, type = "INT32",  scale = 1.0},
-          # Blindleistung (Var; gain=1000)
-          {name = "reactive_power", address = 39136, type = "INT32",  scale = 1.0},
-          # Leistungsfaktor (gain=1000)
-          {name = "power_factor",   address = 39138, type = "INT16",  scale = 0.001},
-          # Innentemperatur (°C; gain=10)
-          {name = "temperature",    address = 39141, type = "INT16",  scale = 0.1},
-          # Lastleistung pro Phase (W; gain=1)
-          {name = "load_l1",        address = 39219, type = "INT32",  scale = 1.0},
-          {name = "load_l2",        address = 39221, type = "INT32",  scale = 1.0},
-          {name = "load_l3",        address = 39223, type = "INT32",  scale = 1.0},
-          # Lastleistung kombiniert (W; gain=1)
-          {name = "load_power",     address = 39225, type = "INT32",  scale = 1.0},
-          # INV Phasenleistung (W; gain=1)
-          {name = "power_l1",       address = 39248, type = "INT32",  scale = 1.0},
-          {name = "power_l2",       address = 39250, type = "INT32",  scale = 1.0},
-          {name = "power_l3",       address = 39252, type = "INT32",  scale = 1.0},
-          # Verfügbare Exportleistung (W; gain=1)
-          {name = "available_export",address = 39277, type = "INT32",  scale = 1.0}
+          {name = "status",   address = 39063, type = "UINT16", scale = 1.0},  # Status1: standby/operation/fault
+          {name = "status_3", address = 39065, type = "UINT32", scale = 1.0},  # Status3: bit 0 off-grid
+          {name = "alarm_1",  address = 39067, type = "UINT16", scale = 1.0},
+          {name = "alarm_2",  address = 39068, type = "UINT16", scale = 1.0},
+          {name = "alarm_3",  address = 39069, type = "UINT16", scale = 1.0}
         ]
 
-      # ── PV-String 1 ─────────────────────────────────────────────────────
-      # Tab. 3-5 (39xxx): nur PV1 angeschlossen
-      [[inputs.modbus.request]]
-        slave_id = 247
-        byte_order = "ABCD"
-        register = "holding"
-        measurement = "foxess_pv"
-        fields = [
-          # PV1 (V gain=10, A gain=100, W gain=1)
-          {name = "pv1_voltage", address = 39070, type = "INT16",  scale = 0.1},
-          {name = "pv1_current", address = 39071, type = "INT16",  scale = 0.01},
-          {name = "pv1_power",   address = 39279, type = "INT32",  scale = 1.0}
-        ]
-
-      # ── Batterie BMS (37xxx) ─────────────────────────────────────────────
-      # Tab. 3-3: BMS1 Status, Rohdaten direkt vom BMS
+      # BMS connection and raw fault bitfields (table 3-3).
       [[inputs.modbus.request]]
         slave_id = 247
         byte_order = "ABCD"
         register = "holding"
         measurement = "foxess_battery_bms"
+        optimization = "none"
         fields = [
-          # BMS1 Connection Status (0=Offline, 1=Online)
-          {name = "bms_status",    address = 37002, type = "UINT16", scale = 1.0},
-          # BMS1 Rohdaten (direkt vom BMS gemeldet)
-          {name = "voltage",       address = 37609, type = "UINT16", scale = 0.1},
-          {name = "current",       address = 37610, type = "INT16",  scale = 0.1},
-          {name = "temperature",   address = 37611, type = "INT16",  scale = 0.1},
-          {name = "soc",           address = 37612, type = "UINT16", scale = 1.0},
-          {name = "soh",           address = 37624, type = "UINT16", scale = 1.0},
-          {name = "temp_max",      address = 37617, type = "INT16",  scale = 0.1},
-          {name = "temp_min",      address = 37618, type = "INT16",  scale = 0.1},
-          {name = "cell_v_max",    address = 37619, type = "UINT16", scale = 1.0},
-          {name = "cell_v_min",    address = 37620, type = "UINT16", scale = 1.0},
-          # remain_energy (37632) entfernt: BMS meldet konstant design_energy
-          # unabhängig vom SoC → keine Aussagekraft (Restenergie via soc/100 * design_energy ableiten)
-          # Full Charge Capacity (Ah; gain=10 → scale=0.1)
-          {name = "fcc_capacity",  address = 37633, type = "UINT16", scale = 0.1},
-          # Design-Energie (Wh; gain=0.1 → scale=10.0)
-          {name = "design_energy", address = 37635, type = "UINT16", scale = 10.0}
+          {name = "bms_status", address = 37002, type = "UINT16", scale = 1.0}  # 0 offline / 1 online
         ]
 
-      # ── Batterie Wechselrichter-seitig (39xxx) ────────────────────────────
-      # Tab. 3-5: Spannung, Strom, Leistung vom Wechselrichter gemessen
-      # Vorzeichen (WR-seitig, Protokoll 39228/39237): positiv = Entladen, negativ = Laden
-      #   Achtung: Gegenkonvention zur BMS-Strommessung (37610: positiv = Laden)
+      [[inputs.modbus.request]]
+        slave_id = 247
+        byte_order = "ABCD"
+        register = "holding"
+        measurement = "foxess_battery_bms"
+        optimization = "none"
+        fields = [
+          {name = "fault_1", address = 37626, type = "UINT16", scale = 1.0},
+          {name = "fault_2", address = 37627, type = "UINT16", scale = 1.0},
+          {name = "fault_3", address = 37628, type = "UINT16", scale = 1.0},
+          {name = "fault_4", address = 37629, type = "UINT16", scale = 1.0},
+          {name = "fault_5", address = 37630, type = "UINT16", scale = 1.0},
+          {name = "fault_6", address = 37631, type = "UINT16", scale = 1.0}
+        ]
+
+    # P1 — fast power-flow signals used by responsive dashboards and analysis.
+    [[inputs.modbus]]
+      alias = "foxess_power"
+      name = "foxess"
+      controller = "${MODBUS_CONTROLLER}"
+      configuration_type = "request"
+      interval = "10s"
+      collection_jitter = "2s"
+      timeout = "5s"
+      busy_retries = 3
+      busy_retries_wait = "500ms"
+      [inputs.modbus.tags]
+        inverter = "foxess_h3_smart"
+
+      # Meter1/CT1 currents and power (table 3-4).
+      # Sign convention after scaling: negative export, positive import.
+      [[inputs.modbus.request]]
+        slave_id = 247
+        byte_order = "ABCD"
+        register = "holding"
+        measurement = "foxess_grid_meter"
+        optimization = "none"
+        fields = [
+          {name = "current_l1",     address = 38808, type = "INT32", scale = 0.001},
+          {name = "current_l2",     address = 38810, type = "INT32", scale = 0.001},
+          {name = "current_l3",     address = 38812, type = "INT32", scale = 0.001},
+          {name = "meter_active",   address = 38814, type = "INT32", scale = -0.1},
+          {name = "l1",             address = 38816, type = "INT32", scale = -0.1},
+          {name = "l2",             address = 38818, type = "INT32", scale = -0.1},
+          {name = "l3",             address = 38820, type = "INT32", scale = -0.1},
+          {name = "reactive_power", address = 38822, type = "INT32", scale = 0.1}
+        ]
+
+      # Inverter output and load power (table 3-5).
+      [[inputs.modbus.request]]
+        slave_id = 247
+        byte_order = "ABCD"
+        register = "holding"
+        measurement = "foxess_inverter"
+        optimization = "none"
+        fields = [
+          {name = "active_power",   address = 39134, type = "INT32", scale = 1.0},
+          {name = "reactive_power", address = 39136, type = "INT32", scale = 1.0},
+          {name = "power_factor",   address = 39138, type = "INT16", scale = 0.001},
+          {name = "load_l1",        address = 39219, type = "INT32", scale = 1.0},
+          {name = "load_l2",        address = 39221, type = "INT32", scale = 1.0},
+          {name = "load_l3",        address = 39223, type = "INT32", scale = 1.0},
+          {name = "load_power",     address = 39225, type = "INT32", scale = 1.0},
+          {name = "power_l1",       address = 39248, type = "INT32", scale = 1.0},
+          {name = "power_l2",       address = 39250, type = "INT32", scale = 1.0},
+          {name = "power_l3",       address = 39252, type = "INT32", scale = 1.0}
+        ]
+
+      # PV string 1 (only installed string).
+      [[inputs.modbus.request]]
+        slave_id = 247
+        byte_order = "ABCD"
+        register = "holding"
+        measurement = "foxess_pv"
+        optimization = "none"
+        fields = [
+          {name = "pv1_voltage", address = 39070, type = "INT16", scale = 0.1},
+          {name = "pv1_current", address = 39071, type = "INT16", scale = 0.01},
+          {name = "pv1_power",   address = 39279, type = "INT32", scale = 1.0}
+        ]
+
+      # Battery as measured by the inverter. Positive current/power means
+      # discharging; negative means charging.
       [[inputs.modbus.request]]
         slave_id = 247
         byte_order = "ABCD"
         register = "holding"
         measurement = "foxess_battery"
+        optimization = "none"
         fields = [
           {name = "voltage", address = 39227, type = "INT16", scale = 0.1},
           {name = "current", address = 39228, type = "INT32", scale = 0.001},
           {name = "power",   address = 39237, type = "INT32", scale = 1.0}
         ]
 
-      # ── Energiezähler (nur _total) ────────────────────────────────────────
-      # Tab. 3-5 (39149+) + Tab. 3-6 (39601+); alle in kWh (gain=100 → scale=0.01)
-      # _today-Register entfernt: tägl. Reset erzeugt Sprünge, increase(_total) ist besser
-      # output_total entfernt: identisch mit generation_total
+    # P2 — grid quality and BMS health. Dynamic, but 10-second resolution adds
+    # mostly measurement noise rather than useful information.
+    [[inputs.modbus]]
+      alias = "foxess_health"
+      name = "foxess"
+      controller = "${MODBUS_CONTROLLER}"
+      configuration_type = "request"
+      interval = "30s"
+      collection_jitter = "5s"
+      timeout = "5s"
+      busy_retries = 3
+      busy_retries_wait = "500ms"
+      [inputs.modbus.tags]
+        inverter = "foxess_h3_smart"
+
+      [[inputs.modbus.request]]
+        slave_id = 247
+        byte_order = "ABCD"
+        register = "holding"
+        measurement = "foxess_grid"
+        optimization = "none"
+        fields = [
+          {name = "voltage_l1",          address = 39123, type = "INT16", scale = 0.1},
+          {name = "voltage_l2",          address = 39124, type = "INT16", scale = 0.1},
+          {name = "voltage_l3",          address = 39125, type = "INT16", scale = 0.1},
+          {name = "inverter_current_l1", address = 39126, type = "INT32", scale = 0.001},
+          {name = "inverter_current_l2", address = 39128, type = "INT32", scale = 0.001},
+          {name = "inverter_current_l3", address = 39130, type = "INT32", scale = 0.001},
+          {name = "frequency",           address = 39139, type = "INT16", scale = 0.01}
+        ]
+
+      [[inputs.modbus.request]]
+        slave_id = 247
+        byte_order = "ABCD"
+        register = "holding"
+        measurement = "foxess_inverter"
+        optimization = "none"
+        fields = [
+          {name = "temperature", address = 39141, type = "INT16", scale = 0.1}
+        ]
+
+      # BMS current uses the opposite sign convention to the inverter-side
+      # current: positive means charging, negative means discharging.
+      [[inputs.modbus.request]]
+        slave_id = 247
+        byte_order = "ABCD"
+        register = "holding"
+        measurement = "foxess_battery_bms"
+        optimization = "none"
+        fields = [
+          {name = "voltage",     address = 37609, type = "UINT16", scale = 0.1},
+          {name = "current",     address = 37610, type = "INT16",  scale = 0.1},
+          {name = "temperature", address = 37611, type = "INT16",  scale = 0.1},
+          {name = "soc",         address = 37612, type = "UINT16", scale = 1.0},
+          {name = "temp_max",    address = 37617, type = "INT16",  scale = 0.1},
+          {name = "temp_min",    address = 37618, type = "INT16",  scale = 0.1},
+          {name = "cell_v_max",  address = 37619, type = "UINT16", scale = 1.0},
+          {name = "cell_v_min",  address = 37620, type = "UINT16", scale = 1.0}
+        ]
+
+    # P3 — monotonic energy totals. The inverter updates these far less often
+    # than the current 10-second poll. Daily counters are deliberately omitted.
+    [[inputs.modbus]]
+      alias = "foxess_energy"
+      name = "foxess"
+      controller = "${MODBUS_CONTROLLER}"
+      configuration_type = "request"
+      interval = "60s"
+      collection_jitter = "10s"
+      timeout = "5s"
+      busy_retries = 3
+      busy_retries_wait = "500ms"
+      [inputs.modbus.tags]
+        inverter = "foxess_h3_smart"
+
       [[inputs.modbus.request]]
         slave_id = 247
         byte_order = "ABCD"
         register = "holding"
         measurement = "foxess_energy"
+        optimization = "none"
         fields = [
           {name = "generation_total",        address = 39149, type = "UINT32", scale = 0.01},
           {name = "pv_total",                address = 39601, type = "UINT32", scale = 0.01},
@@ -171,4 +239,42 @@ data:
           {name = "grid_import_total",       address = 39617, type = "UINT32", scale = 0.01},
           {name = "input_total",             address = 39625, type = "UINT32", scale = 0.01},
           {name = "load_total",              address = 39629, type = "UINT32", scale = 0.01}
+        ]
+
+    # P4 — inventory and very slow BMS/configuration values.
+    [[inputs.modbus]]
+      alias = "foxess_inventory"
+      name = "foxess"
+      controller = "${MODBUS_CONTROLLER}"
+      configuration_type = "request"
+      interval = "5m"
+      collection_jitter = "30s"
+      timeout = "5s"
+      busy_retries = 3
+      busy_retries_wait = "500ms"
+      [inputs.modbus.tags]
+        inverter = "foxess_h3_smart"
+
+      [[inputs.modbus.request]]
+        slave_id = 247
+        byte_order = "ABCD"
+        register = "holding"
+        measurement = "foxess_inverter"
+        optimization = "none"
+        fields = [
+          {name = "available_export", address = 39277, type = "INT32", scale = 1.0}
+        ]
+
+      # remain_energy is intentionally not read: this installation reported
+      # design_energy regardless of SoC. Derive it from SoC and design_energy.
+      [[inputs.modbus.request]]
+        slave_id = 247
+        byte_order = "ABCD"
+        register = "holding"
+        measurement = "foxess_battery_bms"
+        optimization = "none"
+        fields = [
+          {name = "soh",           address = 37624, type = "UINT16", scale = 1.0},
+          {name = "fcc_capacity",  address = 37633, type = "UINT16", scale = 0.1},
+          {name = "design_energy", address = 37635, type = "UINT16", scale = 10.0}
         ]
