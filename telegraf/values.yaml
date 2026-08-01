@@ -10,7 +10,7 @@ telegraf:
   # The upstream chart only hashes its primary ConfigMap. Keep this annotation
   # equal to the rendered modbus.conf SHA-256 so FoxESS changes also roll the pod.
   podAnnotations:
-    checksum/foxess-modbus-config: "6f34f73681e91e5e1595add7c7a8525a241c977c3b4b6928e55c87a4424dcea5"
+    checksum/foxess-modbus-config: "73a583465434e37c98bd94678785d7e2b21f3b269d8a8a52b00c3447b89af770"
 
   service:
     enabled: false
@@ -19,10 +19,10 @@ telegraf:
   env:
     - name: VICTORIA_METRICS_URL
       value: "http://vmsingle-vm:8428"
-    # FoxESS accepts only a small number of direct TCP clients. The evcc proxy
-    # owns the inverter connection and serializes the five Telegraf poll tiers.
+    # The five tiers use fixed offsets and close after every gather, so only one
+    # Telegraf connection occupies the FoxESS TCP-client budget at a time.
     - name: MODBUS_CONTROLLER
-      value: "tcp://evcc:502"
+      value: "tcp://192.168.107.186:502"
     # Daikin Home Hub EKRHH (TCP port 502 plain / 802 TLS, or RTU serial file://):
     - name: DAIKIN_MODBUS_CONTROLLER
       value: "tcp://192.168.1.131:502"
