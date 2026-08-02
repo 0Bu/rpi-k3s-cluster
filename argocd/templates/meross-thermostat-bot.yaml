@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: meross-thermostat-bot
+  namespace: default
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    repoURL: https://git.burau.dev/oleg/meross-thermostat-bot.git
+    path: deploy/helm/meross-thermostat-bot
+    targetRevision: main
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
