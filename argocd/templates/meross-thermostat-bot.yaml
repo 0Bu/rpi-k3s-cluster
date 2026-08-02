@@ -11,10 +11,37 @@ spec:
     server: https://kubernetes.default.svc
   project: default
   source:
-    repoURL: https://git.burau.dev/oleg/meross-thermostat-bot.git
+    repoURL: git@github.com:0Bu/meross-thermostat-bot.git
     path: deploy/helm/meross-thermostat-bot
-    targetRevision: main
+    targetRevision: 08cbf36cb36369dc10ecd07471fb59cb8edd0e51
+    helm:
+      releaseName: meross-thermostat-bot
+      valuesObject:
+        image:
+          repository: git.burau.dev/oleg/meross-thermostat-bot
+          tag: d1fe76757b1b968e1431a435fb0fe23fb6028018
+          pullPolicy: IfNotPresent
+        imagePullSecrets:
+          - name: forgejo-registry
+        meross:
+          hosts:
+            - 192.168.107.114
+            - 192.168.107.125
+            - 192.168.107.172
+          mdns:
+            enabled: true
+            hostNetwork: true
+        mqtt:
+          brokerURL: tcp://mosquitto:1883
+        secret:
+          name: meross-thermostat-bot-device-key
+          key: MEROSS_DEVICE_KEY
+        sealedSecret:
+          create: true
+          encryptedDeviceKey: "AgBB+ZLqr2gfNC6y93HrtTT7qKH/CxPl33Bkv8I0ZgZRD8/BtuMeQLEhkhINWeStkAXRJpRhDljA8SKOIb3ktLVFn5dAENz/4pmFpH+dqBe9W3XwVtC6wJnoEIj4Sf7tHwSY3FvQHbrpc2swtxCQTszUOPpfr2k7qQ6u6g3EN02OiL5nChqAy6CnEIYlwK3dKJeGi8dBsQeIgdp7OTrRKeq5vAAh0qLYf+Yx4TQQNA3LhrLWAbRPaPkMrxdpjZVU2UPo2WTy5tbB7ILovfCTwrMMTnP1SqDtr5AlnDNsE4ocWBpl9QQtEcb32cqswhefmP+vD4ytPA8rYK9T5Xbu1FZLUJXSBfWxwK7Ch84wGxabpqKqKv2ZsfGFmnr8Xhwsi8XKZHIyUDulhCE1FKQxHfhX/7uIqGfE3PEQ23z73uVmFylxR0TzxcNVjpsXpsZWBtlaxqOhTEzbCG6B2VPoTEavFN7rmm+DJElS7FojouESs5Q3nQ1PA3F0yY5F+OPh484FhswcfJdqPeDAJQaQ9UUMeQdVuRW7ZrUgc93Kqq3iOygOqbywFkHB5+9Grj1ScxzKRKBLzvge5R+iBocoO4pOURUX21oyTauW0mICKkMaLFO9KJ61spZZk7KIjg40T7PNqZyIT+HpbsB9b5RYGCf7SX4nqDhasBuZev1n2n2EjHmixyRSXpkFHPjnq/+4topzOv8krB+fW1iCf7TDMC7ast8RFvitfI9rnfUc3CcCFQ=="
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
