@@ -5,7 +5,7 @@ metadata:
   namespace: default
   annotations:
     helm.sh/resource-policy: keep
-    meross-thermostat-bot/source-sha: 9178ed20b8c64262c92503c5526227c945d1ce28
+    meross-thermostat-bot/source-sha: bdbb234740758c1aca73f4fd5a81442f813e57a5
 spec:
   destination:
     namespace: default
@@ -14,13 +14,13 @@ spec:
   source:
     repoURL: ghcr.io/0bu/charts
     chart: meross-thermostat-bot
-    targetRevision: 0.3.0-sha9178ed20b8c64262c92503c5526227c945d1ce28
+    targetRevision: 1.0.0
     helm:
       releaseName: meross-thermostat-bot
       valuesObject:
         image:
           repository: ghcr.io/0bu/meross-thermostat-bot
-          tag: 9178ed20b8c64262c92503c5526227c945d1ce28
+          tag: bdbb234740758c1aca73f4fd5a81442f813e57a5
           pullPolicy: IfNotPresent
         imagePullSecrets:
           - name: ghcr-registry
