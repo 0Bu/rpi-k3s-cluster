@@ -29,6 +29,19 @@ k3s_node_cidr_mask_size_ipv6: 80
 k3s_flannel_interface: eth0
 gitops_path: clusters/pi5b/argocd
 
+# Choose `local-path` for node-local RWO volumes or `nfs` for dynamically
+# provisioned volumes that can be remounted when a Pod moves to another node.
+storage_backend: nfs
+persistent_storage_class: homelab-persistent
+nfs_server_host: pi5b
+nfs_export_path: /srv/k3s-nfs
+nfs_mount_options:
+  - nfsvers=4.1
+  - hard
+  - timeo=600
+  - retrans=2
+  - noresvport
+
 grafana_hostnames:
   - grafana.pi5b.burau.dev
   - grafana.pi5c.burau.dev

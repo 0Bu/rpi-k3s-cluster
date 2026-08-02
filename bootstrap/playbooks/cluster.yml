@@ -11,12 +11,13 @@
       ansible.builtin.assert:
         that:
           - groups['k3s_servers'] | length == 1
-          - groups['k3s_agents'] | length >= 1
           - groups['k3s_servers'][0] == cluster_server_host
           - cluster_expected_nodes | sort == groups['all'] | sort
+          - storage_backend in ['local-path', 'nfs']
+          - storage_backend != 'nfs' or nfs_server_host in cluster_expected_nodes
         fail_msg: >-
-          Safety stop: this playbook requires exactly the declared pi5b server
-          and all declared agents in one inventory.
+          Safety stop: this playbook requires exactly one declared server, zero
+          or more declared agents, and a valid storage selection.
       run_once: true
       tags: [preflight]
 
@@ -87,18 +88,30 @@
           - --noheadings
           - --types
           - nfs,nfs4
+          - --output
+          - SOURCE,TARGET
       register: nfs_mounts
       changed_when: false
       failed_when: nfs_mounts.rc not in [0, 1]
       check_mode: false
       tags: [preflight]
 
-    - name: Refuse shared NFS on the disposable cluster
+    - name: Refuse undeclared NFS mounts
       ansible.builtin.assert:
         that:
-          - nfs_mounts.stdout | trim == ''
+          - >-
+            storage_backend == 'nfs' or
+            nfs_mounts.stdout | trim == ''
+          - >-
+            storage_backend != 'nfs' or
+            (nfs_mounts.stdout_lines |
+            reject('match', '^' +
+              (hostvars[nfs_server_host].expected_ipv4 | regex_escape) + ':' +
+              (nfs_export_path | regex_escape) + '.*\\s+/var/lib/kubelet/') |
+            list | length == 0)
         fail_msg: >-
-          Safety stop: {{ inventory_hostname }} has NFS mounted: {{ nfs_mounts.stdout }}
+          Safety stop: {{ inventory_hostname }} has an NFS mount that does not
+          belong to the selected cluster backend: {{ nfs_mounts.stdout }}
       tags: [preflight]
 
     - name: Inventory installed packages before applying kernel holds
@@ -287,6 +300,141 @@
       ansible.builtin.apt:
         deb: "/usr/local/src/k3s-bootstrap/k9s-{{ k9s_version }}-linux-arm64.deb"
         state: present
+
+    - name: Install NFS client support on every cluster member
+      ansible.builtin.apt:
+        name: nfs-common
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+      when: storage_backend == 'nfs'
+
+    - name: Install the NFS server only on the selected host
+      ansible.builtin.apt:
+        name: nfs-kernel-server
+        state: present
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
+    - name: Create the selected NFS export directory
+      ansible.builtin.file:
+        path: "{{ nfs_export_path }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0770"
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
+    - name: Export NFS only to declared cluster nodes
+      ansible.builtin.template:
+        src: ../templates/k3s-nfs.exports.j2
+        dest: /etc/exports.d/k3s.exports
+        owner: root
+        group: root
+        mode: "0644"
+      register: nfs_exports_file
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
+    - name: Reload changed NFS exports
+      ansible.builtin.systemd_service:
+        name: nfs-kernel-server
+        state: restarted
+        enabled: true
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+        - nfs_exports_file.changed
+
+    - name: Ensure the selected NFS server is running
+      ansible.builtin.systemd_service:
+        name: nfs-kernel-server
+        state: started
+        enabled: true
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
+    - name: Verify the declared export is active
+      ansible.builtin.command:
+        argv:
+          - exportfs
+          - --verbose
+      register: active_nfs_exports
+      changed_when: false
+      failed_when: nfs_export_path not in active_nfs_exports.stdout
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
+    - name: Create the temporary NFS probe mountpoint
+      ansible.builtin.file:
+        path: /var/tmp/k3s-nfs-probe
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+      when: storage_backend == 'nfs'
+
+    - name: Verify read-write NFS access from every declared node
+      when:
+        - storage_backend == 'nfs'
+        - not ansible_check_mode
+      block:
+        - name: Clear a stale NFS probe mount
+          ansible.builtin.command:
+            argv:
+              - umount
+              - /var/tmp/k3s-nfs-probe
+          changed_when: false
+          failed_when: false
+
+        - name: Mount the selected share for the NFS probe
+          ansible.builtin.command:
+            argv:
+              - mount
+              - --types
+              - nfs4
+              - --options
+              - "{{ nfs_mount_options | join(',') }}"
+              - "{{ hostvars[nfs_server_host].expected_ipv4 }}:{{ nfs_export_path }}"
+              - /var/tmp/k3s-nfs-probe
+          changed_when: false
+
+        - name: Write a node-specific NFS probe
+          ansible.builtin.command:
+            argv:
+              - touch
+              - "/var/tmp/k3s-nfs-probe/.bootstrap-{{ inventory_hostname }}"
+          changed_when: false
+
+        - name: Read the node-specific NFS probe back
+          ansible.builtin.stat:
+            path: "/var/tmp/k3s-nfs-probe/.bootstrap-{{ inventory_hostname }}"
+          register: nfs_probe_file
+
+        - name: Require a successful NFS roundtrip
+          ansible.builtin.assert:
+            that:
+              - nfs_probe_file.stat.exists
+
+        - name: Remove the node-specific NFS probe
+          ansible.builtin.file:
+            path: "/var/tmp/k3s-nfs-probe/.bootstrap-{{ inventory_hostname }}"
+            state: absent
+          changed_when: false
+      always:
+        - name: Unmount the temporary NFS probe
+          ansible.builtin.command:
+            argv:
+              - umount
+              - /var/tmp/k3s-nfs-probe
+          changed_when: false
+          failed_when: false
 
     - name: Create the operator kubeconfig directory
       ansible.builtin.file:
@@ -509,6 +657,129 @@
         fail_msg: >-
           Node {{ item.item }} did not register both declared IP families.
       loop: "{{ registered_nodes.results | default([]) }}"
+      when: not ansible_check_mode
+
+    - name: Label the selected NFS server node
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - label
+          - node
+          - "{{ nfs_server_host }}"
+          - homelab.burau.dev/nfs-server=true
+          - --overwrite
+      register: nfs_server_label
+      changed_when: "'not labeled' not in nfs_server_label.stdout"
+      when:
+        - not ansible_check_mode
+        - storage_backend == 'nfs'
+
+    - name: Install the pinned NFS CSI driver through the k3s Helm controller
+      ansible.builtin.template:
+        src: ../templates/nfs-csi-helmchart.yaml.j2
+        dest: /var/lib/rancher/k3s/server/manifests/nfs-csi.yaml
+        owner: root
+        group: root
+        mode: "0600"
+      when: storage_backend == 'nfs'
+
+    - name: Remove the managed NFS CSI manifest for local-path clusters
+      ansible.builtin.file:
+        path: /var/lib/rancher/k3s/server/manifests/nfs-csi.yaml
+        state: absent
+      when: storage_backend == 'local-path'
+
+    - name: Wait for the NFS CSI controller deployment to exist
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - kube-system
+          - get
+          - deployment/csi-nfs-controller
+      register: nfs_csi_controller
+      changed_when: false
+      until: nfs_csi_controller.rc == 0
+      retries: 60
+      delay: 10
+      when:
+        - not ansible_check_mode
+        - storage_backend == 'nfs'
+
+    - name: Wait for the NFS CSI controller
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - kube-system
+          - rollout
+          - status
+          - deployment/csi-nfs-controller
+          - --timeout=600s
+      changed_when: false
+      when:
+        - not ansible_check_mode
+        - storage_backend == 'nfs'
+
+    - name: Wait for the NFS CSI node plugin on every node
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - kube-system
+          - rollout
+          - status
+          - daemonset/csi-nfs-node
+          - --timeout=600s
+      changed_when: false
+      when:
+        - not ansible_check_mode
+        - storage_backend == 'nfs'
+
+    - name: Read an existing stable persistent StorageClass
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - get
+          - "storageclass/{{ persistent_storage_class }}"
+          - --output=json
+      register: persistent_storage_class_existing
+      changed_when: false
+      failed_when: persistent_storage_class_existing.rc not in [0, 1]
+      when: not ansible_check_mode
+
+    - name: Refuse an implicit storage backend migration
+      ansible.builtin.assert:
+        that:
+          - >-
+            persistent_storage_class_existing.rc != 0 or
+            (persistent_storage_class_existing.stdout | from_json).provisioner ==
+            ('nfs.csi.k8s.io' if storage_backend == 'nfs' else 'rancher.io/local-path')
+        fail_msg: >-
+          StorageClass {{ persistent_storage_class }} already belongs to another
+          backend. Back up and migrate its PVC data explicitly before switching.
+      when: not ansible_check_mode
+
+    - name: Apply the selected stable persistent StorageClass
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - apply
+          - --server-side
+          - --field-manager=pi5b-bootstrap
+          - -f
+          - '-'
+        stdin: "{{ lookup('ansible.builtin.template', '../templates/persistent-storageclass.yaml.j2') }}"
+      register: persistent_storage_class_apply
+      changed_when: >-
+        'configured' in persistent_storage_class_apply.stdout or
+        'created' in persistent_storage_class_apply.stdout
       when: not ansible_check_mode
 
     - name: Install Argo CD through the k3s Helm controller

@@ -45,7 +45,7 @@ spec:
         persistence:
           enabled: true
           type: pvc
-          storageClassName: local-path
+          storageClassName: homelab-persistent
           accessModes:
             - ReadWriteOnce
           size: 2Gi

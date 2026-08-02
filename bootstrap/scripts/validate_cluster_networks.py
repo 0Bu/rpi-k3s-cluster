@@ -9,6 +9,7 @@ import sys
 import urllib.parse
 
 import yaml
+from jinja2 import Environment, StrictUndefined
 
 
 def fail(message: str) -> None:
@@ -36,8 +37,19 @@ def main() -> None:
 
     if len(servers) != 1 or set(servers) != {values["cluster_server_host"]}:
         fail("inventory must contain exactly the declared server")
-    if not agents or set(hosts) != expected_nodes:
+    if set(hosts) != expected_nodes:
         fail("inventory hosts must exactly match cluster_expected_nodes")
+
+    storage_backend = values["storage_backend"]
+    if storage_backend not in {"local-path", "nfs"}:
+        fail("storage_backend must be local-path or nfs")
+    if storage_backend == "nfs":
+        nfs_server = values["nfs_server_host"]
+        if nfs_server not in hosts:
+            fail("nfs_server_host must be a declared cluster node")
+        export_path = pathlib.PurePosixPath(values["nfs_export_path"])
+        if not export_path.is_absolute() or str(export_path) in {"/", "/home", "/var"}:
+            fail("nfs_export_path must be an explicit dedicated absolute path")
 
     protected = {ipaddress.ip_address(value) for value in values["protected_ipv4_addresses"]}
     lan = ipaddress.ip_network(values["k3s_lan_ipv6_cidr"])
@@ -93,8 +105,30 @@ def main() -> None:
     if ipaddress.ip_address(values["cluster_server_ipv6"]) not in lan:
         fail("cluster server IPv6 must belong to the node LAN")
 
+    storage_template = pathlib.Path(sys.argv[3])
+    template = Environment(undefined=StrictUndefined).from_string(
+        storage_template.read_text(encoding="utf-8")
+    )
+    for backend, provisioner in {
+        "local-path": "rancher.io/local-path",
+        "nfs": "nfs.csi.k8s.io",
+    }.items():
+        context = values | {"storage_backend": backend, "hostvars": hosts}
+        storage_class = yaml.safe_load(template.render(**context))
+        if storage_class["provisioner"] != provisioner:
+            fail(f"{backend} rendered the wrong provisioner")
+        if backend == "nfs":
+            parameters = storage_class.get("parameters", {})
+            if parameters.get("server") != hosts[values["nfs_server_host"]]["expected_ipv4"]:
+                fail("NFS StorageClass did not select nfs_server_host")
+            if parameters.get("share") != values["nfs_export_path"]:
+                fail("NFS StorageClass did not select nfs_export_path")
+        elif "parameters" in storage_class:
+            fail("local-path StorageClass unexpectedly contains NFS parameters")
+
     print(
-        f"validated server={next(iter(servers))} agents={','.join(sorted(agents))} "
+        f"validated server={next(iter(servers))} agents={','.join(sorted(agents)) or '-'} "
+        f"storage={storage_backend} selectable=local-path,nfs "
         f"lan={lan} pods={','.join(map(str, pod_networks))} "
         f"services={','.join(map(str, service_networks))}"
     )

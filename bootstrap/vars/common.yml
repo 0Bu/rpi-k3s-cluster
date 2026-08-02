@@ -9,6 +9,8 @@ k9s_deb_url: https://github.com/derailed/k9s/releases/download/v0.51.0/k9s_linux
 k9s_deb_sha256: 9dbc652cb3a6ede7279216e49c638ac2d5dfb701edd4e407e89dc42cb9920423
 
 argocd_chart_version: 10.2.2
+nfs_csi_chart_version: 4.13.4
+nfs_csi_chart_repo: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
 gitops_repo_url: https://github.com/0Bu/rpi-k3s-cluster.git
 gitops_target_revision: codex/pi5b-bootstrap
 grafana_admin_secret_name: grafana-admin

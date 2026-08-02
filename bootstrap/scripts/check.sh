@@ -17,5 +17,8 @@ mkdir -p "${ANSIBLE_LOCAL_TEMP}"
   --syntax-check
 .venv/bin/python bootstrap/scripts/validate_cluster_networks.py \
   bootstrap/inventory/pi5b/hosts.yml \
-  bootstrap/inventory/pi5b/group_vars/all.yml
+  bootstrap/inventory/pi5b/group_vars/all.yml \
+  bootstrap/templates/persistent-storageclass.yaml.j2
+.venv/bin/python bootstrap/scripts/validate_infrastructure_charts.py \
+  bootstrap/vars/common.yml
 .venv/bin/python bootstrap/scripts/validate_helm_applications.py clusters/pi5b/argocd

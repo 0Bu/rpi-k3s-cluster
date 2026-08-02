@@ -1,0 +1,1 @@
+{{ nfs_export_path }}{% for node in cluster_expected_nodes %} {{ hostvars[node].expected_ipv4 }}(rw,sync,no_subtree_check,no_root_squash){% endfor %}

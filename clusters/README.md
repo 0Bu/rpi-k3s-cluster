@@ -9,4 +9,6 @@ charts from mixing reusable chart code with prod/test addresses and storage.
 whose agent is `pi5c`. It deliberately contains no NFS server, static PV,
 MetalLB pool, production secret, or reference to `192.168.1.5`. Grafana exposes
 both LAN hostnames and requests a dual-stack Service, while its persistent volume
-remains cluster-local.
+uses the bootstrap-owned stable `homelab-persistent` StorageClass. That class can
+resolve to node-local storage or the dedicated NFS CSI backend without coupling
+the Helm Application to a particular cluster topology.
