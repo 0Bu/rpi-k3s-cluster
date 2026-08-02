@@ -6,7 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-10"
 spec:
-  description: Isolated applications for the pi5b disposable test cluster
+  description: Applications for the disposable pi5b-server and pi5c-agent cluster
   sourceRepos:
     - https://grafana-community.github.io/helm-charts
   destinations:

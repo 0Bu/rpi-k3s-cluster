@@ -27,7 +27,7 @@ def render_application(path: pathlib.Path) -> None:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml") as values_file:
             yaml.safe_dump(values, values_file, sort_keys=False)
             values_file.flush()
-            subprocess.run(
+            rendered = subprocess.run(
                 [
                     "helm",
                     "template",
@@ -43,8 +43,39 @@ def render_application(path: pathlib.Path) -> None:
                     values_file.name,
                 ],
                 check=True,
-                stdout=subprocess.DEVNULL,
+                capture_output=True,
+                text=True,
             )
+
+        resources = [
+            resource
+            for resource in yaml.safe_load_all(rendered.stdout)
+            if resource
+        ]
+        expected_service = values.get("service", {})
+        if expected_service.get("ipFamilyPolicy"):
+            services = [resource for resource in resources if resource.get("kind") == "Service"]
+            if not services:
+                raise RuntimeError(f"{path}: rendered chart has no Service")
+            for service in services:
+                spec = service["spec"]
+                if spec.get("ipFamilyPolicy") != expected_service["ipFamilyPolicy"]:
+                    raise RuntimeError(f"{path}: Service lost ipFamilyPolicy")
+                if spec.get("ipFamilies") != expected_service.get("ipFamilies"):
+                    raise RuntimeError(f"{path}: Service lost requested ipFamilies")
+
+        expected_hosts = values.get("ingress", {}).get("hosts", [])
+        if expected_hosts:
+            ingresses = [resource for resource in resources if resource.get("kind") == "Ingress"]
+            rendered_hosts = {
+                rule["host"]
+                for ingress in ingresses
+                for rule in ingress["spec"].get("rules", [])
+            }
+            if rendered_hosts != set(expected_hosts):
+                raise RuntimeError(
+                    f"{path}: rendered Ingress hosts {rendered_hosts} != {set(expected_hosts)}"
+                )
         print(f"rendered {path}: Application/{name}", file=sys.stderr)
 
 

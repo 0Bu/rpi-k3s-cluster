@@ -1,17 +1,34 @@
 ---
 cluster_name: pi5b
-expected_hostname: pi5b
-expected_ipv4: 192.168.1.15
+cluster_server_host: pi5b
+cluster_server_ipv4: 192.168.1.15
+cluster_server_ipv6: fd7c:3b4a:5f1d::5b
+cluster_api_url: https://192.168.1.15:6443
+cluster_expected_nodes:
+  - pi5b
+  - pi5c
 
-# Never target these addresses from the test-cluster bootstrap. 192.168.1.25
-# currently identifies itself as pi5a and runs k3s, so it is protected too.
+# Production is never a valid target of the disposable test-cluster inventory.
 protected_ipv4_addresses:
   - 192.168.1.5
-  - 192.168.1.25
 
-k3s_cluster_cidr: 10.52.0.0/16
-k3s_service_cidr: 10.53.0.0/16
-k3s_cluster_dns: 10.53.0.10
+# fd7c:3b4a:5f1d:0::/64 is the directly connected LAN and is used only for
+# node addresses. Pods and Services must use separate, non-overlapping subnets.
+k3s_lan_ipv6_cidr: fd7c:3b4a:5f1d::/64
+k3s_cluster_cidrs:
+  - 10.52.0.0/16
+  - fd7c:3b4a:5f1d:42::/64
+k3s_service_cidrs:
+  - 10.53.0.0/16
+  - fd7c:3b4a:5f1d:43::/112
+k3s_cluster_dns:
+  - 10.53.0.10
+  - fd7c:3b4a:5f1d:43::a
+k3s_node_cidr_mask_size_ipv4: 24
+k3s_node_cidr_mask_size_ipv6: 80
+k3s_flannel_interface: eth0
 gitops_path: clusters/pi5b/argocd
 
-grafana_hostname: grafana.pi5b.burau.dev
+grafana_hostnames:
+  - grafana.pi5b.burau.dev
+  - grafana.pi5c.burau.dev

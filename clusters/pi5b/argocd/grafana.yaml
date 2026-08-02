@@ -35,7 +35,13 @@ spec:
           ingressClassName: traefik
           hosts:
             - grafana.pi5b.burau.dev
+            - grafana.pi5c.burau.dev
           tls: []
+        service:
+          ipFamilyPolicy: PreferDualStack
+          ipFamilies:
+            - IPv4
+            - IPv6
         persistence:
           enabled: true
           type: pvc

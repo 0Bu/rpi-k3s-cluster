@@ -6,9 +6,9 @@ cd "${repository_root}"
 
 cluster_name="${1:-}"
 case "${cluster_name}" in
-  pi5b|pi5c) ;;
+  pi5b) ;;
   *)
-    printf 'Usage: %s <pi5b|pi5c> [ansible-playbook arguments...]\n' "$0" >&2
+    printf 'Usage: %s pi5b [ansible-playbook arguments...]\n' "$0" >&2
     exit 2
     ;;
 esac
@@ -29,5 +29,4 @@ mkdir -p "${ANSIBLE_LOCAL_TEMP}" "${repository_root}/.state/${cluster_name}"
 exec .venv/bin/ansible-playbook \
   --inventory "bootstrap/inventory/${cluster_name}/hosts.yml" \
   bootstrap/playbooks/cluster.yml \
-  --limit "${cluster_name}" \
   "$@"
