@@ -13,13 +13,13 @@ spec:
   source:
     repoURL: ghcr.io/0bu/charts
     chart: meross-thermostat-bot
-    targetRevision: 0.3.0-shae472c14c3608bdfa551121520947c2ff61a9b781
+    targetRevision: 0.3.0-sha9178ed20b8c64262c92503c5526227c945d1ce28
     helm:
       releaseName: meross-thermostat-bot
       valuesObject:
         image:
           repository: ghcr.io/0bu/meross-thermostat-bot
-          tag: e472c14c3608bdfa551121520947c2ff61a9b781
+          tag: 9178ed20b8c64262c92503c5526227c945d1ce28
           pullPolicy: IfNotPresent
         imagePullSecrets:
           - name: ghcr-registry
