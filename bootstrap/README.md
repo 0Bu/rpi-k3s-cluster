@@ -96,17 +96,6 @@ existing PVC between `local-path` and NFS requires an explicit backup/restore.
 The bootstrap refuses to mutate an existing stable StorageClass to a different
 provisioner.
 
-### Why rclone CSI is not the primary StorageClass
-
-The existing rclone application remains the encrypted off-site backup layer.
-An rclone CSI mount is useful for cloud/object content and read-mostly exchange,
-but it does not share the local `/nfs` directory between nodes by itself. Doing
-that would require an additional SFTP, WebDAV, or object-storage service and a
-FUSE/VFS cache on every node. Those semantics are a poor fit for SQLite,
-PostgreSQL, VictoriaMetrics, and other write-intensive application state. The
-kernel NFS client plus the GA Kubernetes NFS CSI driver therefore remains the
-primary multi-node persistent-storage path.
-
 ## Deliberate phase-3 boundaries
 
 - LAN DNS resolves `*.pi5b.burau.dev` to `192.168.1.15` and
