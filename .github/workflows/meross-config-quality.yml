@@ -1,0 +1,81 @@
+name: meross-config-quality
+
+on:
+  pull_request:
+    paths:
+      - .github/renovate.json
+      - .github/workflows/meross-*.yml
+      - .github/workflows/renovate.yaml
+      - argocd/templates/meross-thermostat-bot.yaml
+      - argocd/templates/meross-ghcr-sealed-secrets.yaml
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: meross-config-quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: 1.26.5
+          cache: false
+
+      - name: Set up Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v4.2.3
+
+      - name: Validate workflows
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -shellcheck= -pyflakes= .github/workflows/*.y*ml
+
+      - name: Validate Renovate configuration
+        run: |
+          docker run --rm \
+            --volume "${PWD}/.github/renovate.json:/tmp/renovate.json:ro" \
+            renovate/renovate@sha256:bd7d8f646bf9d22aea995eaad06ec26c3f4fd4efbc36826024f5653006c9e7b1 \
+            renovate-config-validator /tmp/renovate.json
+
+      - name: Validate Meross single-file contract
+        run: |
+          test ! -e argocd/templates/meross-ghcr-sealed-secrets.yaml
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          application = Path("argocd/templates/meross-thermostat-bot.yaml").read_text()
+          if len(re.findall(r"^kind: Application$", application, re.MULTILINE)) != 1:
+              raise SystemExit("expected exactly one Application")
+          if len(re.findall(r"^kind: SealedSecret$", application, re.MULTILINE)) != 2:
+              raise SystemExit("expected exactly two SealedSecrets in the Application file")
+
+          source_sha = re.findall(
+              r"^\s*meross-thermostat-bot/source-sha: ([0-9a-f]{40})$",
+              application,
+              re.MULTILINE,
+          )
+          image_sha = re.findall(r"^\s*tag: ([0-9a-f]{40})$", application, re.MULTILINE)
+          if len(source_sha) != 1 or image_sha != source_sha:
+              raise SystemExit("source annotation and image tag must pin the same SHA")
+
+          config = json.loads(Path(".github/renovate.json").read_text())
+          patterns = config.get("argocd", {}).get("managerFilePatterns", [])
+          if not any("meross-thermostat-bot" in pattern for pattern in patterns):
+              raise SystemExit("Renovate ArgoCD manager does not include the Meross Application")
+          PY
+
+      - name: Validate ArgoCD chart
+        run: |
+          helm repo add argo https://argoproj.github.io/argo-helm
+          helm dependency build argocd
+          helm lint --strict argocd
+          helm template argocd argocd --namespace default >/dev/null

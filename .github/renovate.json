@@ -1,5 +1,8 @@
 {
-  "baseBranches": ["main"],
+  "baseBranchPatterns": ["main"],
+  "argocd": {
+    "managerFilePatterns": ["/^argocd/templates/meross-thermostat-bot\\.yaml$/"]
+  },
   "customManagers": [
     {
       "customType": "regex", 

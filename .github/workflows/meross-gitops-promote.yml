@@ -78,9 +78,12 @@ jobs:
               return values[0]
 
           chart_version = capture(r"^\s*targetRevision: (.+)$")
-          chart_match = re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+-sha([0-9a-f]{40})", chart_version)
-          if not chart_match or chart_match.group(1) != release_sha:
-              raise SystemExit(f"chart version does not pin release SHA: {chart_version!r}")
+          if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", chart_version):
+              raise SystemExit(f"chart version is not pure SemVer: {chart_version!r}")
+
+          source_sha = capture(r"^\s*meross-thermostat-bot/source-sha: (.+)$")
+          if source_sha != release_sha:
+              raise SystemExit(f"source annotation does not pin release SHA: {source_sha!r}")
 
           expected = {
               r"^\s*repoURL: (.+)$": "ghcr.io/0bu/charts",
@@ -121,8 +124,8 @@ jobs:
               --repo "${GITHUB_REPOSITORY}" \
               --base main \
               --head "${PROMOTION_BRANCH}" \
-              --title "deploy(meross): ${CHART_VERSION}" \
-              --body "Automated immutable promotion of Meross source SHA \`${RELEASE_SHA}\`. The validation workflow permits only the Meross ArgoCD Application and requires matching OCI chart and image SHAs.")"
+              --title "deploy(meross): ${CHART_VERSION} @ ${RELEASE_SHA}" \
+              --body "Automated promotion of Meross chart version \`${CHART_VERSION}\` and independent source SHA \`${RELEASE_SHA}\`. The validation workflow permits only the Meross ArgoCD Application and requires pure chart SemVer plus matching annotation and image SHA.")"
             pr_number="${pr_url##*/}"
           fi
 
@@ -139,5 +142,5 @@ jobs:
             --squash \
             --delete-branch \
             --match-head-commit "${PROMOTION_HEAD_SHA}" \
-            --subject "deploy(meross): ${CHART_VERSION}" \
-            --body "Promote immutable Meross release ${RELEASE_SHA}."
+            --subject "deploy(meross): ${CHART_VERSION} @ ${RELEASE_SHA}" \
+            --body "Promote Meross chart ${CHART_VERSION} with immutable source revision ${RELEASE_SHA}."

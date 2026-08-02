@@ -55,9 +55,12 @@ jobs:
               return values[0]
 
           chart_version = capture(r"^\s*targetRevision: (.+)$")
-          chart_match = re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+-sha([0-9a-f]{40})", chart_version)
-          if not chart_match or chart_match.group(1) != release_sha:
-              raise SystemExit(f"chart version does not pin release SHA: {chart_version!r}")
+          if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", chart_version):
+              raise SystemExit(f"chart version is not pure SemVer: {chart_version!r}")
+
+          source_sha = capture(r"^\s*meross-thermostat-bot/source-sha: (.+)$")
+          if source_sha != release_sha:
+              raise SystemExit(f"source annotation does not pin release SHA: {source_sha!r}")
 
           expected = {
               r"^\s*repoURL: (.+)$": "ghcr.io/0bu/charts",
