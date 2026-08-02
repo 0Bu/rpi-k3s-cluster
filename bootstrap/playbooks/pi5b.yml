@@ -257,12 +257,50 @@
       delegate_to: localhost
       when: not ansible_check_mode
 
+    - name: Read the existing Grafana admin secret if present
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - monitoring
+          - get
+          - secret/{{ grafana_admin_secret_name }}
+          - --output=json
+      register: grafana_admin_secret
+      changed_when: false
+      failed_when: grafana_admin_secret.rc not in [0, 1]
+      no_log: true
+      when: not ansible_check_mode
+
     - name: Generate or reuse the test-cluster Grafana password
       ansible.builtin.set_fact:
         grafana_admin_password: >-
           {{ lookup('ansible.builtin.password',
           playbook_dir + '/../../.state/' + cluster_name +
           '/grafana-admin-password length=32 chars=ascii_letters,digits') }}
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - grafana_admin_secret.rc != 0
+
+    - name: Recover the existing Grafana password into controller state
+      ansible.builtin.set_fact:
+        grafana_admin_password: >-
+          {{ ((grafana_admin_secret.stdout | from_json).data['admin-password']) |
+          b64decode }}
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - grafana_admin_secret.rc == 0
+
+    - name: Persist the private Grafana password on the controller
+      ansible.builtin.copy:
+        content: "{{ grafana_admin_password }}\n"
+        dest: "{{ playbook_dir }}/../../.state/{{ cluster_name }}/grafana-admin-password"
+        mode: "0600"
+      become: false
+      delegate_to: localhost
       no_log: true
       when: not ansible_check_mode
 
@@ -279,7 +317,9 @@
         stdin: "{{ lookup('ansible.builtin.template', '../templates/grafana-admin-secret.yaml.j2') }}"
       changed_when: true
       no_log: true
-      when: not ansible_check_mode
+      when:
+        - not ansible_check_mode
+        - grafana_admin_secret.rc != 0
 
     - name: Apply the cluster-scoped GitOps root
       ansible.builtin.command:
@@ -287,7 +327,6 @@
           - /usr/local/bin/k3s
           - kubectl
           - apply
-          - --server-side
           - --field-manager=pi5b-bootstrap
           - -f
           - '-'
