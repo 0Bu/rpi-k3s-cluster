@@ -43,8 +43,11 @@ inside a mode `0700` directory.
 
 On the server, `~/.kube/config` points to the current k3s-generated kubeconfig.
 The bootstrap distributes the same protected operator kubeconfig to the agent;
-both sources are `root:k3s-admin 0640`. A fresh SSH login activates the group,
-then both `kgpa` and `k9s` work without `sudo` or `KUBECONFIG` exports.
+both sources are `root:k3s-admin 0640`. It replaces only k3s's expected
+`kubectl -> k3s` symlink with the checksum-pinned standalone kubectl matching
+the Kubernetes minor version, so operator commands do not try to read the
+root-only k3s server configuration. A fresh SSH login activates the group, then
+both `kgpa` and `k9s` work without warnings, `sudo`, or `KUBECONFIG` exports.
 
 ## Address plan
 

@@ -4,6 +4,10 @@ k3s_install_script_url: https://raw.githubusercontent.com/k3s-io/k3s/v1.36.2%2Bk
 k3s_install_script_sha256: 46177d4c99440b4c0311b67233823a8e8a2fc09693f6c89af1a7161e152fbfad
 k3s_admin_group: k3s-admin
 
+kubectl_version: v1.36.2
+kubectl_arm64_url: https://dl.k8s.io/release/v1.36.2/bin/linux/arm64/kubectl
+kubectl_arm64_sha256: c957eb8c4bea27a3bb35b269edd9082e27f027f7b76b20b5bf4afebc726c6d3e
+
 k9s_version: v0.51.0
 k9s_deb_url: https://github.com/derailed/k9s/releases/download/v0.51.0/k9s_linux_arm64.deb
 k9s_deb_sha256: 9dbc652cb3a6ede7279216e49c638ac2d5dfb701edd4e407e89dc42cb9920423

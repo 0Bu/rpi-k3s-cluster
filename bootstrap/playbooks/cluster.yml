@@ -289,6 +289,15 @@
         group: root
         mode: "0755"
 
+    - name: Download the pinned standalone ARM64 kubectl with checksum verification
+      ansible.builtin.get_url:
+        url: "{{ kubectl_arm64_url }}"
+        dest: "/usr/local/src/k3s-bootstrap/kubectl-{{ kubectl_version }}-linux-arm64"
+        checksum: "sha256:{{ kubectl_arm64_sha256 }}"
+        owner: root
+        group: root
+        mode: "0755"
+
     - name: Download the pinned ARM64 k9s package with checksum verification
       ansible.builtin.get_url:
         url: "{{ k9s_deb_url }}"
@@ -1071,6 +1080,37 @@
     - ../vars/common.yml
 
   tasks:
+    - name: Inspect the installed kubectl command
+      ansible.builtin.stat:
+        path: /usr/local/bin/kubectl
+        follow: false
+      register: kubectl_command
+
+    - name: Refuse to replace an unexpected kubectl symlink
+      ansible.builtin.assert:
+        that:
+          - >-
+            not (kubectl_command.stat.islnk | default(false)) or
+            kubectl_command.stat.lnk_source in ['k3s', '/usr/local/bin/k3s']
+        fail_msg: >-
+          Safety stop: /usr/local/bin/kubectl is an unexpected symlink to
+          {{ kubectl_command.stat.lnk_source | default('unknown') }}.
+
+    - name: Remove only the k3s-managed kubectl symlink
+      ansible.builtin.file:
+        path: /usr/local/bin/kubectl
+        state: absent
+      when: kubectl_command.stat.islnk | default(false)
+
+    - name: Install the pinned standalone kubectl
+      ansible.builtin.copy:
+        src: "/usr/local/src/k3s-bootstrap/kubectl-{{ kubectl_version }}-linux-arm64"
+        dest: /usr/local/bin/kubectl
+        remote_src: true
+        owner: root
+        group: root
+        mode: "0755"
+
     - name: Inspect an existing operator kubeconfig
       ansible.builtin.stat:
         path: "/home/{{ ansible_user }}/.kube/config"
