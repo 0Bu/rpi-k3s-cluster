@@ -177,7 +177,21 @@
         group: root
         mode: "0600"
 
-    - name: Wait for the Argo CD Application CRD
+    - name: Wait for the Argo CD Application CRD to exist
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - get
+          - crd/applications.argoproj.io
+      register: argocd_application_crd
+      changed_when: false
+      until: argocd_application_crd.rc == 0
+      retries: 60
+      delay: 10
+      when: not ansible_check_mode
+
+    - name: Wait for the Argo CD Application CRD to be established
       ansible.builtin.command:
         argv:
           - /usr/local/bin/k3s
@@ -187,6 +201,22 @@
           - crd/applications.argoproj.io
           - --timeout=600s
       changed_when: false
+      when: not ansible_check_mode
+
+    - name: Wait for the Argo CD server deployment to exist
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - get
+          - deployment/argocd-server
+      register: argocd_server_deployment
+      changed_when: false
+      until: argocd_server_deployment.rc == 0
+      retries: 60
+      delay: 10
       when: not ansible_check_mode
 
     - name: Wait for the Argo CD server deployment
@@ -278,6 +308,22 @@
           - application/{{ cluster_name }}-root
           - --timeout=600s
       changed_when: false
+      when: not ansible_check_mode
+
+    - name: Wait for the Grafana Application to exist
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - get
+          - application/grafana
+      register: grafana_application
+      changed_when: false
+      until: grafana_application.rc == 0
+      retries: 60
+      delay: 10
       when: not ansible_check_mode
 
     - name: Wait for Grafana to become healthy
