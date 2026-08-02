@@ -24,6 +24,8 @@ jobs:
           RENOVATE_CONFIG_MIGRATION: true
           RENOVATE_AUTOMERGE: true
           RENOVATE_BUMP_VERSION: patch
+          RENOVATE_HOST_RULES: >-
+            [{"matchHost":"ghcr.io","hostType":"docker","username":"0Bu","password":"${{ secrets.RENOVATE_GHCR_TOKEN }}"}]
           RENOVATE_IGNORE_TESTS: true
           RENOVATE_REBASE_WHEN: never
           RENOVATE_SEMANTIC_COMMITS: disabled
