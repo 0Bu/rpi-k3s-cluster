@@ -1,0 +1,15 @@
+# Strict-scope ciphertext for the private GHCR pull credential.
+# It is bound to the exact Secret name and namespace below.
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: ghcr-registry
+  namespace: default
+spec:
+  encryptedData:
+    .dockerconfigjson: AgAsST3kIhZML+jCPA/zb+tHs+rAOzbiziQWbJZJ0YY4Xsor6EvOnb9KQY77+x1C6QzeZSe8asahcAc8o3Dv2Vsfju8bcOrMWfzVoRwY2vtS1LF0mOzNJY9+d3JR8OrZp1bW6FT78kRYGBiep6iaBlj0FmEhy/Gz3N4c82OtuXYdW+xGrAXuLs677DLAe4JrN6M92EhTOAvXoZkMhZ4PPH6xKqFI83tRMCfqoYas+lpfMncykP2+gckT+ypu98ko1ONmVbBJbil3Jt8e6K+WqXuXnZR65yz48buwlyLtP7ED3fiEVkECUuG2/e5B23GH0G3lnT6DOLywdhdphje202vd9mq4CIJrseaI3seT7d2+qnYAXxKBXJlqNxCjS41RAMRtONTuCtY6QFKtD/OEAR+wlbea3gjB1sbuTgoUYybaGjwquuGeLyNkC/G+SmujFKd9ZKNCv4VN7m/2vBURPT3ujuxpcviO1qAZH+dId3BA27pcOuKdv979COc907pVodAjlYHgtIGLJVTY2o9QJUpV/ppsdbxo0G/N2QULc0PrP2jgM4ip/7NZ+Q+yJe653Gl15AW1hn8XRI+KRjEDFTtGyV38KWyRF4TfyRDFCFHVd/5lGn6LSaokv9tuSJJMF1b942xCEMppuza4iy+dxXUIiT5KlHwyoutUhnU1g74Q26HY6onmLvsH9LlPxFTuOxWStBg2btCrzFtqjcj7ghA2XCkMSCtglPuGImoxQYb01yAH7nu9r40pIPV6eiGlzWPKhrfvwRvw2cHhErcH1dpzRAdlfZMC2YV0+W0pUDlcgVWDV4N68iCCRhiP2kXf/1t8AgYrnpS7Gu/e82GDkzH+LwK72dznHoxt6wTcJTsm9H6Du7kfSCW9xHykSS9vqcXWt9544PkFRakTc8418zu+W1Hqkg==
+  template:
+    metadata:
+      name: ghcr-registry
+      namespace: default
+    type: kubernetes.io/dockerconfigjson
