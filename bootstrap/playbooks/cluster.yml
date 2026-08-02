@@ -309,6 +309,29 @@
         cache_valid_time: 3600
       when: storage_backend == 'nfs'
 
+    - name: Create the base Debian NFS exports file if absent
+      ansible.builtin.copy:
+        dest: /etc/exports
+        content: "# Managed exports are stored in /etc/exports.d.\n"
+        owner: root
+        group: root
+        mode: "0644"
+        force: false
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
+    - name: Create the Debian NFS export configuration directory
+      ansible.builtin.file:
+        path: /etc/exports.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
     - name: Install the NFS server only on the selected host
       ansible.builtin.apt:
         name: nfs-kernel-server
@@ -328,17 +351,6 @@
         - storage_backend == 'nfs'
         - inventory_hostname == nfs_server_host
 
-    - name: Create the Debian NFS export configuration directory
-      ansible.builtin.file:
-        path: /etc/exports.d
-        state: directory
-        owner: root
-        group: root
-        mode: "0755"
-      when:
-        - storage_backend == 'nfs'
-        - inventory_hostname == nfs_server_host
-
     - name: Export NFS only to declared cluster nodes
       ansible.builtin.template:
         src: ../templates/k3s-nfs.exports.j2
@@ -351,11 +363,12 @@
         - storage_backend == 'nfs'
         - inventory_hostname == nfs_server_host
 
-    - name: Reload changed NFS exports
-      ansible.builtin.systemd_service:
-        name: nfs-kernel-server
-        state: restarted
-        enabled: true
+    - name: Reload changed NFS exports without restarting kernel NFS threads
+      ansible.builtin.command:
+        argv:
+          - exportfs
+          - --ra
+      changed_when: true
       when:
         - storage_backend == 'nfs'
         - inventory_hostname == nfs_server_host
