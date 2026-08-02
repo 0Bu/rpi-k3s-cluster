@@ -1,2 +1,7 @@
 **/charts/*.tgz
 .DS_Store
+.venv/
+.state/
+.ansible/
+*.retry
+__pycache__/

@@ -1,0 +1,324 @@
+---
+- name: Bootstrap the isolated pi5b test cluster
+  hosts: k3s_servers
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Refuse any inventory target except the explicitly approved test host
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname == cluster_name
+          - ansible_host == expected_ipv4
+          - ansible_host not in protected_ipv4_addresses
+          - ansible_facts.hostname == expected_hostname
+          - ansible_facts.default_ipv4.address == expected_ipv4
+        fail_msg: >-
+          Safety stop: inventory, SSH address, discovered hostname, and primary
+          IPv4 must all identify pi5b at 192.168.1.15.
+      tags: [preflight]
+
+    - name: Refuse unsafe Raspberry Pi 6.18 kernels
+      ansible.builtin.assert:
+        that:
+          - >-
+            not ansible_facts.kernel.startswith('6.18.') or
+            (ansible_facts.kernel.split('+')[0] is version('6.18.38', '>='))
+        fail_msg: >-
+          Kernel {{ ansible_facts.kernel }} is within the known NVMe silent-corruption
+          window. Boot a known-good 6.12 kernel or a validated >=6.18.38 kernel.
+      tags: [preflight]
+
+    - name: Detect NFS mounts
+      ansible.builtin.command:
+        argv:
+          - findmnt
+          - --raw
+          - --noheadings
+          - --types
+          - nfs,nfs4
+      register: nfs_mounts
+      changed_when: false
+      failed_when: nfs_mounts.rc not in [0, 1]
+      check_mode: false
+      tags: [preflight]
+
+    - name: Refuse shared NFS on the isolated test cluster
+      ansible.builtin.assert:
+        that:
+          - nfs_mounts.stdout | trim == ''
+        fail_msg: "Safety stop: pi5b has NFS mounted: {{ nfs_mounts.stdout }}"
+      tags: [preflight]
+
+    - name: Inventory installed packages before applying kernel holds
+      ansible.builtin.package_facts:
+        manager: auto
+      tags: [preflight]
+
+    - name: Read existing package holds
+      ansible.builtin.command:
+        argv:
+          - apt-mark
+          - showhold
+      register: apt_holds_before
+      changed_when: false
+      check_mode: false
+      tags: [preflight]
+
+    - name: Hold every installed Raspberry Pi kernel package
+      ansible.builtin.command:
+        argv:
+          - apt-mark
+          - hold
+          - "{{ item }}"
+      loop: "{{ kernel_hold_packages }}"
+      when:
+        - item in ansible_facts.packages
+        - item not in apt_holds_before.stdout_lines
+      register: kernel_holds_changed
+      changed_when: true
+      tags: [preflight]
+
+    - name: Verify effective package holds
+      ansible.builtin.command:
+        argv:
+          - apt-mark
+          - showhold
+      register: apt_holds_after
+      changed_when: false
+      check_mode: false
+      tags: [preflight]
+
+    - name: Refuse to continue unless all installed kernel packages are held
+      ansible.builtin.assert:
+        that:
+          - item not in ansible_facts.packages or item in apt_holds_after.stdout_lines
+        fail_msg: "Safety stop: installed kernel package {{ item }} is not held."
+      loop: "{{ kernel_hold_packages }}"
+      when: not ansible_check_mode
+      tags: [preflight]
+
+  tasks:
+    - name: Create k3s configuration directory
+      ansible.builtin.file:
+        path: /etc/rancher/k3s
+        state: directory
+        owner: root
+        group: root
+        mode: "0750"
+
+    - name: Install cluster-specific k3s configuration
+      ansible.builtin.template:
+        src: ../templates/k3s-config.yaml.j2
+        dest: /etc/rancher/k3s/config.yaml
+        owner: root
+        group: root
+        mode: "0600"
+      notify: Restart k3s
+
+    - name: Create pinned installer directory
+      ansible.builtin.file:
+        path: /usr/local/src/k3s-bootstrap
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Download the version-bound k3s installer with checksum verification
+      ansible.builtin.get_url:
+        url: "{{ k3s_install_script_url }}"
+        dest: "/usr/local/src/k3s-bootstrap/install-{{ k3s_version }}.sh"
+        checksum: "sha256:{{ k3s_install_script_sha256 }}"
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Read installed k3s version
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - --version
+      register: installed_k3s_version
+      changed_when: false
+      failed_when: false
+
+    - name: Install or upgrade the pinned k3s version
+      ansible.builtin.command:
+        argv:
+          - "/usr/local/src/k3s-bootstrap/install-{{ k3s_version }}.sh"
+      environment:
+        INSTALL_K3S_VERSION: "{{ k3s_version }}"
+        INSTALL_K3S_EXEC: server
+      when:
+        - not ansible_check_mode
+        - k3s_version not in installed_k3s_version.stdout
+      changed_when: true
+
+    - name: Apply pending k3s restart before Kubernetes resources
+      ansible.builtin.meta: flush_handlers
+
+    - name: Wait for the pi5b Kubernetes node to be ready
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - wait
+          - --for=condition=Ready
+          - node/pi5b
+          - --timeout=300s
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Install Argo CD through the k3s Helm controller
+      ansible.builtin.template:
+        src: ../templates/argocd-helmchart.yaml.j2
+        dest: /var/lib/rancher/k3s/server/manifests/argocd.yaml
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Wait for the Argo CD Application CRD
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - wait
+          - --for=condition=Established
+          - crd/applications.argoproj.io
+          - --timeout=600s
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Wait for the Argo CD server deployment
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - rollout
+          - status
+          - deployment/argocd-server
+          - --timeout=600s
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Ensure the isolated application namespace exists
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - create
+          - namespace
+          - monitoring
+      register: monitoring_namespace
+      changed_when: monitoring_namespace.rc == 0
+      failed_when:
+        - monitoring_namespace.rc != 0
+        - "'AlreadyExists' not in monitoring_namespace.stderr"
+      when: not ansible_check_mode
+
+    - name: Create local controller state directory
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/../../.state/{{ cluster_name }}"
+        state: directory
+        mode: "0700"
+      become: false
+      delegate_to: localhost
+      when: not ansible_check_mode
+
+    - name: Generate or reuse the test-cluster Grafana password
+      ansible.builtin.set_fact:
+        grafana_admin_password: >-
+          {{ lookup('ansible.builtin.password',
+          playbook_dir + '/../../.state/' + cluster_name +
+          '/grafana-admin-password length=32 chars=ascii_letters,digits') }}
+      no_log: true
+      when: not ansible_check_mode
+
+    - name: Apply the Grafana admin secret without writing plaintext remotely
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - apply
+          - --server-side
+          - --field-manager=pi5b-bootstrap
+          - -f
+          - '-'
+        stdin: "{{ lookup('ansible.builtin.template', '../templates/grafana-admin-secret.yaml.j2') }}"
+      changed_when: true
+      no_log: true
+      when: not ansible_check_mode
+
+    - name: Apply the cluster-scoped GitOps root
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - apply
+          - --server-side
+          - --field-manager=pi5b-bootstrap
+          - -f
+          - '-'
+        stdin: "{{ lookup('ansible.builtin.template', '../templates/gitops-root.yaml.j2') }}"
+      register: gitops_root_apply
+      changed_when: "'configured' in gitops_root_apply.stdout or 'created' in gitops_root_apply.stdout"
+      when: not ansible_check_mode
+
+    - name: Wait for the GitOps root to become healthy
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - wait
+          - --for=jsonpath={.status.health.status}=Healthy
+          - application/{{ cluster_name }}-root
+          - --timeout=600s
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Wait for Grafana to become healthy
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - wait
+          - --for=jsonpath={.status.health.status}=Healthy
+          - application/grafana
+          - --timeout=900s
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Read the protected kubeconfig
+      ansible.builtin.slurp:
+        src: /etc/rancher/k3s/k3s.yaml
+      register: pi5b_kubeconfig
+      no_log: true
+      when: not ansible_check_mode
+
+    - name: Store a private controller kubeconfig for validation
+      ansible.builtin.copy:
+        content: >-
+          {{ (pi5b_kubeconfig.content | b64decode) |
+          regex_replace('https://127.0.0.1:6443', 'https://' + expected_ipv4 + ':6443') }}
+        dest: "{{ playbook_dir }}/../../.state/{{ cluster_name }}/kubeconfig"
+        mode: "0600"
+      become: false
+      delegate_to: localhost
+      no_log: true
+      when: not ansible_check_mode
+
+  handlers:
+    - name: Restart k3s
+      ansible.builtin.systemd_service:
+        name: k3s
+        state: restarted
+        enabled: true
+      when:
+        - not ansible_check_mode
+        - installed_k3s_version.rc | default(1) == 0
