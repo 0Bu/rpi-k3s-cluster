@@ -1,0 +1,76 @@
+name: meross-gitops-validate
+
+on:
+  push:
+    branches:
+      - 'automation/meross-*'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: validate-meross-promotion
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out promotion commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate immutable Meross references
+        env:
+          PROMOTION_BRANCH: ${{ github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+
+          branch = os.environ["PROMOTION_BRANCH"]
+          match = re.fullmatch(r"automation/meross-([0-9a-f]{40})", branch)
+          if not match:
+              raise SystemExit(f"invalid promotion branch: {branch!r}")
+          release_sha = match.group(1)
+
+          changed = subprocess.run(
+              ["git", "diff", "--name-only", "origin/main...HEAD"],
+              check=True,
+              capture_output=True,
+              text=True,
+          ).stdout.splitlines()
+          expected_path = "argocd/templates/meross-thermostat-bot.yaml"
+          if changed != [expected_path]:
+              raise SystemExit(f"promotion may change only {expected_path}: {changed!r}")
+
+          content = Path(expected_path).read_text()
+
+          def capture(pattern: str) -> str:
+              values = re.findall(pattern, content, flags=re.MULTILINE)
+              if len(values) != 1:
+                  raise SystemExit(f"expected one match for {pattern!r}, got {len(values)}")
+              return values[0]
+
+          chart_version = capture(r"^\s*targetRevision: (.+)$")
+          chart_match = re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+-sha([0-9a-f]{40})", chart_version)
+          if not chart_match or chart_match.group(1) != release_sha:
+              raise SystemExit(f"chart version does not pin release SHA: {chart_version!r}")
+
+          expected = {
+              r"^\s*repoURL: (.+)$": "ghcr.io/0bu/charts",
+              r"^\s*chart: (.+)$": "meross-thermostat-bot",
+              r"^\s*repository: (.+)$": "ghcr.io/0bu/meross-thermostat-bot",
+              r"^\s*tag: (.+)$": release_sha,
+              r"^\s*- name: (.+)$": "ghcr-registry",
+          }
+          for pattern, wanted in expected.items():
+              actual = capture(pattern)
+              if actual != wanted:
+                  raise SystemExit(f"unexpected value {actual!r}; wanted {wanted!r}")
+
+          if "forgejo" in content.lower() or "git.burau.dev" in content.lower():
+              raise SystemExit("promotion still contains a Forgejo reference")
+          PY

@@ -1,0 +1,143 @@
+name: meross-gitops-promote
+
+on:
+  workflow_run:
+    workflows: [meross-gitops-validate]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: meross-gitops-promotion
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: promote-meross-via-pr
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      startsWith(github.event.workflow_run.head_branch, 'automation/meross-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PROMOTION_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      PROMOTION_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Check out validated promotion commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Revalidate immutable Meross references
+        id: validate
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+
+          branch = os.environ["PROMOTION_BRANCH"]
+          match = re.fullmatch(r"automation/meross-([0-9a-f]{40})", branch)
+          if not match:
+              raise SystemExit(f"invalid promotion branch: {branch!r}")
+          release_sha = match.group(1)
+
+          head_sha = subprocess.run(
+              ["git", "rev-parse", "HEAD"],
+              check=True,
+              capture_output=True,
+              text=True,
+          ).stdout.strip()
+          if head_sha != os.environ["PROMOTION_HEAD_SHA"]:
+              raise SystemExit("checked-out commit differs from validated workflow head")
+
+          changed = subprocess.run(
+              ["git", "diff", "--name-only", "origin/main...HEAD"],
+              check=True,
+              capture_output=True,
+              text=True,
+          ).stdout.splitlines()
+          expected_path = "argocd/templates/meross-thermostat-bot.yaml"
+          if changed != [expected_path]:
+              raise SystemExit(f"promotion may change only {expected_path}: {changed!r}")
+
+          content = Path(expected_path).read_text()
+
+          def capture(pattern: str) -> str:
+              values = re.findall(pattern, content, flags=re.MULTILINE)
+              if len(values) != 1:
+                  raise SystemExit(f"expected one match for {pattern!r}, got {len(values)}")
+              return values[0]
+
+          chart_version = capture(r"^\s*targetRevision: (.+)$")
+          chart_match = re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+-sha([0-9a-f]{40})", chart_version)
+          if not chart_match or chart_match.group(1) != release_sha:
+              raise SystemExit(f"chart version does not pin release SHA: {chart_version!r}")
+
+          expected = {
+              r"^\s*repoURL: (.+)$": "ghcr.io/0bu/charts",
+              r"^\s*chart: (.+)$": "meross-thermostat-bot",
+              r"^\s*repository: (.+)$": "ghcr.io/0bu/meross-thermostat-bot",
+              r"^\s*tag: (.+)$": release_sha,
+              r"^\s*- name: (.+)$": "ghcr-registry",
+          }
+          for pattern, wanted in expected.items():
+              actual = capture(pattern)
+              if actual != wanted:
+                  raise SystemExit(f"unexpected value {actual!r}; wanted {wanted!r}")
+
+          if "forgejo" in content.lower() or "git.burau.dev" in content.lower():
+              raise SystemExit("promotion still contains a Forgejo reference")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"chart_version={chart_version}\n")
+              output.write(f"release_sha={release_sha}\n")
+          PY
+
+      - name: Create or reuse promotion PR
+        id: pr
+        env:
+          CHART_VERSION: ${{ steps.validate.outputs.chart_version }}
+          RELEASE_SHA: ${{ steps.validate.outputs.release_sha }}
+        run: |
+          pr_number="$(gh pr list \
+            --repo "${GITHUB_REPOSITORY}" \
+            --head "${PROMOTION_BRANCH}" \
+            --base main \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')"
+
+          if [[ -z "${pr_number}" ]]; then
+            pr_url="$(gh pr create \
+              --repo "${GITHUB_REPOSITORY}" \
+              --base main \
+              --head "${PROMOTION_BRANCH}" \
+              --title "deploy(meross): ${CHART_VERSION}" \
+              --body "Automated immutable promotion of Meross source SHA \`${RELEASE_SHA}\`. The validation workflow permits only the Meross ArgoCD Application and requires matching OCI chart and image SHAs.")"
+            pr_number="${pr_url##*/}"
+          fi
+
+          echo "number=${pr_number}" >> "${GITHUB_OUTPUT}"
+
+      - name: Squash-merge validated promotion
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          CHART_VERSION: ${{ steps.validate.outputs.chart_version }}
+          RELEASE_SHA: ${{ steps.validate.outputs.release_sha }}
+        run: |
+          gh pr merge "${PR_NUMBER}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --squash \
+            --delete-branch \
+            --match-head-commit "${PROMOTION_HEAD_SHA}" \
+            --subject "deploy(meross): ${CHART_VERSION}" \
+            --body "Promote immutable Meross release ${RELEASE_SHA}."
