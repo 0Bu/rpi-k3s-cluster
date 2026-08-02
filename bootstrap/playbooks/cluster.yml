@@ -657,7 +657,7 @@
       changed_when: false
       when: not ansible_check_mode
 
-    - name: Read every node's registered addresses
+    - name: Wait for every node to register both address families
       ansible.builtin.command:
         argv:
           - /usr/local/bin/k3s
@@ -668,6 +668,17 @@
       loop: "{{ cluster_expected_nodes }}"
       register: registered_nodes
       changed_when: false
+      until:
+        - >-
+          hostvars[item].expected_ipv4 in
+          ((registered_nodes.stdout | from_json).status.addresses |
+          map(attribute='address') | list)
+        - >-
+          hostvars[item].expected_ipv6 in
+          ((registered_nodes.stdout | from_json).status.addresses |
+          map(attribute='address') | list)
+      retries: 30
+      delay: 2
       when: not ansible_check_mode
 
     - name: Require both declared address families on every node
