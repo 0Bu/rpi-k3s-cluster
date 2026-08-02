@@ -102,6 +102,25 @@
       tags: [preflight]
 
   tasks:
+    - name: Preserve the validated hostname across cloud-init runs
+      ansible.builtin.copy:
+        dest: /etc/cloud/cloud.cfg.d/99-k3s-bootstrap-hostname.cfg
+        content: |-
+          preserve_hostname: true
+          manage_etc_hosts: true
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Keep the local hostname immediately resolvable
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1\s+'
+        line: "127.0.1.1 {{ expected_hostname }} {{ expected_hostname }}"
+        owner: root
+        group: root
+        mode: "0644"
+
     - name: Create the local k3s administrator group
       ansible.builtin.group:
         name: "{{ k3s_admin_group }}"

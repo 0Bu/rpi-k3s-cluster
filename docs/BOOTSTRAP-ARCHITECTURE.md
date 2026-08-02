@@ -24,6 +24,8 @@ not need an agent. The k3s and k9s versions, download URLs and SHA-256 values,
 node IP, Pod CIDR, and Service CIDR are declarative. Each cluster gets unique
 network ranges. A dedicated local group can read the rotating k3s kubeconfig;
 the operator's `~/.kube/config` is a symlink rather than a stale credential copy.
+The validated hostname is made cloud-init-persistent and locally resolvable so
+`sudo` and system services do not depend on external DNS.
 Argo CD is a bootstrapped platform component; normal applications are not
 installed imperatively.
 
