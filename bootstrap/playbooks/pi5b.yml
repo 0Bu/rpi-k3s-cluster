@@ -125,8 +125,8 @@
         src: ../templates/k3s-config.yaml.j2
         dest: /etc/rancher/k3s/config.yaml
         owner: root
-        group: root
-        mode: "0600"
+        group: "{{ k3s_admin_group }}"
+        mode: "0640"
       notify: Restart k3s
 
     - name: Create pinned installer directory
@@ -212,8 +212,6 @@
         dest: "/home/{{ ansible_user }}/.kube/config"
         state: link
         force: true
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
 
     - name: Download the pinned ARM64 k9s package with checksum verification
       ansible.builtin.get_url:
