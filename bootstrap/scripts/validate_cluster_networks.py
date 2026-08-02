@@ -48,8 +48,8 @@ def main() -> None:
         if nfs_server not in hosts:
             fail("nfs_server_host must be a declared cluster node")
         export_path = pathlib.PurePosixPath(values["nfs_export_path"])
-        if not export_path.is_absolute() or str(export_path) in {"/", "/home", "/var"}:
-            fail("nfs_export_path must be an explicit dedicated absolute path")
+        if str(export_path) != "/nfs":
+            fail("the selected NFS host must export the fixed /nfs path")
 
     protected = {ipaddress.ip_address(value) for value in values["protected_ipv4_addresses"]}
     lan = ipaddress.ip_network(values["k3s_lan_ipv6_cidr"])
@@ -109,18 +109,23 @@ def main() -> None:
     template = Environment(undefined=StrictUndefined).from_string(
         storage_template.read_text(encoding="utf-8")
     )
-    for backend, provisioner in {
-        "local-path": "rancher.io/local-path",
-        "nfs": "nfs.csi.k8s.io",
-    }.items():
-        context = values | {"storage_backend": backend, "hostvars": hosts}
+    backend_cases = [("local-path", None)] + [("nfs", hostname) for hostname in hosts]
+    for backend, selected_nfs_server in backend_cases:
+        provisioner = (
+            "nfs.csi.k8s.io" if backend == "nfs" else "rancher.io/local-path"
+        )
+        context = values | {
+            "storage_backend": backend,
+            "hostvars": hosts,
+            "nfs_server_host": selected_nfs_server or values["nfs_server_host"],
+        }
         storage_class = yaml.safe_load(template.render(**context))
         if storage_class["provisioner"] != provisioner:
             fail(f"{backend} rendered the wrong provisioner")
         if backend == "nfs":
             parameters = storage_class.get("parameters", {})
-            if parameters.get("server") != hosts[values["nfs_server_host"]]["expected_ipv4"]:
-                fail("NFS StorageClass did not select nfs_server_host")
+            if parameters.get("server") != hosts[selected_nfs_server]["expected_ipv4"]:
+                fail(f"NFS StorageClass did not select {selected_nfs_server}")
             if parameters.get("share") != values["nfs_export_path"]:
                 fail("NFS StorageClass did not select nfs_export_path")
         elif "parameters" in storage_class:

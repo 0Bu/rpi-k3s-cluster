@@ -34,9 +34,12 @@ installed imperatively.
 Each test-cluster root Application may reconcile only its own
 `clusters/<cluster>/argocd` directory. Its AppProject permits only the
 `monitoring` namespace and the Grafana Community chart repository. Grafana uses
-a dynamically provisioned local-path PVC. Its hostname, persistence, resources,
-and chart settings live directly in the Argo CD Application. There is no
-environment-specific `grafana/values.yaml` wrapper and no NFS reference.
+the bootstrap-owned `homelab-persistent` StorageClass. NFS on a declared
+cluster node at `/nfs` is the default; local-path must be selected explicitly
+for a disposable cluster. Its hostname, persistence, resources, and chart
+settings live directly in the Argo CD Application. There is no environment-
+specific `grafana/values.yaml` wrapper and no literal storage endpoint in the
+application.
 
 ## Next phases
 
@@ -45,7 +48,7 @@ environment-specific `grafana/values.yaml` wrapper and no NFS reference.
 2. Add SOPS/age or External Secrets with a separate key per cluster.
 3. Add an explicit DNS and certificate layer per cluster; do not reuse prod
    wildcard credentials in disposable clusters.
-4. Add a storage class contract (`local-path`, replicated, or dedicated NFS)
-   and ban literal storage endpoints in reusable charts.
+4. Migrate production workloads to the stable StorageClass one at a time with
+   an explicit backup, restore, and rollback test.
 5. Add an image/bootstrap path for blank Pis and OpenTofu only where an
    external provider actually owns DHCP/DNS/VM resources.

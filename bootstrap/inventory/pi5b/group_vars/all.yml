@@ -29,12 +29,14 @@ k3s_node_cidr_mask_size_ipv6: 80
 k3s_flannel_interface: eth0
 gitops_path: clusters/pi5b/argocd
 
-# Choose `local-path` for node-local RWO volumes or `nfs` for dynamically
-# provisioned volumes that can be remounted when a Pod moves to another node.
+# NFS is the bootstrap default. Use the explicit bootstrap CLI option when a
+# disposable cluster should use node-local storage instead.
 storage_backend: nfs
 persistent_storage_class: homelab-persistent
+# The control plane is the default. Override this only through the explicit
+# bootstrap option when another declared node should own the share.
 nfs_server_host: pi5b
-nfs_export_path: /srv/k3s-nfs
+nfs_export_path: /nfs
 nfs_mount_options:
   - nfsvers=4.1
   - hard

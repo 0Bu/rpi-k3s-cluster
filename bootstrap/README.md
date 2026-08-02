@@ -4,7 +4,7 @@ This directory builds one reproducible cluster with one server and zero or more
 agents:
 
 1. verify both SSH targets, hostnames, IPv4 addresses, stable IPv6 addresses,
-   roles, peer reachability, and the absence of NFS;
+   roles, peer reachability, and the absence of undeclared NFS mounts;
 2. reject unsafe 6.18 kernels and hold installed Raspberry Pi kernel packages;
 3. configure persistent IPv4/IPv6 forwarding without dropping the
    router-advertised IPv6 default route;
@@ -19,6 +19,17 @@ Run from the `codex/pi5b-bootstrap` worktree:
 make check
 make bootstrap-pi5b
 make status-pi5b
+```
+
+`make bootstrap-pi5b` uses NFS on the control-plane host at `/nfs`. The two
+non-default storage choices must be requested explicitly:
+
+```sh
+# Keep NFS, but place the /nfs share on another declared cluster node.
+./bootstrap/scripts/bootstrap-cluster.sh pi5b --nfs-server-host pi5c
+
+# Build a disposable cluster with node-local persistence instead of NFS.
+make bootstrap-pi5b-local-path
 ```
 
 The single bootstrap command processes both inventory members in ordered plays:
@@ -53,18 +64,21 @@ ULA Pod egress is masqueraded with `flannel-ipv6-masq`.
 `bootstrap/inventory/pi5b/group_vars/all.yml` selects the cluster-wide backend:
 
 ```yaml
-storage_backend: local-path # or nfs
+storage_backend: nfs
 persistent_storage_class: homelab-persistent
 nfs_server_host: pi5b
-nfs_export_path: /srv/k3s-nfs
+nfs_export_path: /nfs
 ```
 
 Applications reference only the stable `homelab-persistent` StorageClass and do
-not need environment-specific wrapper charts. With `local-path`, the bootstrap
-maps that class to the built-in k3s provisioner. With `nfs`, it:
+not need environment-specific wrapper charts. NFS is the default. Only the
+explicit `--storage-backend local-path` option (or the corresponding Make target)
+maps that class to the built-in k3s provisioner. With NFS, the bootstrap:
 
 - installs `nfs-common` on every declared node;
-- installs and exports NFS only on `nfs_server_host`;
+- defaults `nfs_server_host` to the control plane, while allowing the explicit
+  `--nfs-server-host` override for another declared node;
+- installs and exports `/nfs` only on `nfs_server_host`;
 - limits the export to the exact IPv4 addresses in the inventory;
 - performs a temporary read/write mount probe from every node;
 - installs the pinned GA Kubernetes NFS CSI driver; and
@@ -81,6 +95,17 @@ mount their data. Moving an existing NFS share to another node or switching an
 existing PVC between `local-path` and NFS requires an explicit backup/restore.
 The bootstrap refuses to mutate an existing stable StorageClass to a different
 provisioner.
+
+### Why rclone CSI is not the primary StorageClass
+
+The existing rclone application remains the encrypted off-site backup layer.
+An rclone CSI mount is useful for cloud/object content and read-mostly exchange,
+but it does not share the local `/nfs` directory between nodes by itself. Doing
+that would require an additional SFTP, WebDAV, or object-storage service and a
+FUSE/VFS cache on every node. Those semantics are a poor fit for SQLite,
+PostgreSQL, VictoriaMetrics, and other write-intensive application state. The
+kernel NFS client plus the GA Kubernetes NFS CSI driver therefore remains the
+primary multi-node persistent-storage path.
 
 ## Deliberate phase-3 boundaries
 

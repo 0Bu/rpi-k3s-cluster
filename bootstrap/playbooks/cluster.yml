@@ -15,9 +15,11 @@
           - cluster_expected_nodes | sort == groups['all'] | sort
           - storage_backend in ['local-path', 'nfs']
           - storage_backend != 'nfs' or nfs_server_host in cluster_expected_nodes
+          - storage_backend != 'nfs' or nfs_export_path == '/nfs'
         fail_msg: >-
           Safety stop: this playbook requires exactly one declared server, zero
-          or more declared agents, and a valid storage selection.
+          or more declared agents, NFS on an explicitly declared node at /nfs,
+          or an explicitly selected local-path backend.
       run_once: true
       tags: [preflight]
 
@@ -340,7 +342,7 @@
         - storage_backend == 'nfs'
         - inventory_hostname == nfs_server_host
 
-    - name: Create the selected NFS export directory
+    - name: Create the fixed NFS export directory on the selected host
       ansible.builtin.file:
         path: "{{ nfs_export_path }}"
         state: directory
