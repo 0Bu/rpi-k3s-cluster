@@ -369,7 +369,7 @@
       ansible.builtin.command:
         argv:
           - exportfs
-          - --ra
+          - -ra
       changed_when: true
       when:
         - storage_backend == 'nfs'
@@ -389,7 +389,7 @@
       ansible.builtin.command:
         argv:
           - exportfs
-          - --verbose
+          - -v
       register: active_nfs_exports
       changed_when: false
       failed_when: nfs_export_path not in active_nfs_exports.stdout
