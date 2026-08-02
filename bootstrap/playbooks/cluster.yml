@@ -1,8 +1,10 @@
 ---
-- name: Bootstrap the isolated pi5b test cluster
+- name: Bootstrap an isolated k3s test cluster
   hosts: k3s_servers
   become: true
   gather_facts: true
+  vars_files:
+    - ../vars/common.yml
 
   pre_tasks:
     - name: Refuse any inventory target except the explicitly approved test host
@@ -15,7 +17,7 @@
           - ansible_facts.default_ipv4.address == expected_ipv4
         fail_msg: >-
           Safety stop: inventory, SSH address, discovered hostname, and primary
-          IPv4 must all identify pi5b at 192.168.1.15.
+          IPv4 must all identify {{ cluster_name }} at {{ expected_ipv4 }}.
       tags: [preflight]
 
     - name: Refuse unsafe Raspberry Pi 6.18 kernels
@@ -47,7 +49,8 @@
       ansible.builtin.assert:
         that:
           - nfs_mounts.stdout | trim == ''
-        fail_msg: "Safety stop: pi5b has NFS mounted: {{ nfs_mounts.stdout }}"
+        fail_msg: >-
+          Safety stop: {{ cluster_name }} has NFS mounted: {{ nfs_mounts.stdout }}
       tags: [preflight]
 
     - name: Inventory installed packages before applying kernel holds
@@ -196,7 +199,7 @@
     - name: Preserve a pre-bootstrap operator kubeconfig
       ansible.builtin.copy:
         src: "/home/{{ ansible_user }}/.kube/config"
-        dest: "/home/{{ ansible_user }}/.kube/config.pre-pi5b-bootstrap"
+        dest: "/home/{{ ansible_user }}/.kube/config.pre-{{ cluster_name }}-bootstrap"
         remote_src: true
         force: false
         owner: "{{ ansible_user }}"
@@ -227,14 +230,14 @@
         deb: "/usr/local/src/k3s-bootstrap/k9s-{{ k9s_version }}-linux-arm64.deb"
         state: present
 
-    - name: Wait for the pi5b Kubernetes node to be ready
+    - name: Wait for the Kubernetes node to be ready
       ansible.builtin.command:
         argv:
           - /usr/local/bin/k3s
           - kubectl
           - wait
           - --for=condition=Ready
-          - node/pi5b
+          - "node/{{ cluster_name }}"
           - --timeout=300s
       changed_when: false
       when: not ansible_check_mode
@@ -381,7 +384,7 @@
           - kubectl
           - apply
           - --server-side
-          - --field-manager=pi5b-bootstrap
+          - "--field-manager={{ cluster_name }}-bootstrap"
           - -f
           - '-'
         stdin: "{{ lookup('ansible.builtin.template', '../templates/grafana-admin-secret.yaml.j2') }}"
@@ -397,7 +400,7 @@
           - /usr/local/bin/k3s
           - kubectl
           - apply
-          - --field-manager=pi5b-bootstrap
+          - "--field-manager={{ cluster_name }}-bootstrap"
           - -f
           - '-'
         stdin: "{{ lookup('ansible.builtin.template', '../templates/gitops-root.yaml.j2') }}"
@@ -452,14 +455,14 @@
     - name: Read the protected kubeconfig
       ansible.builtin.slurp:
         src: /etc/rancher/k3s/k3s.yaml
-      register: pi5b_kubeconfig
+      register: cluster_kubeconfig
       no_log: true
       when: not ansible_check_mode
 
     - name: Store a private controller kubeconfig for validation
       ansible.builtin.copy:
         content: >-
-          {{ (pi5b_kubeconfig.content | b64decode) |
+          {{ (cluster_kubeconfig.content | b64decode) |
           regex_replace('https://127.0.0.1:6443', 'https://' + expected_ipv4 + ':6443') }}
         dest: "{{ playbook_dir }}/../../.state/{{ cluster_name }}/kubeconfig"
         mode: "0600"

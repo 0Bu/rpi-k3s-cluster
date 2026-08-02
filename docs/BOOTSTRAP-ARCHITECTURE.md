@@ -29,12 +29,12 @@ installed imperatively.
 
 ## Phase 3: isolated GitOps application slice
 
-The pi5b root Application may reconcile only `clusters/pi5b/argocd`. Its
-AppProject permits only the `monitoring` namespace and the Grafana Community
-chart repository. Grafana uses a dynamically provisioned local-path PVC. Its
-hostname, persistence, resources, and chart settings live directly in the Argo
-CD Application. There is no environment-specific `grafana/values.yaml` wrapper
-and no NFS reference.
+Each test-cluster root Application may reconcile only its own
+`clusters/<cluster>/argocd` directory. Its AppProject permits only the
+`monitoring` namespace and the Grafana Community chart repository. Grafana uses
+a dynamically provisioned local-path PVC. Its hostname, persistence, resources,
+and chart settings live directly in the Argo CD Application. There is no
+environment-specific `grafana/values.yaml` wrapper and no NFS reference.
 
 ## Next phases
 

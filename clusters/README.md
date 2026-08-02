@@ -5,5 +5,6 @@ upstream Helm charts directly and keep all environment-specific values in the
 Argo CD `Application` (`spec.source.helm.valuesObject`). This prevents wrapper
 charts from mixing reusable chart code with prod/test addresses and storage.
 
-The first slice is `pi5b`. It deliberately contains no NFS server, static PV,
-MetalLB pool, production secret, or reference to `192.168.1.5`.
+The first slices are the independent `pi5b` and `pi5c` clusters. They deliberately
+contain no NFS server, static PV, MetalLB pool, production secret, or reference
+to `192.168.1.5`.

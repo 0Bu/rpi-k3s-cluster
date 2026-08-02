@@ -9,32 +9,9 @@ protected_ipv4_addresses:
   - 192.168.1.5
   - 192.168.1.25
 
-k3s_version: v1.36.2+k3s1
-k3s_install_script_url: https://raw.githubusercontent.com/k3s-io/k3s/v1.36.2%2Bk3s1/install.sh
-k3s_install_script_sha256: 46177d4c99440b4c0311b67233823a8e8a2fc09693f6c89af1a7161e152fbfad
 k3s_cluster_cidr: 10.52.0.0/16
 k3s_service_cidr: 10.53.0.0/16
 k3s_cluster_dns: 10.53.0.10
-k3s_admin_group: k3s-admin
-
-k9s_version: v0.51.0
-k9s_deb_url: https://github.com/derailed/k9s/releases/download/v0.51.0/k9s_linux_arm64.deb
-k9s_deb_sha256: 9dbc652cb3a6ede7279216e49c638ac2d5dfb701edd4e407e89dc42cb9920423
-
-argocd_chart_version: 10.2.2
-gitops_repo_url: https://github.com/0Bu/rpi-k3s-cluster.git
-gitops_target_revision: codex/pi5b-bootstrap
 gitops_path: clusters/pi5b/argocd
 
 grafana_hostname: grafana.pi5b.burau.dev
-grafana_admin_secret_name: grafana-admin
-
-# Keep every package capable of replacing the known-good Raspberry Pi kernel
-# pinned until a >=6.18.38 build has passed the NVMe corruption test protocol.
-kernel_hold_packages:
-  - linux-image-rpi-2712
-  - linux-headers-rpi-2712
-  - linux-image-rpi-v8
-  - linux-headers-rpi-v8
-  - raspberrypi-kernel
-  - raspberrypi-kernel-headers

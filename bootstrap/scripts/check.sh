@@ -11,5 +11,9 @@ export ANSIBLE_CONFIG="${repository_root}/bootstrap/ansible.cfg"
 export ANSIBLE_LOCAL_TEMP="${repository_root}/.ansible/tmp"
 mkdir -p "${ANSIBLE_LOCAL_TEMP}"
 
-.venv/bin/ansible-playbook bootstrap/playbooks/pi5b.yml --syntax-check
+.venv/bin/ansible-playbook \
+  --inventory bootstrap/inventory/pi5b/hosts.yml \
+  bootstrap/playbooks/cluster.yml \
+  --syntax-check
 .venv/bin/python bootstrap/scripts/validate_helm_applications.py clusters/pi5b/argocd
+.venv/bin/python bootstrap/scripts/validate_helm_applications.py clusters/pi5c/argocd
