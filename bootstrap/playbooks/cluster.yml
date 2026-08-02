@@ -328,6 +328,17 @@
         - storage_backend == 'nfs'
         - inventory_hostname == nfs_server_host
 
+    - name: Create the Debian NFS export configuration directory
+      ansible.builtin.file:
+        path: /etc/exports.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
     - name: Export NFS only to declared cluster nodes
       ansible.builtin.template:
         src: ../templates/k3s-nfs.exports.j2
