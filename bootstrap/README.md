@@ -88,7 +88,9 @@ maps that class to the built-in k3s provisioner. With NFS, the bootstrap:
 - limits the export to the exact IPv4 addresses in the inventory;
 - performs a temporary read/write mount probe from every node;
 - installs the pinned GA Kubernetes NFS CSI driver; and
-- maps `homelab-persistent` to dynamically provisioned NFS subdirectories.
+- maps `homelab-persistent` to dynamically provisioned NFS subdirectories; and
+- disables and removes k3s's packaged `local-storage` component. It remains
+  enabled only when `--storage-backend local-path` was selected explicitly.
 
 For a one-node start, leave `k3s_agents` empty and list only the control-plane
 host in `cluster_expected_nodes`. To add agents later, add their exact host

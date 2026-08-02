@@ -29,3 +29,7 @@ kubelet-arg:
 flannel-iface: "{{ k3s_flannel_interface }}"
 flannel-ipv6-masq: true
 secrets-encryption: true
+{% if storage_backend == 'nfs' %}
+disable:
+  - local-storage
+{% endif %}
