@@ -11,14 +11,18 @@ export ANSIBLE_CONFIG="${repository_root}/bootstrap/ansible.cfg"
 export ANSIBLE_LOCAL_TEMP="${repository_root}/.ansible/tmp"
 mkdir -p "${ANSIBLE_LOCAL_TEMP}"
 
-.venv/bin/ansible-playbook \
-  --inventory bootstrap/inventory/pi5b/hosts.yml \
-  bootstrap/playbooks/cluster.yml \
-  --syntax-check
-.venv/bin/python bootstrap/scripts/validate_cluster_networks.py \
-  bootstrap/inventory/pi5b/hosts.yml \
-  bootstrap/inventory/pi5b/group_vars/all.yml \
-  bootstrap/templates/persistent-storageclass.yaml.j2
 .venv/bin/python bootstrap/scripts/validate_infrastructure_charts.py \
   bootstrap/vars/common.yml
-.venv/bin/python bootstrap/scripts/validate_helm_applications.py clusters/pi5b/argocd
+
+for cluster_name in pi5b pi5c; do
+  .venv/bin/ansible-playbook \
+    --inventory "bootstrap/inventory/${cluster_name}/hosts.yml" \
+    bootstrap/playbooks/cluster.yml \
+    --syntax-check
+  .venv/bin/python bootstrap/scripts/validate_cluster_networks.py \
+    "bootstrap/inventory/${cluster_name}/hosts.yml" \
+    "bootstrap/inventory/${cluster_name}/group_vars/all.yml" \
+    bootstrap/templates/persistent-storageclass.yaml.j2
+  .venv/bin/python bootstrap/scripts/validate_helm_applications.py \
+    "clusters/${cluster_name}/argocd"
+done

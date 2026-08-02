@@ -6,9 +6,9 @@ cd "${repository_root}"
 
 cluster_name="${1:-}"
 case "${cluster_name}" in
-  pi5b) ;;
+  pi5b|pi5c) ;;
   *)
-    printf 'Usage: %s pi5b [--storage-backend nfs|local-path] [--nfs-server-host HOST] [ansible-playbook arguments...]\n' "$0" >&2
+    printf 'Usage: %s pi5b|pi5c [--storage-backend nfs|local-path] [--nfs-server-host HOST] [ansible-playbook arguments...]\n' "$0" >&2
     exit 2
     ;;
 esac

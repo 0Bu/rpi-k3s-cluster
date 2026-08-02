@@ -8,20 +8,22 @@ agents:
 2. reject unsafe 6.18 kernels and hold installed Raspberry Pi kernel packages;
 3. configure persistent IPv4/IPv6 forwarding without dropping the
    router-advertised IPv6 default route;
-4. install pinned k3s with `pi5b` as the only server and join every declared agent;
+4. install pinned k3s with the inventory's control plane as the only server and
+   join every declared agent;
 5. grant `oleg` access through a dedicated `k3s-admin` group and install pinned k9s;
-6. install Argo CD once and let the `pi5b-root` Application reconcile the
-   shared cluster overlay.
+6. install Argo CD once and let the `<cluster>-root` Application reconcile the
+   selected cluster overlay.
 
 Run from the `codex/pi5b-bootstrap` worktree:
 
 ```sh
 make check
-make bootstrap-pi5b
-make status-pi5b
+make bootstrap-pi5c
+make status-pi5c
 ```
 
-`make bootstrap-pi5b` uses NFS on the control-plane host at `/nfs`. The two
+`make bootstrap-pi5c` builds the one-node pi5c test cluster and uses NFS on its
+control-plane host at `/nfs`. The two
 non-default storage choices must be requested explicitly:
 
 ```sh
@@ -29,12 +31,13 @@ non-default storage choices must be requested explicitly:
 ./bootstrap/scripts/bootstrap-cluster.sh pi5b --nfs-server-host pi5c
 
 # Build a disposable cluster with node-local persistence instead of NFS.
-make bootstrap-pi5b-local-path
+make bootstrap-pi5c-local-path
 ```
 
-The single bootstrap command processes both inventory members in ordered plays:
-common host preparation, server creation, agent join, GitOps installation, and
-operator access. Controller-only state is written below `.state/pi5b/` and
+The single bootstrap command processes all selected inventory members in ordered
+plays: common host preparation, server creation, optional agent joins, GitOps
+installation, and operator access. Controller-only state is written below
+`.state/<cluster>/` and
 ignored by Git. The generated kubeconfig and Grafana password stay mode `0600`
 inside a mode `0700` directory.
 
@@ -61,7 +64,8 @@ ULA Pod egress is masqueraded with `flannel-ipv6-masq`.
 
 ## Storage selection and node growth
 
-`bootstrap/inventory/pi5b/group_vars/all.yml` selects the cluster-wide backend:
+Each `bootstrap/inventory/<cluster>/group_vars/all.yml` selects the cluster-wide
+backend:
 
 ```yaml
 storage_backend: nfs
@@ -83,10 +87,12 @@ maps that class to the built-in k3s provisioner. With NFS, the bootstrap:
 - installs the pinned GA Kubernetes NFS CSI driver; and
 - maps `homelab-persistent` to dynamically provisioned NFS subdirectories.
 
-For a one-node start, leave `k3s_agents` empty and list only `pi5b` in
-`cluster_expected_nodes`. To add pi5c or further agents later, add their exact
-host variables and append their names to `cluster_expected_nodes`; rerunning the
-same bootstrap joins only the new nodes and expands the NFS export allow-list.
+For a one-node start, leave `k3s_agents` empty and list only the control-plane
+host in `cluster_expected_nodes`. To add agents later, add their exact host
+variables and append their names to `cluster_expected_nodes`; rerunning the same
+bootstrap joins only the new nodes and expands the NFS export allow-list. The
+pi5c inventory is the executable example: pi5c is both the sole control plane
+and, by default, the NFS server at `/nfs`.
 
 NFS removes the local-volume scheduling constraint, but it does not make storage
 highly available: if the selected NFS node is offline, Pods on other nodes cannot

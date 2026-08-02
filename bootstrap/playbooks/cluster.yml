@@ -470,7 +470,7 @@
         group: "{{ ansible_user }}"
         mode: "0700"
 
-- name: Install the first and only k3s server on pi5b
+- name: Install the first and only declared k3s server
   hosts: k3s_servers
   become: true
   gather_facts: false
@@ -561,7 +561,7 @@
       no_log: true
       when: not ansible_check_mode
 
-- name: Join pi5c as a k3s agent
+- name: Join every declared k3s agent
   hosts: k3s_agents
   become: true
   gather_facts: false
@@ -798,7 +798,7 @@
           - kubectl
           - apply
           - --server-side
-          - --field-manager=pi5b-bootstrap
+          - "--field-manager={{ cluster_name }}-bootstrap"
           - -f
           - '-'
         stdin: "{{ lookup('ansible.builtin.template', '../templates/persistent-storageclass.yaml.j2') }}"

@@ -1,0 +1,44 @@
+---
+cluster_name: pi5c
+cluster_server_host: pi5c
+cluster_server_ipv4: 192.168.1.25
+cluster_server_ipv6: fd7c:3b4a:5f1d::5c
+cluster_api_url: https://192.168.1.25:6443
+cluster_expected_nodes:
+  - pi5c
+
+# Production is never a valid target of the disposable test-cluster inventory.
+protected_ipv4_addresses:
+  - 192.168.1.5
+
+# fd7c:3b4a:5f1d:0::/64 is the directly connected LAN and is used only for
+# node addresses. Pods and Services use separate, non-overlapping subnets.
+k3s_lan_ipv6_cidr: fd7c:3b4a:5f1d::/64
+k3s_cluster_cidrs:
+  - 10.52.0.0/16
+  - fd7c:3b4a:5f1d:42::/64
+k3s_service_cidrs:
+  - 10.53.0.0/16
+  - fd7c:3b4a:5f1d:43::/112
+k3s_cluster_dns:
+  - 10.53.0.10
+  - fd7c:3b4a:5f1d:43::a
+k3s_node_cidr_mask_size_ipv4: 24
+k3s_node_cidr_mask_size_ipv6: 80
+k3s_flannel_interface: eth0
+gitops_path: clusters/pi5c/argocd
+
+# NFS defaults to the control-plane node (pi5c for this inventory). Use the
+# explicit bootstrap CLI option only to select another declared node later.
+storage_backend: nfs
+persistent_storage_class: homelab-persistent
+nfs_export_path: /nfs
+nfs_mount_options:
+  - nfsvers=4.1
+  - hard
+  - timeo=600
+  - retrans=2
+  - noresvport
+
+grafana_hostnames:
+  - grafana.pi5c.burau.dev
