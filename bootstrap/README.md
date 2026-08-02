@@ -5,8 +5,9 @@ This directory implements the first reproducible, isolated cluster slice:
 1. verify the SSH target is exactly `pi5b` at `192.168.1.15`;
 2. reject unsafe 6.18 kernels and NFS mounts, then hold installed Pi kernel packages;
 3. install pinned k3s and Argo CD versions;
-4. create only a random local Grafana admin secret;
-5. let the `pi5b-root` Argo CD Application reconcile `clusters/pi5b/argocd`.
+4. grant `oleg` access through a dedicated `k3s-admin` group and install pinned k9s;
+5. create only a random local Grafana admin secret;
+6. let the `pi5b-root` Argo CD Application reconcile `clusters/pi5b/argocd`.
 
 Run from the `codex/pi5b-bootstrap` worktree:
 
@@ -19,6 +20,12 @@ make status-pi5b
 Controller-only state is written below `.state/pi5b/` and ignored by Git. The
 generated kubeconfig and Grafana password stay mode `0600`/inside a mode `0700`
 directory.
+
+On the Pi, `~/.kube/config` points to the current k3s-generated kubeconfig. k3s
+keeps that source at `root:k3s-admin 0640`, so certificate rotation is picked up
+without copying credentials again. An existing user kubeconfig is preserved once
+as `~/.kube/config.pre-pi5b-bootstrap`. A fresh SSH login activates the added
+group; then both `kgpa` and `k9s` work without `sudo` or `KUBECONFIG` exports.
 
 ## Deliberate phase-3 boundaries
 

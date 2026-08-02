@@ -20,10 +20,12 @@ host with a mismatching identity, an NFS mount, or a kernel in the known-bad
 ## Phase 2: reproducible host and k3s bootstrap
 
 Ansible is the controller because the Raspberry Pis already expose SSH and do
-not need an agent. The k3s version, installer URL, installer SHA-256, node IP,
-Pod CIDR, and Service CIDR are declarative. Each cluster gets unique network
-ranges. Argo CD is a bootstrapped platform component; normal applications are
-not installed imperatively.
+not need an agent. The k3s and k9s versions, download URLs and SHA-256 values,
+node IP, Pod CIDR, and Service CIDR are declarative. Each cluster gets unique
+network ranges. A dedicated local group can read the rotating k3s kubeconfig;
+the operator's `~/.kube/config` is a symlink rather than a stale credential copy.
+Argo CD is a bootstrapped platform component; normal applications are not
+installed imperatively.
 
 ## Phase 3: isolated GitOps application slice
 

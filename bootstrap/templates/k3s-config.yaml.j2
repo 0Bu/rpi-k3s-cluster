@@ -1,4 +1,5 @@
-write-kubeconfig-mode: "600"
+write-kubeconfig-mode: "0640"
+write-kubeconfig-group: "{{ k3s_admin_group }}"
 node-name: "{{ cluster_name }}"
 node-ip: "{{ expected_ipv4 }}"
 advertise-address: "{{ expected_ipv4 }}"

@@ -99,12 +99,25 @@
       tags: [preflight]
 
   tasks:
+    - name: Create the local k3s administrator group
+      ansible.builtin.group:
+        name: "{{ k3s_admin_group }}"
+        system: true
+        state: present
+
+    - name: Grant the SSH operator local cluster administration
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        groups:
+          - "{{ k3s_admin_group }}"
+        append: true
+
     - name: Create k3s configuration directory
       ansible.builtin.file:
         path: /etc/rancher/k3s
         state: directory
         owner: root
-        group: root
+        group: "{{ k3s_admin_group }}"
         mode: "0750"
 
     - name: Install cluster-specific k3s configuration
@@ -156,6 +169,65 @@
 
     - name: Apply pending k3s restart before Kubernetes resources
       ansible.builtin.meta: flush_handlers
+
+    - name: Ensure the generated k3s kubeconfig has operator access
+      ansible.builtin.file:
+        path: /etc/rancher/k3s/k3s.yaml
+        state: file
+        owner: root
+        group: "{{ k3s_admin_group }}"
+        mode: "0640"
+      when: not ansible_check_mode
+
+    - name: Create the operator kubeconfig directory
+      ansible.builtin.file:
+        path: "/home/{{ ansible_user }}/.kube"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0700"
+
+    - name: Inspect an existing operator kubeconfig
+      ansible.builtin.stat:
+        path: "/home/{{ ansible_user }}/.kube/config"
+        follow: false
+      register: operator_kubeconfig
+
+    - name: Preserve a pre-bootstrap operator kubeconfig
+      ansible.builtin.copy:
+        src: "/home/{{ ansible_user }}/.kube/config"
+        dest: "/home/{{ ansible_user }}/.kube/config.pre-pi5b-bootstrap"
+        remote_src: true
+        force: false
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0600"
+      when:
+        - operator_kubeconfig.stat.exists
+        - not operator_kubeconfig.stat.islnk
+
+    - name: Link the operator to the current rotating k3s kubeconfig
+      ansible.builtin.file:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: "/home/{{ ansible_user }}/.kube/config"
+        state: link
+        force: true
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: Download the pinned ARM64 k9s package with checksum verification
+      ansible.builtin.get_url:
+        url: "{{ k9s_deb_url }}"
+        dest: "/usr/local/src/k3s-bootstrap/k9s-{{ k9s_version }}-linux-arm64.deb"
+        checksum: "sha256:{{ k9s_deb_sha256 }}"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Install the pinned k9s package
+      ansible.builtin.apt:
+        deb: "/usr/local/src/k3s-bootstrap/k9s-{{ k9s_version }}-linux-arm64.deb"
+        state: present
 
     - name: Wait for the pi5b Kubernetes node to be ready
       ansible.builtin.command:
