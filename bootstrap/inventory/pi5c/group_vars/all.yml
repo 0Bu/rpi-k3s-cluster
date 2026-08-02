@@ -38,7 +38,6 @@ nfs_mount_options:
   - hard
   - timeo=600
   - retrans=2
-  - noresvport
 
 grafana_hostnames:
   - grafana.pi5c.burau.dev
