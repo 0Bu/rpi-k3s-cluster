@@ -11,18 +11,18 @@ spec:
     server: https://kubernetes.default.svc
   project: default
   source:
-    repoURL: git@github.com:0Bu/meross-thermostat-bot.git
-    path: deploy/helm/meross-thermostat-bot
-    targetRevision: 08cbf36cb36369dc10ecd07471fb59cb8edd0e51
+    repoURL: ghcr.io/0bu/charts
+    chart: meross-thermostat-bot
+    targetRevision: 0.3.0-shae472c14c3608bdfa551121520947c2ff61a9b781
     helm:
       releaseName: meross-thermostat-bot
       valuesObject:
         image:
-          repository: git.burau.dev/oleg/meross-thermostat-bot
-          tag: d1fe76757b1b968e1431a435fb0fe23fb6028018
+          repository: ghcr.io/0bu/meross-thermostat-bot
+          tag: e472c14c3608bdfa551121520947c2ff61a9b781
           pullPolicy: IfNotPresent
         imagePullSecrets:
-          - name: forgejo-registry
+          - name: ghcr-registry
         meross:
           hosts:
             - 192.168.107.114
