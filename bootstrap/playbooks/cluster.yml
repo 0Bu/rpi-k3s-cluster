@@ -365,22 +365,21 @@
         - storage_backend == 'nfs'
         - inventory_hostname == nfs_server_host
 
-    - name: Reload changed NFS exports without restarting kernel NFS threads
-      ansible.builtin.command:
-        argv:
-          - exportfs
-          - -ra
-      changed_when: true
-      when:
-        - storage_backend == 'nfs'
-        - inventory_hostname == nfs_server_host
-        - nfs_exports_file.changed
-
     - name: Ensure the selected NFS server is running
       ansible.builtin.systemd_service:
         name: nfs-kernel-server
         state: started
         enabled: true
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
+    - name: Reconcile NFS exports without restarting kernel NFS threads
+      ansible.builtin.command:
+        argv:
+          - exportfs
+          - -ra
+      changed_when: nfs_exports_file.changed
       when:
         - storage_backend == 'nfs'
         - inventory_hostname == nfs_server_host
