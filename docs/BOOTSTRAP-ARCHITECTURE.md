@@ -34,12 +34,12 @@ installed imperatively.
 Each test-cluster root Application may reconcile only its own
 `clusters/<cluster>/argocd` directory. Its AppProject permits only the
 `monitoring` namespace and the Grafana Community chart repository. Grafana uses
-the bootstrap-owned `homelab-persistent` StorageClass. NFS on a declared
-cluster node at `/nfs` is the default; local-path must be selected explicitly
-for a disposable cluster. Its hostname, persistence, resources, and chart
-settings live directly in the Argo CD Application. There is no environment-
-specific `grafana/values.yaml` wrapper and no literal storage endpoint in the
-application.
+the bootstrap-owned `homelab-persistent` StorageClass. NFS on the declared
+control-plane host at `/nfs` is the default; another declared NFS node or
+local-path must be selected explicitly. Its hostname, persistence, resources,
+and chart settings live directly in the Argo CD Application. There is no
+environment-specific `grafana/values.yaml` wrapper and no literal storage
+endpoint in the application.
 
 ## Next phases
 

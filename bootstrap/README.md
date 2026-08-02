@@ -66,7 +66,6 @@ ULA Pod egress is masqueraded with `flannel-ipv6-masq`.
 ```yaml
 storage_backend: nfs
 persistent_storage_class: homelab-persistent
-nfs_server_host: pi5b
 nfs_export_path: /nfs
 ```
 
@@ -76,8 +75,8 @@ explicit `--storage-backend local-path` option (or the corresponding Make target
 maps that class to the built-in k3s provisioner. With NFS, the bootstrap:
 
 - installs `nfs-common` on every declared node;
-- defaults `nfs_server_host` to the control plane, while allowing the explicit
-  `--nfs-server-host` override for another declared node;
+- derives `nfs_server_host` from `cluster_server_host`, while allowing the
+  explicit `--nfs-server-host` override for another declared node;
 - installs and exports `/nfs` only on `nfs_server_host`;
 - limits the export to the exact IPv4 addresses in the inventory;
 - performs a temporary read/write mount probe from every node;

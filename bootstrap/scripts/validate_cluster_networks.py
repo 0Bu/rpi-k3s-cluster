@@ -43,9 +43,9 @@ def main() -> None:
     storage_backend = values["storage_backend"]
     if storage_backend not in {"local-path", "nfs"}:
         fail("storage_backend must be local-path or nfs")
+    default_nfs_server = values.get("nfs_server_host", values["cluster_server_host"])
     if storage_backend == "nfs":
-        nfs_server = values["nfs_server_host"]
-        if nfs_server not in hosts:
+        if default_nfs_server not in hosts:
             fail("nfs_server_host must be a declared cluster node")
         export_path = pathlib.PurePosixPath(values["nfs_export_path"])
         if str(export_path) != "/nfs":
@@ -117,7 +117,7 @@ def main() -> None:
         context = values | {
             "storage_backend": backend,
             "hostvars": hosts,
-            "nfs_server_host": selected_nfs_server or values["nfs_server_host"],
+            "nfs_server_host": selected_nfs_server or default_nfs_server,
         }
         storage_class = yaml.safe_load(template.render(**context))
         if storage_class["provisioner"] != provisioner:
