@@ -79,6 +79,10 @@ spec:
                 memory: 768Mi
           volumePermissions:
             enabled: true
+            image:
+              registry: docker.io
+              repository: library/debian
+              tag: 13-slim
         additionalObjects:
           - apiVersion: v1
             kind: ServiceAccount
