@@ -921,7 +921,7 @@
         - "'AlreadyExists' not in authentik_namespace.stderr"
       when:
         - not ansible_check_mode
-        - authentik_enabled | bool
+        - (authentik_enabled | default(false)) | bool
 
     - name: Create local controller state directory
       ansible.builtin.file:
@@ -948,7 +948,7 @@
       no_log: true
       when:
         - not ansible_check_mode
-        - authentik_enabled | bool
+        - (authentik_enabled | default(false)) | bool
 
     - name: Generate or reuse Authentik configuration credentials
       ansible.builtin.set_fact:
@@ -967,7 +967,7 @@
       no_log: true
       when:
         - not ansible_check_mode
-        - authentik_enabled | bool
+        - (authentik_enabled | default(false)) | bool
         - authentik_config_secret.rc != 0
 
     - name: Recover existing Authentik configuration credentials
@@ -984,7 +984,7 @@
       no_log: true
       when:
         - not ansible_check_mode
-        - authentik_enabled | bool
+        - (authentik_enabled | default(false)) | bool
         - authentik_config_secret.rc == 0
 
     - name: Persist private Authentik configuration credentials on the controller
@@ -1004,7 +1004,7 @@
       no_log: true
       when:
         - not ansible_check_mode
-        - authentik_enabled | bool
+        - (authentik_enabled | default(false)) | bool
 
     - name: Read the existing Authentik blueprint secret if present
       ansible.builtin.command:
@@ -1022,7 +1022,7 @@
       no_log: true
       when:
         - not ansible_check_mode
-        - authentik_enabled | bool
+        - (authentik_enabled | default(false)) | bool
 
     - name: Generate or reuse Authentik application credentials
       ansible.builtin.set_fact:
@@ -1037,7 +1037,7 @@
       no_log: true
       when:
         - not ansible_check_mode
-        - authentik_enabled | bool
+        - (authentik_enabled | default(false)) | bool
         - authentik_blueprint_secret.rc != 0
 
     - name: Recover existing Authentik application credentials
@@ -1051,7 +1051,7 @@
       no_log: true
       when:
         - not ansible_check_mode
-        - authentik_enabled | bool
+        - (authentik_enabled | default(false)) | bool
         - authentik_blueprint_secret.rc == 0
 
     - name: Persist private Authentik application credentials on the controller
@@ -1069,7 +1069,7 @@
       no_log: true
       when:
         - not ansible_check_mode
-        - authentik_enabled | bool
+        - (authentik_enabled | default(false)) | bool
 
     - name: Apply Authentik and Grafana OAuth secrets without writing plaintext remotely
       ansible.builtin.command:
@@ -1094,7 +1094,7 @@
       no_log: true
       when:
         - not ansible_check_mode
-        - authentik_enabled | bool
+        - (authentik_enabled | default(false)) | bool
 
     - name: Read the existing Grafana admin secret if present
       ansible.builtin.command:
@@ -1222,7 +1222,7 @@
       delay: 10
       when:
         - not ansible_check_mode
-        - authentik_enabled | bool
+        - (authentik_enabled | default(false)) | bool
 
     - name: Wait for Authentik to become healthy
       ansible.builtin.command:
@@ -1238,7 +1238,7 @@
       changed_when: false
       when:
         - not ansible_check_mode
-        - authentik_enabled | bool
+        - (authentik_enabled | default(false)) | bool
 
     - name: Wait for Grafana to become healthy
       ansible.builtin.command:
