@@ -32,4 +32,4 @@ jobs:
       - run: ANSIBLE_CONFIG=bootstrap/ansible.cfg ansible-playbook --inventory bootstrap/inventory/${{ matrix.cluster }}/hosts.yml bootstrap/playbooks/cluster.yml --syntax-check
       - run: python bootstrap/scripts/validate_cluster_networks.py bootstrap/inventory/${{ matrix.cluster }}/hosts.yml bootstrap/inventory/${{ matrix.cluster }}/group_vars/all.yml bootstrap/templates/persistent-storageclass.yaml.j2
       - run: python bootstrap/scripts/validate_infrastructure_charts.py bootstrap/vars/common.yml
-      - run: python bootstrap/scripts/validate_helm_applications.py clusters/${{ matrix.cluster }}/argocd
+      - run: python bootstrap/scripts/validate_gitops_boundary.py bootstrap/vars/common.yml bootstrap/inventory/${{ matrix.cluster }}/group_vars/all.yml

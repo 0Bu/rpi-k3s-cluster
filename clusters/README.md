@@ -1,14 +1,12 @@
-# Cluster overlays
+# Private cluster overlays
 
-Each directory owns only the desired state for one cluster. Applications pull
-upstream Helm charts directly and keep all environment-specific values in the
-Argo CD `Application` (`spec.source.helm.valuesObject`). This prevents wrapper
-charts from mixing reusable chart code with prod/test addresses and storage.
+Real Argo CD `AppProject`, `Application`, `ApplicationSet`, cluster-specific
+Helm values, and encrypted Git secrets do not belong in this public repository.
+Their source of truth is the private
+[`0Bu/rpi-k3s-cluster-apps`](https://github.com/0Bu/rpi-k3s-cluster-apps)
+repository under `clusters/<cluster>/argocd`.
 
-`clusters/pi5b` represents the shared test cluster whose server is `pi5b` and
-whose agent is `pi5c`. It deliberately contains no NFS server, static PV,
-MetalLB pool, production secret, or reference to `192.168.1.5`. Grafana exposes
-both LAN hostnames and requests a dual-stack Service, while its persistent volume
-uses the bootstrap-owned stable `homelab-persistent` StorageClass. That class can
-resolve to node-local storage or the dedicated NFS CSI backend without coupling
-the Helm Application to a particular cluster topology.
+This public directory intentionally contains documentation only. The bootstrap
+keeps the path contract visible in inventory while a cluster-scoped read-only
+SSH deploy key grants Argo CD access to the private repository. Never add a real
+overlay here as a public fallback.

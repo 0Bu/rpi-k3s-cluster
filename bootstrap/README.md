@@ -11,8 +11,9 @@ agents:
 4. install pinned k3s with the inventory's control plane as the only server and
    join every declared agent;
 5. grant `oleg` access through a dedicated `k3s-admin` group and install pinned k9s;
-6. install Argo CD once and let the `<cluster>-root` Application reconcile the
-   selected cluster overlay.
+6. install Argo CD once, register a cluster-scoped read-only SSH deploy key,
+   and let the `<cluster>-root` Application reconcile its overlay from the
+   separate private desired-state repository.
 
 Run from the `codex/pi5b-bootstrap` worktree:
 
@@ -40,12 +41,31 @@ installation, and operator access. Controller-only state is written below
 `.state/<cluster>/` and
 ignored by Git. The generated kubeconfig, Grafana break-glass password, Authentik
 bootstrap password, and `oleg` password stay mode `0600` inside a mode `0700`
-directory.
+directory. The GitOps deploy-key pair is stored there as
+`gitops-repo-ssh-key{,.pub}`. The bootstrap verifies through the authenticated
+GitHub CLI that `0Bu/rpi-k3s-cluster-apps` is private, registers only the public
+half as a read-only deploy key, and writes the private half only to Argo CD's
+repository Secret.
+
+## Public/private GitOps boundary
+
+This public repository owns host preparation, k3s, Argo CD installation,
+storage, reusable charts, and validators. Real AppProjects, Applications,
+ApplicationSets, environment values, and encrypted Git secrets live in the
+private `0Bu/rpi-k3s-cluster-apps` repository. Plaintext secrets remain forbidden
+in both repositories; bootstrap-generated values stay in `.state/<cluster>` and
+Kubernetes Secrets.
+
+The controller must have `gh` authenticated as an account allowed to manage the
+private repository. A separate deploy key is generated for every cluster and
+registered without write access. Losing `.state/<cluster>/gitops-repo-ssh-key`
+requires removing that cluster's named deploy key in GitHub before bootstrap can
+create a replacement; a mismatched key is rejected rather than overwritten.
 
 ## Grafana authentication on pi5c
 
-The pi5c overlay deploys the pinned official Authentik chart as a separate Argo
-CD Application at `http://auth.pi5c.burau.dev`. Its mounted blueprint creates
+The private pi5c overlay deploys the pinned official Authentik chart as a separate
+Argo CD Application at `http://auth.pi5c.burau.dev`. Its mounted blueprint creates
 the Grafana OIDC provider, the `oleg` user, and application-scoped `Grafana
 Admins`, `Grafana Editors`, and `Grafana Viewers` entitlements. Only users with
 one of those entitlements can sign in; `oleg` receives `Grafana Admins` during

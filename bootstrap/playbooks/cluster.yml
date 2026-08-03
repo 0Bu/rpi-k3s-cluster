@@ -932,6 +932,192 @@
       delegate_to: localhost
       when: not ansible_check_mode
 
+    - name: Define the private GitOps deploy-key paths
+      ansible.builtin.set_fact:
+        gitops_repo_private_key_path: >-
+          {{ playbook_dir }}/../../.state/{{ cluster_name }}/gitops-repo-ssh-key
+      when: not ansible_check_mode
+
+    - name: Locate private GitOps controller prerequisites
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/which
+          - "{{ item }}"
+      loop:
+        - gh
+        - ssh-keygen
+      changed_when: false
+      become: false
+      delegate_to: localhost
+      when: not ansible_check_mode
+
+    - name: Verify the desired-state repository is private
+      ansible.builtin.command:
+        argv:
+          - gh
+          - repo
+          - view
+          - "{{ gitops_repo_github_slug }}"
+          - --json
+          - visibility
+          - --jq
+          - .visibility
+      register: gitops_repo_visibility
+      changed_when: false
+      become: false
+      delegate_to: localhost
+      when: not ansible_check_mode
+
+    - name: Refuse a public desired-state repository
+      ansible.builtin.assert:
+        that:
+          - gitops_repo_visibility.stdout == 'PRIVATE'
+        fail_msg: >-
+          {{ gitops_repo_github_slug }} must be private before bootstrap can
+          install real Argo CD Applications.
+      when: not ansible_check_mode
+
+    - name: Inspect the private GitOps deploy-key pair
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "{{ gitops_repo_private_key_path }}"
+        - "{{ gitops_repo_private_key_path }}.pub"
+      register: gitops_repo_key_files
+      become: false
+      delegate_to: localhost
+      when: not ansible_check_mode
+
+    - name: Refuse a partial private GitOps deploy-key pair
+      ansible.builtin.assert:
+        that:
+          - >-
+            gitops_repo_key_files.results[0].stat.exists ==
+            gitops_repo_key_files.results[1].stat.exists
+        fail_msg: >-
+          Refusing to overwrite a partial GitOps deploy-key pair below
+          .state/{{ cluster_name }}; restore or remove the exact orphaned file.
+      when: not ansible_check_mode
+
+    - name: Generate a cluster-scoped read-only GitOps deploy key
+      ansible.builtin.command:
+        argv:
+          - ssh-keygen
+          - -q
+          - -t
+          - ed25519
+          - -N
+          - ''
+          - -C
+          - "argocd-{{ cluster_name }}@{{ gitops_repo_github_slug }}"
+          - -f
+          - "{{ gitops_repo_private_key_path }}"
+      changed_when: true
+      no_log: true
+      become: false
+      delegate_to: localhost
+      when:
+        - not ansible_check_mode
+        - not gitops_repo_key_files.results[0].stat.exists
+
+    - name: Protect the private GitOps deploy key
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - path: "{{ gitops_repo_private_key_path }}"
+          mode: "0600"
+        - path: "{{ gitops_repo_private_key_path }}.pub"
+          mode: "0644"
+      become: false
+      delegate_to: localhost
+      when: not ansible_check_mode
+
+    - name: Read registered private-repository deploy keys
+      ansible.builtin.command:
+        argv:
+          - gh
+          - api
+          - "repos/{{ gitops_repo_github_slug }}/keys"
+      register: gitops_repo_registered_keys
+      changed_when: false
+      become: false
+      delegate_to: localhost
+      when: not ansible_check_mode
+
+    - name: Resolve the local and registered deploy-key identities
+      ansible.builtin.set_fact:
+        gitops_repo_public_key: >-
+          {{ (lookup('ansible.builtin.file', gitops_repo_private_key_path + '.pub').split())[0:2] | join(' ') }}
+        gitops_repo_matching_keys: >-
+          {{ (gitops_repo_registered_keys.stdout | from_json) |
+             selectattr('title', 'equalto', gitops_repo_deploy_key_title) | list }}
+      when: not ansible_check_mode
+
+    - name: Refuse a mismatched registered deploy key
+      ansible.builtin.assert:
+        that:
+          - gitops_repo_matching_keys | length <= 1
+          - >-
+            gitops_repo_matching_keys | length == 0 or
+            gitops_repo_matching_keys[0].key == gitops_repo_public_key
+        fail_msg: >-
+          GitHub already has a deploy key named {{ gitops_repo_deploy_key_title }}
+          whose public key does not match local controller state.
+      when: not ansible_check_mode
+
+    - name: Register the cluster-scoped read-only GitOps deploy key
+      ansible.builtin.command:
+        argv:
+          - gh
+          - repo
+          - deploy-key
+          - add
+          - "{{ gitops_repo_private_key_path }}.pub"
+          - --repo
+          - "{{ gitops_repo_github_slug }}"
+          - --title
+          - "{{ gitops_repo_deploy_key_title }}"
+      changed_when: true
+      no_log: true
+      become: false
+      delegate_to: localhost
+      when:
+        - not ansible_check_mode
+        - gitops_repo_matching_keys | length == 0
+
+    - name: Detect changes to the private GitOps repository credential
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - diff
+          - --server-side
+          - "--field-manager={{ cluster_name }}-bootstrap"
+          - -f
+          - '-'
+        stdin: "{{ lookup('ansible.builtin.template', '../templates/argocd-repository-secret.yaml.j2') }}"
+      register: gitops_repo_secret_diff
+      changed_when: gitops_repo_secret_diff.rc == 1
+      failed_when: gitops_repo_secret_diff.rc not in [0, 1]
+      no_log: true
+      when: not ansible_check_mode
+
+    - name: Apply the private GitOps repository credential
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - apply
+          - --server-side
+          - "--field-manager={{ cluster_name }}-bootstrap"
+          - -f
+          - '-'
+        stdin: "{{ lookup('ansible.builtin.template', '../templates/argocd-repository-secret.yaml.j2') }}"
+      changed_when: false
+      no_log: true
+      when: not ansible_check_mode
+
     - name: Read the existing Authentik configuration secret if present
       ansible.builtin.command:
         argv:
@@ -1274,6 +1460,20 @@
           - argocd
           - wait
           - --for=jsonpath={.status.health.status}=Healthy
+          - "application/{{ cluster_name }}-root"
+          - --timeout=600s
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Wait for the GitOps root to be synced from the private repository
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - wait
+          - --for=jsonpath={.status.sync.status}=Synced
           - "application/{{ cluster_name }}-root"
           - --timeout=600s
       changed_when: false

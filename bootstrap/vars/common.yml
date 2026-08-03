@@ -18,8 +18,11 @@ nfs_csi_chart_repo: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-
 # Storage follows the cluster role, not a hardware hostname. An explicit
 # bootstrap extra-var has higher precedence and can select another node.
 nfs_server_host: "{{ cluster_server_host }}"
-gitops_repo_url: https://github.com/0Bu/rpi-k3s-cluster.git
-gitops_target_revision: codex/pi5b-bootstrap
+gitops_repo_url: git@github.com:0Bu/rpi-k3s-cluster-apps.git
+gitops_repo_github_slug: 0Bu/rpi-k3s-cluster-apps
+gitops_target_revision: main
+gitops_repo_deploy_key_title: "argocd-{{ cluster_name }}-read-only"
+gitops_repo_secret_name: "{{ cluster_name }}-gitops-repository"
 grafana_admin_secret_name: grafana-admin
 grafana_oauth_secret_name: grafana-oauth
 grafana_oauth_client_id: grafana

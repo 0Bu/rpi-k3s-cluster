@@ -2,6 +2,7 @@
 .DS_Store
 .venv/
 .state/
+.private-apps/
 .ansible/
 *.retry
 __pycache__/

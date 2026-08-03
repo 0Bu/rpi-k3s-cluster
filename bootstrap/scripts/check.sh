@@ -23,6 +23,7 @@ for cluster_name in pi5b pi5c; do
     "bootstrap/inventory/${cluster_name}/hosts.yml" \
     "bootstrap/inventory/${cluster_name}/group_vars/all.yml" \
     bootstrap/templates/persistent-storageclass.yaml.j2
-  .venv/bin/python bootstrap/scripts/validate_helm_applications.py \
-    "clusters/${cluster_name}/argocd"
+  .venv/bin/python bootstrap/scripts/validate_gitops_boundary.py \
+    bootstrap/vars/common.yml \
+    "bootstrap/inventory/${cluster_name}/group_vars/all.yml"
 done
