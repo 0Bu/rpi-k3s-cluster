@@ -21,6 +21,12 @@ nfs_server_host: "{{ cluster_server_host }}"
 gitops_repo_url: https://github.com/0Bu/rpi-k3s-cluster.git
 gitops_target_revision: codex/pi5b-bootstrap
 grafana_admin_secret_name: grafana-admin
+grafana_oauth_secret_name: grafana-oauth
+grafana_oauth_client_id: grafana
+authentik_config_secret_name: authentik-config
+authentik_postgresql_secret_name: authentik-postgresql
+authentik_blueprint_secret_name: authentik-blueprint-secrets
+authentik_enabled: false
 
 # Keep every package capable of replacing the known-good Raspberry Pi kernel
 # pinned until a >=6.18.38 build has passed the NVMe corruption test protocol.

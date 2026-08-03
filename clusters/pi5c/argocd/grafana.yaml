@@ -23,6 +23,15 @@ spec:
           existingSecret: grafana-admin
           userKey: admin-user
           passwordKey: admin-password
+        envValueFrom:
+          GF_AUTH_GENERIC_OAUTH_CLIENT_ID:
+            secretKeyRef:
+              name: grafana-oauth
+              key: client-id
+          GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET:
+            secretKeyRef:
+              name: grafana-oauth
+              key: client-secret
         deploymentStrategy:
           type: Recreate
         rbac:
@@ -59,6 +68,23 @@ spec:
           analytics:
             check_for_updates: false
             reporting_enabled: false
+          auth:
+            disable_login_form: false
+            signout_redirect_url: http://auth.pi5c.burau.dev/application/o/grafana/end-session/
+          auth.generic_oauth:
+            name: authentik
+            enabled: true
+            allow_sign_up: true
+            auto_login: true
+            client_id: $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_ID}
+            client_secret: $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}
+            scopes: openid profile email entitlements
+            auth_url: http://auth.pi5c.burau.dev/application/o/authorize/
+            token_url: http://authentik-server.authentik.svc.cluster.local/application/o/token/
+            api_url: http://authentik-server.authentik.svc.cluster.local/application/o/userinfo/
+            use_refresh_token: true
+            role_attribute_path: "contains(entitlements[*], 'Grafana Admins') && 'Admin' || contains(entitlements[*], 'Grafana Editors') && 'Editor' || contains(entitlements[*], 'Grafana Viewers') && 'Viewer'"
+            role_attribute_strict: true
           server:
             domain: grafana.pi5c.burau.dev
             root_url: http://grafana.pi5c.burau.dev/

@@ -906,6 +906,23 @@
         - "'AlreadyExists' not in monitoring_namespace.stderr"
       when: not ansible_check_mode
 
+    - name: Ensure the Authentik namespace exists
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - create
+          - namespace
+          - authentik
+      register: authentik_namespace
+      changed_when: authentik_namespace.rc == 0
+      failed_when:
+        - authentik_namespace.rc != 0
+        - "'AlreadyExists' not in authentik_namespace.stderr"
+      when:
+        - not ansible_check_mode
+        - authentik_enabled | bool
+
     - name: Create local controller state directory
       ansible.builtin.file:
         path: "{{ playbook_dir }}/../../.state/{{ cluster_name }}"
@@ -914,6 +931,170 @@
       become: false
       delegate_to: localhost
       when: not ansible_check_mode
+
+    - name: Read the existing Authentik configuration secret if present
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - authentik
+          - get
+          - "secret/{{ authentik_config_secret_name }}"
+          - --output=json
+      register: authentik_config_secret
+      changed_when: false
+      failed_when: authentik_config_secret.rc not in [0, 1]
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - authentik_enabled | bool
+
+    - name: Generate or reuse Authentik configuration credentials
+      ansible.builtin.set_fact:
+        authentik_secret_key: >-
+          {{ lookup('ansible.builtin.password',
+          playbook_dir + '/../../.state/' + cluster_name +
+          '/authentik-secret-key length=64 chars=ascii_letters,digits') }}
+        authentik_postgresql_password: >-
+          {{ lookup('ansible.builtin.password',
+          playbook_dir + '/../../.state/' + cluster_name +
+          '/authentik-postgresql-password length=48 chars=ascii_letters,digits') }}
+        authentik_bootstrap_password: >-
+          {{ lookup('ansible.builtin.password',
+          playbook_dir + '/../../.state/' + cluster_name +
+          '/authentik-akadmin-password length=32 chars=ascii_letters,digits') }}
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - authentik_enabled | bool
+        - authentik_config_secret.rc != 0
+
+    - name: Recover existing Authentik configuration credentials
+      ansible.builtin.set_fact:
+        authentik_secret_key: >-
+          {{ ((authentik_config_secret.stdout | from_json).data['AUTHENTIK_SECRET_KEY']) |
+          b64decode }}
+        authentik_postgresql_password: >-
+          {{ ((authentik_config_secret.stdout | from_json).data['AUTHENTIK_POSTGRESQL__PASSWORD']) |
+          b64decode }}
+        authentik_bootstrap_password: >-
+          {{ ((authentik_config_secret.stdout | from_json).data['AUTHENTIK_BOOTSTRAP_PASSWORD']) |
+          b64decode }}
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - authentik_enabled | bool
+        - authentik_config_secret.rc == 0
+
+    - name: Persist private Authentik configuration credentials on the controller
+      ansible.builtin.copy:
+        content: "{{ item.value }}\n"
+        dest: "{{ playbook_dir }}/../../.state/{{ cluster_name }}/{{ item.name }}"
+        mode: "0600"
+      loop:
+        - name: authentik-secret-key
+          value: "{{ authentik_secret_key }}"
+        - name: authentik-postgresql-password
+          value: "{{ authentik_postgresql_password }}"
+        - name: authentik-akadmin-password
+          value: "{{ authentik_bootstrap_password }}"
+      become: false
+      delegate_to: localhost
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - authentik_enabled | bool
+
+    - name: Read the existing Authentik blueprint secret if present
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - authentik
+          - get
+          - "secret/{{ authentik_blueprint_secret_name }}"
+          - --output=json
+      register: authentik_blueprint_secret
+      changed_when: false
+      failed_when: authentik_blueprint_secret.rc not in [0, 1]
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - authentik_enabled | bool
+
+    - name: Generate or reuse Authentik application credentials
+      ansible.builtin.set_fact:
+        grafana_oauth_client_secret: >-
+          {{ lookup('ansible.builtin.password',
+          playbook_dir + '/../../.state/' + cluster_name +
+          '/grafana-oauth-client-secret length=64 chars=ascii_letters,digits') }}
+        authentik_oleg_password: >-
+          {{ lookup('ansible.builtin.password',
+          playbook_dir + '/../../.state/' + cluster_name +
+          '/authentik-oleg-password length=32 chars=ascii_letters,digits') }}
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - authentik_enabled | bool
+        - authentik_blueprint_secret.rc != 0
+
+    - name: Recover existing Authentik application credentials
+      ansible.builtin.set_fact:
+        grafana_oauth_client_secret: >-
+          {{ ((authentik_blueprint_secret.stdout | from_json).data['HOMELAB_GRAFANA_CLIENT_SECRET']) |
+          b64decode }}
+        authentik_oleg_password: >-
+          {{ ((authentik_blueprint_secret.stdout | from_json).data['HOMELAB_OLEG_PASSWORD']) |
+          b64decode }}
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - authentik_enabled | bool
+        - authentik_blueprint_secret.rc == 0
+
+    - name: Persist private Authentik application credentials on the controller
+      ansible.builtin.copy:
+        content: "{{ item.value }}\n"
+        dest: "{{ playbook_dir }}/../../.state/{{ cluster_name }}/{{ item.name }}"
+        mode: "0600"
+      loop:
+        - name: grafana-oauth-client-secret
+          value: "{{ grafana_oauth_client_secret }}"
+        - name: authentik-oleg-password
+          value: "{{ authentik_oleg_password }}"
+      become: false
+      delegate_to: localhost
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - authentik_enabled | bool
+
+    - name: Apply Authentik and Grafana OAuth secrets without writing plaintext remotely
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - apply
+          - --server-side
+          - "--field-manager={{ cluster_name }}-bootstrap"
+          - -f
+          - '-'
+        stdin: "{{ lookup('ansible.builtin.template', item) }}"
+      loop:
+        - ../templates/authentik-config-secret.yaml.j2
+        - ../templates/authentik-postgresql-secret.yaml.j2
+        - ../templates/authentik-blueprint-secrets.yaml.j2
+        - ../templates/grafana-oauth-secret.yaml.j2
+      register: identity_secret_apply
+      changed_when: >-
+        'configured' in identity_secret_apply.stdout or
+        'created' in identity_secret_apply.stdout
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - authentik_enabled | bool
 
     - name: Read the existing Grafana admin secret if present
       ansible.builtin.command:
@@ -1024,6 +1205,40 @@
       retries: 60
       delay: 10
       when: not ansible_check_mode
+
+    - name: Wait for the Authentik Application to exist
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - get
+          - application/authentik
+      register: authentik_application
+      changed_when: false
+      until: authentik_application.rc == 0
+      retries: 60
+      delay: 10
+      when:
+        - not ansible_check_mode
+        - authentik_enabled | bool
+
+    - name: Wait for Authentik to become healthy
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - wait
+          - --for=jsonpath={.status.health.status}=Healthy
+          - application/authentik
+          - --timeout=1200s
+      changed_when: false
+      when:
+        - not ansible_check_mode
+        - authentik_enabled | bool
 
     - name: Wait for Grafana to become healthy
       ansible.builtin.command:

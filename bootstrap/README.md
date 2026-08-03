@@ -38,8 +38,37 @@ The single bootstrap command processes all selected inventory members in ordered
 plays: common host preparation, server creation, optional agent joins, GitOps
 installation, and operator access. Controller-only state is written below
 `.state/<cluster>/` and
-ignored by Git. The generated kubeconfig and Grafana password stay mode `0600`
-inside a mode `0700` directory.
+ignored by Git. The generated kubeconfig, Grafana break-glass password, Authentik
+bootstrap password, and `oleg` password stay mode `0600` inside a mode `0700`
+directory.
+
+## Grafana authentication on pi5c
+
+The pi5c overlay deploys the pinned official Authentik chart as a separate Argo
+CD Application at `http://auth.pi5c.burau.dev`. Its mounted blueprint creates
+the Grafana OIDC provider, the `oleg` user, and application-scoped `Grafana
+Admins`, `Grafana Editors`, and `Grafana Viewers` entitlements. Only users with
+one of those entitlements can sign in; `oleg` receives `Grafana Admins` during
+initial provisioning.
+
+The bootstrap owns the Authentik, PostgreSQL, operator, and OAuth credentials;
+Helm values contain only Kubernetes Secret references. The initial credentials
+are available only on the controller:
+
+```text
+.state/pi5c/authentik-oleg-password
+.state/pi5c/authentik-akadmin-password
+```
+
+Grafana starts the Authentik flow automatically. Its local admin remains a
+break-glass account and can be reached with
+`http://grafana.pi5c.burau.dev/login?disableAutoLogin=true`.
+
+This test slice intentionally remains HTTP-only because the independent test
+DNS/ACME credential is not available yet. Do not reuse this transport contract
+for production: passwords, authorization codes, and tokens require TLS outside
+the isolated test LAN. The bundled PostgreSQL chart is likewise for the test
+cluster; production should use a separately managed PostgreSQL deployment.
 
 On the server, `~/.kube/config` points to the current k3s-generated kubeconfig.
 The bootstrap distributes the same protected operator kubeconfig to the agent;

@@ -41,3 +41,4 @@ nfs_mount_options:
 
 grafana_hostnames:
   - grafana.pi5c.burau.dev
+authentik_enabled: true
