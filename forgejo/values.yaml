@@ -9,7 +9,7 @@ runner:
   name: k3s
   image:
     repository: code.forgejo.org/forgejo/runner
-    tag: "12.13.2"
+    tag: "13.0.0@sha256:7fb853bfe73c229be6349398359c0a7bd01fadfd17c106607b2221150b799ed2"
   dind:
     image:
       repository: docker
