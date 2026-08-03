@@ -1071,6 +1071,30 @@
         - not ansible_check_mode
         - (authentik_enabled | default(false)) | bool
 
+    - name: Detect Authentik and Grafana OAuth secret changes without logging plaintext
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - diff
+          - --server-side
+          - "--field-manager={{ cluster_name }}-bootstrap"
+          - -f
+          - '-'
+        stdin: "{{ lookup('ansible.builtin.template', item) }}"
+      loop:
+        - ../templates/authentik-config-secret.yaml.j2
+        - ../templates/authentik-postgresql-secret.yaml.j2
+        - ../templates/authentik-blueprint-secrets.yaml.j2
+        - ../templates/grafana-oauth-secret.yaml.j2
+      register: identity_secret_diff
+      changed_when: identity_secret_diff.rc == 1
+      failed_when: identity_secret_diff.rc not in [0, 1]
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
     - name: Apply Authentik and Grafana OAuth secrets without writing plaintext remotely
       ansible.builtin.command:
         argv:
@@ -1087,14 +1111,79 @@
         - ../templates/authentik-postgresql-secret.yaml.j2
         - ../templates/authentik-blueprint-secrets.yaml.j2
         - ../templates/grafana-oauth-secret.yaml.j2
-      register: identity_secret_apply
-      changed_when: >-
-        'configured' in identity_secret_apply.stdout or
-        'created' in identity_secret_apply.stdout
+      changed_when: false
       no_log: true
       when:
         - not ansible_check_mode
         - (authentik_enabled | default(false)) | bool
+
+    - name: Inspect existing Authentik runtime deployments
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - authentik
+          - get
+          - deployment/authentik-server
+          - deployment/authentik-worker
+      register: authentik_runtime_deployments
+      changed_when: false
+      failed_when: authentik_runtime_deployments.rc not in [0, 1]
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
+    - name: Restart Authentik after an external Secret change
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - authentik
+          - rollout
+          - restart
+          - deployment/authentik-server
+          - deployment/authentik-worker
+      changed_when: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+        - identity_secret_diff is changed
+        - authentik_runtime_deployments.rc == 0
+
+    - name: Inspect the existing Grafana deployment
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - monitoring
+          - get
+          - deployment/grafana
+      register: grafana_runtime_deployment
+      changed_when: false
+      failed_when: grafana_runtime_deployment.rc not in [0, 1]
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
+    - name: Restart Grafana after an external OAuth Secret change
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - monitoring
+          - rollout
+          - restart
+          - deployment/grafana
+      changed_when: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+        - identity_secret_diff is changed
+        - grafana_runtime_deployment.rc == 0
 
     - name: Read the existing Grafana admin secret if present
       ansible.builtin.command:
