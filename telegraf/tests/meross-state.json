@@ -1,0 +1,15 @@
+{
+  "schema": "meross.thermostat.v1",
+  "device_id": "0123456789abcdef0123456789abcdef",
+  "source": "local_http_poll",
+  "thermostat": {
+    "read_at": "2026-08-04T12:00:00.123456789Z",
+    "uuid": "0123456789abcdef0123456789abcdef",
+    "model": "mts200b",
+    "enabled": true,
+    "active": false,
+    "hvac_mode": "heat",
+    "current_temperature_c": 21.1,
+    "target_temperature_c": 22.5
+  }
+}
