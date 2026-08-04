@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telegraf-meross-mqtt
+  labels:
+    app.kubernetes.io/name: telegraf
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  meross.conf: |-
+    # Raw observation contract for issue 0Bu/daikin-altherma-esp32#288.
+    # The wildcard is bounded to one model and one state document per stable Meross UUID.
+    [[inputs.mqtt_consumer]]
+      servers = ["tcp://mosquitto:1883"]
+      topics = ["meross-thermostat-bot/mts200b/+/state"]
+      topic_tag = "topic"
+      data_format = "json_v2"
+
+      [inputs.mqtt_consumer.tags]
+        source = "meross-thermostat-bot"
+
+      [[inputs.mqtt_consumer.json_v2]]
+        measurement_name = "meross_thermostat"
+        timestamp_path = "thermostat.read_at"
+        timestamp_format = "2006-01-02T15:04:05.999999999Z07:00"
+
+        [[inputs.mqtt_consumer.json_v2.tag]]
+          path = "device_id"
+          rename = "device_id"
+          type = "string"
+
+        [[inputs.mqtt_consumer.json_v2.tag]]
+          path = "thermostat.model"
+          rename = "model"
+          type = "string"
+
+        [[inputs.mqtt_consumer.json_v2.field]]
+          path = "thermostat.current_temperature_c"
+          rename = "current_temperature_c"
+          type = "float"
+
+        [[inputs.mqtt_consumer.json_v2.field]]
+          path = "thermostat.target_temperature_c"
+          rename = "target_temperature_c"
+          type = "float"
+
+        [[inputs.mqtt_consumer.json_v2.field]]
+          path = "thermostat.enabled"
+          rename = "enabled"
+          type = "bool"
+
+        [[inputs.mqtt_consumer.json_v2.field]]
+          path = "thermostat.active"
+          rename = "active"
+          type = "bool"
+
+    # VictoriaMetrics' Influx receiver keeps numeric fields. Convert the two JSON booleans to
+    # stable 1/0 integers after parsing; Telegraf 1.39.2's converter explicitly maps bool this way.
+    [[processors.converter]]
+      namepass = ["meross_thermostat"]
+      [processors.converter.fields]
+        integer = ["enabled", "active"]

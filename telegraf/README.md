@@ -32,6 +32,12 @@ so a retained replay cannot silently rewrite when the historian actually observe
 Analysis must require both `available == 1` and `fresh == 1`. An unavailable snapshot may still
 carry the last figures for forensic comparison and must not be interpreted as a usable forecast.
 
+## Meross room history
+
+[MEROSS-MQTT.md](MEROSS-MQTT.md) documents the bounded MTS200 MQTT input, source-time extraction,
+stable series identity, parser fixture, and the distinction between raw Meross observations and the
+firmware-accepted `daikin_heartbeat_room_*` view.
+
 ## Helm install
 ```
 helm install telegraf .
