@@ -176,6 +176,9 @@ telegraf:
     # Daikin Home Hub EKRHH Modbus input:
     - --config-directory
     - /etc/telegraf/daikin.d
+    # Raw Meross MTS200 observations use their publisher-side read_at as the metric timestamp.
+    - --config-directory
+    - /etc/telegraf/meross.d
 
   volumes:
     - name: telegraf-modbus
@@ -184,9 +187,14 @@ telegraf:
     - name: telegraf-modbus-daikin
       configMap:
         name: telegraf-modbus-daikin
+    - name: telegraf-meross-mqtt
+      configMap:
+        name: telegraf-meross-mqtt
 
   mountPoints:
     - name: telegraf-modbus
       mountPath: /etc/telegraf/conf.d
     - name: telegraf-modbus-daikin
       mountPath: /etc/telegraf/daikin.d
+    - name: telegraf-meross-mqtt
+      mountPath: /etc/telegraf/meross.d
