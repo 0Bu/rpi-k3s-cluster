@@ -81,6 +81,7 @@ telegraf:
             - "shellypill-d885ac1a6284/status/#"
             - "shelly3em63g3-e4b063f32e48/status/#"
             - "shellyplugsg3-d0cf13d87ed8/status/#"
+            - "shellyplugsg3-d0cf13c856a0/status/#"
           data_format: "json"
       - mqtt_consumer:
           name_override: "tibber_pulse"
