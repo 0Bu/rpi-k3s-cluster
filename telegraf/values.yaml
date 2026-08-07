@@ -63,7 +63,13 @@ telegraf:
     - --watch-interval
     - "10s"
     - --config-directory
-    - /etc/telegraf/conf.d
+    - /etc/telegraf/conf.d/foxess
+    - --config-directory
+    - /etc/telegraf/conf.d/daikin
+    - --config-directory
+    - /etc/telegraf/conf.d/meross
+    - --config-directory
+    - /etc/telegraf/conf.d/mqtt
 
   volumes:
     - name: telegraf-modbus-foxess
@@ -81,14 +87,10 @@ telegraf:
 
   mountPoints:
     - name: telegraf-modbus-foxess
-      mountPath: /etc/telegraf/conf.d/foxess-modbus.conf
-      subPath: foxess-modbus.conf
+      mountPath: /etc/telegraf/conf.d/foxess
     - name: telegraf-modbus-daikin
-      mountPath: /etc/telegraf/conf.d/daikin-modbus.conf
-      subPath: daikin-modbus.conf
+      mountPath: /etc/telegraf/conf.d/daikin
     - name: telegraf-meross-mqtt
-      mountPath: /etc/telegraf/conf.d/meross-mqtt.conf
-      subPath: meross-mqtt.conf
+      mountPath: /etc/telegraf/conf.d/meross
     - name: telegraf-mqtt-integrations
-      mountPath: /etc/telegraf/conf.d/mqtt-integrations.conf
-      subPath: mqtt-integrations.conf
+      mountPath: /etc/telegraf/conf.d/mqtt
