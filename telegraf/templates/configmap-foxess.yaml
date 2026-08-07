@@ -7,13 +7,27 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
 data:
   foxess-modbus.conf: |
-    # FoxESS H3 Smart via Modbus TCP. All registers below are documented RO
-    # registers from FoxESS Modbus definition V1.05.04.00. Telegraf only uses
-    # FC03 reads; it has no Modbus write configuration.
+    # =====================================================================
+    # FoxESS H3 Smart — Modbus Integration
+    # =====================================================================
+    # Telegraf reads the FoxESS H3 Smart directly at tcp://<controller>:502,
+    # logical device/slave ID 247. The mapping follows FoxESS Modbus definition
+    # V1.05.04.00, tables 3-3 through 3-6. All configured registers are documented
+    # RO; Telegraf uses FC03 only and has no write path.
     #
-    # Polling is tiered by operational relevance and observed change rate.
-    # Every request explicitly disables gap filling so reserved registers are
-    # never read implicitly.
+    # Polling priorities:
+    #   P0 safety     (10 s): Inverter/BMS status, off-grid state, alarm/fault bitfields
+    #   P1 power      (10 s): CT1, inverter/load phase power, PV1, battery data
+    #   P2 health     (30 s): Grid quality, inverter temperature, BMS operating data
+    #   P3 energy     (60 s): Monotonic lifetime energy counters
+    #   P4 inventory  (5 min): Export availability, SOH, FCC and design energy
+    #
+    # Optimization & TCP Budget:
+    # Every request explicitly sets optimization = "none", so Telegraf never fills
+    # gaps with reserved registers. Fixed per-input collection_offset values place
+    # the five pollers at 0, 2, 4, 6 and 8 seconds within their interval.
+    # close_connection_after_gather = true ensures only one TCP connection is open.
+    # =====================================================================
 
     # P0 — safety and connectivity. Rare changes must be visible quickly.
     [[inputs.modbus]]

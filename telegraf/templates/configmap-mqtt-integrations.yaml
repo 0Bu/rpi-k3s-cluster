@@ -42,6 +42,12 @@ data:
       data_format = "json"
 
     # ── Daikin Altherma ESP32 (X10A-Bridge) ──────────────────────────────
+    # Topic: daikin-altherma-esp32/heating_curve
+    # Measurement: daikin_heating_curve (device="daikin-altherma-esp32")
+    # Non-retained domain snapshot published on ~10s cadence when gate is open.
+    # Legacy JSON parser flattens nested object paths with '_'.
+    # Booleans are numeric 1/0; JSON null is omitted (not measured zero).
+    # ─────────────────────────────────────────────────────────────────────
     [[inputs.mqtt_consumer]]
       name_override = "daikin_altherma"
       servers = ["tcp://mosquitto:1883"]
