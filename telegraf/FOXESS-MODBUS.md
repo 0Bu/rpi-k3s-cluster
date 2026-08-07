@@ -62,9 +62,7 @@ annotation, which forces a rollout when the mapping changes. Telegraf also runs
 with `--watch-config poll --watch-interval 10s` so projected ConfigMap updates
 are reloaded if an annotation update is accidentally missed.
 
-When editing `templates/configmap.yaml`, update
-`telegraf.podAnnotations.checksum/foxess-modbus-config` to the SHA-256 of the
-rendered `modbus.conf`.
+When editing `templates/configmap-foxess.yaml`, update `foxess-modbus.conf` as needed. Telegraf's `--watch-config poll` automatically reloads updates.
 
 ## Validation
 

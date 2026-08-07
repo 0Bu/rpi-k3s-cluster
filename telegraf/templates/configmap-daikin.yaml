@@ -27,15 +27,16 @@
 
   Activation: see telegraf/DAIKIN-MODBUS.md.
 */ -}}
-{{- if .Values.daikin.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: telegraf-modbus-daikin
   labels:
     app.kubernetes.io/name: telegraf
+    app.kubernetes.io/instance: {{ .Release.Name }}
 data:
-  daikin.conf: |
+  daikin-modbus.conf: |
+    {{- if .Values.daikin.enabled }}
     # =====================================================================
     # Daikin Altherma 3 R — ERGA04-08E / ETBH12E / EKHWSP via Home Hub EKRHH
     # Full register map from EKRHH installer reference guide 4P744838-1E, §9.2.

@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/name: telegraf
     app.kubernetes.io/instance: {{ .Release.Name }}
 data:
-  meross.conf: |-
+  meross-mqtt.conf: |-
     # Raw observation contract for issue 0Bu/daikin-altherma-esp32#288.
     # The wildcard is bounded to one model and one state document per stable Meross UUID.
     [[inputs.mqtt_consumer]]
