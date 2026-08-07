@@ -33,7 +33,7 @@ data:
     [[inputs.modbus]]
       alias = "foxess_safety"
       name = "foxess"
-      controller = "${MODBUS_CONTROLLER}"
+      controller = "${FOXESS_MODBUS_CONTROLLER}"
       configuration_type = "request"
       interval = "10s"
       collection_offset = "0s"
@@ -94,7 +94,7 @@ data:
     [[inputs.modbus]]
       alias = "foxess_power"
       name = "foxess"
-      controller = "${MODBUS_CONTROLLER}"
+      controller = "${FOXESS_MODBUS_CONTROLLER}"
       configuration_type = "request"
       interval = "10s"
       collection_offset = "2s"
@@ -178,7 +178,7 @@ data:
     [[inputs.modbus]]
       alias = "foxess_health"
       name = "foxess"
-      controller = "${MODBUS_CONTROLLER}"
+      controller = "${FOXESS_MODBUS_CONTROLLER}"
       configuration_type = "request"
       interval = "30s"
       collection_offset = "4s"
@@ -241,7 +241,7 @@ data:
     [[inputs.modbus]]
       alias = "foxess_energy"
       name = "foxess"
-      controller = "${MODBUS_CONTROLLER}"
+      controller = "${FOXESS_MODBUS_CONTROLLER}"
       configuration_type = "request"
       interval = "60s"
       collection_offset = "6s"
@@ -275,7 +275,7 @@ data:
     [[inputs.modbus]]
       alias = "foxess_inventory"
       name = "foxess"
-      controller = "${MODBUS_CONTROLLER}"
+      controller = "${FOXESS_MODBUS_CONTROLLER}"
       configuration_type = "request"
       interval = "5m"
       collection_offset = "8s"
