@@ -7,11 +7,6 @@ daikin:
   enabled: true
 
 telegraf:
-  # The upstream chart only hashes its primary ConfigMap. Keep this annotation
-  # equal to the rendered modbus.conf SHA-256 so FoxESS changes also roll the pod.
-  podAnnotations:
-    checksum/foxess-modbus-config: "73a583465434e37c98bd94678785d7e2b21f3b269d8a8a52b00c3447b89af770"
-
   service:
     enabled: false
   pdb:
@@ -57,187 +52,43 @@ telegraf:
           skip_database_creation: true
           exclude_retention_policy_tag: true
           content_encoding: "gzip"
-#      - file:
-#          files: ["stdout"]
-#          namepass: ["foxess_grid", "foxess_grid_meter", "foxess_energy", "foxess_pv", "foxess_battery", "foxess_battery_bms"]
-
-    inputs:
-      - mqtt_consumer:
-          name_override: "ems-esp"
-          servers: ["tcp://mosquitto:1883"]
-          topics: ["ems-esp/thermostat_data", "ems-esp/boiler_data"]
-          data_format: "json"
-      - mqtt_consumer:
-          name_override: "shelly"
-          servers: ["tcp://mosquitto:1883"]
-          topics:
-            - "shellypro3em-2cbcbbb2ddb8/status/#"
-            - "shellypro3em63-3c8a1fd182e0/status/#"
-            - "shellyplugsg3-8cbfea9fd6c8/status/#"
-            - "shellyplus1pm-a8032ab9d8e4/status/#"
-            - "shellypmmini-543204b695cc/status/#"
-            - "shelly1pmminig4-ccba97c4e854/status/#"
-            - "shelly1pmminig4-ccba97c65f18/status/#"
-            - "shellypill-d885ac1a6284/status/#"
-            - "shelly3em63g3-e4b063f32e48/status/#"
-            - "shellyplugsg3-d0cf13d87ed8/status/#"
-            - "shellyplugsg3-d0cf13c856a0/status/#"
-          data_format: "json"
-      - mqtt_consumer:
-          name_override: "tibber_pulse"
-          servers: ["tcp://mosquitto:1883"]
-          topics:
-            - "tibber/#"
-          topic_tag: "topic"
-          data_format: "json"
-      # ── Daikin Altherma ESP32 (X10A-Bridge) ──────────────────────────────
-      # Firmware daikin-altherma-esp32 publiziert sechs Metrik-JSON-Topics unter
-      # <base> = "daikin-altherma-esp32" (CONFIG_DAIKIN_MQTT_BASE_TOPIC):
-      #   <base>/x10a      - gruppiertes X10A-JSON, on-change (retained)
-      #   <base>/modbus    - HomeHub-Modbus-JSON, on-change (retained)
-      #   <base>/heartbeat - flache Board-/Link-Diagnose, fester 10s-Takt
-      #   <base>/env3      - ENV-III-Klimamessung, flach, ~10s-Takt (retained)
-      #   <base>/heating_curve - gruppierte Raum-/Heizkurven-Diagnose, 10s-Takt
-      #   <base>/weather/openmeteo/forecast - atomarer Prognose-/Provenienz-Snapshot (retained)
-      # /status, /modbus/status (Verfügbarkeit) und /crash sind kein Metrik-JSON und
-      # werden bewusst nicht abonniert (Parser würde fehlschlagen).
-      #
-      # Ausschließlich /x10a wird hier konsumiert. /modbus bleibt bewusst außen vor:
-      # Telegraf liest dieselben HomeHub-Register bereits direkt über inputs.modbus
-      # (/etc/telegraf/daikin.d) und würde sie über MQTT doppelt nach VictoriaMetrics senden.
-      #
-      # Der json-Parser übernimmt nur numerische Felder; verschachtelte Objekte
-      # im x10a-Topic werden mit "_" zu flachen Feldnamen verkettet, z.B.
-      # outdoor_sensors.leaving_water_temp -> outdoor_sensors_leaving_water.
-      # Enum-/Text-/Boolean-Felder verwirft der Parser (Metrik-Store ist
-      # numerisch); Bus-/Heap-/RSSI-Zähler decken die Diagnose numerisch ab.
-      - mqtt_consumer:
-          name_override: "daikin_altherma"
-          servers: ["tcp://mosquitto:1883"]
-          topics: ["daikin-altherma-esp32/x10a"]
-          data_format: "json"
-          tags:
-            device: "daikin-altherma-esp32"
-      - mqtt_consumer:
-          name_override: "daikin_heartbeat"
-          servers: ["tcp://mosquitto:1883"]
-          topics: ["daikin-altherma-esp32/heartbeat"]
-          data_format: "json"
-          tags:
-            device: "daikin-altherma-esp32"
-      # Eigenes Measurement fuer den fachlichen Raum-/Heizkurven-Snapshot. Der
-      # Legacy-JSON-Parser flacht Objektpfade mit "_" ab; JSON null wird als
-      # nicht vorhandenes Feld verworfen. Die Firmware sendet Booleans bereits
-      # numerisch als 1/0, damit sie in VictoriaMetrics erhalten bleiben.
-      - mqtt_consumer:
-          name_override: "daikin_heating_curve"
-          servers: ["tcp://mosquitto:1883"]
-          topics: ["daikin-altherma-esp32/heating_curve"]
-          data_format: "json"
-          tags:
-            device: "daikin-altherma-esp32"
-      # ENV III (SHT30 + QMP6988) am Grove-Port des AtomS3 Lite. Der Sensor
-      # sitzt NICHT am Board, sondern über eine lange I2C-Strecke in der
-      # Bosch-Box an der NORDWAND — der Position des Außenfühlers der
-      # abgebauten Gasanlage, vor direkter Sonne und Regen geschützt. Die
-      # Reihe ist damit echte Außenluft am Gebäude, lückenlos und unabhängig
-      # vom Verdichter. Genau das kann X10A nicht: R1T-Outdoor (Seite 0x20)
-      # friert im Stillstand auf dem letzten Laufwert ein. Im Laufbetrieb
-      # stimmen beide überein (2026-08-07: 19,5 °C X10A vs. 19,13 °C ENV III).
-      #
-      # Der `location`-Tag hält den Montageort fest, weil die Firmware ihn
-      # nicht kennen kann und `daikin_env3_temperature_c` sonst nicht von
-      # einer Technikraum-Messung zu unterscheiden wäre. Wird der Sensor
-      # umgesetzt, gehört der Tag mitgeändert — die Reihe forkt dann bewusst,
-      # denn ein verlegter Fühler misst etwas anderes.
-      #
-      # Felder: temperature_c, humidity_pct, pressure_hpa (alle numerisch).
-      # Bei abgelaufener Frische oder unplausibler Messung publiziert die
-      # Firmware `{}` — kein numerisches Feld, also kein Sample. Die Lücke in
-      # der Reihe ist die richtige Darstellung von "keine gültige Messung" und
-      # entspricht der fail-closed-Regel der Firmware; ein letzter Wert darf
-      # nicht fortgeschrieben werden.
-      - mqtt_consumer:
-          name_override: "daikin_env3"
-          servers: ["tcp://mosquitto:1883"]
-          topics: ["daikin-altherma-esp32/env3"]
-          data_format: "json"
-          tags:
-            device: "daikin-altherma-esp32"
-            location: "outdoor-wall"
-      # Telegraf-Empfangszeit bleibt der Sample-Zeitpunkt in VictoriaMetrics. Die
-      # Payload-Zeitstempel bleiben gleichzeitig numerische Felder: so ist sowohl
-      # rekonstruierbar, wann der Snapshot archiviert wurde, als auch wann die
-      # Firmware ihn abgerufen hat und bis wann er entscheidungsfähig war.
-      # `available`/`fresh` müssen jede spätere Auswertung fail-closed begrenzen;
-      # ein Fehler-Snapshot darf seine letzten Zahlen nur als Diagnose behalten.
-      # Nur stabile Provider-/Modell-Tags hängen an den numerischen Zeitreihen. Wechselnde
-      # Zustände und Fehler landen in einer separaten Info-Serie, damit ein Statuswechsel keine
-      # alten numerischen Label-Sets (z.B. available=1) zurücklässt.
-      - mqtt_consumer:
-          name_override: "daikin_weather_openmeteo_forecast"
-          servers: ["tcp://mosquitto:1883"]
-          topics: ["daikin-altherma-esp32/weather/openmeteo/forecast"]
-          topic_tag: "topic"
-          data_format: "json"
-          fieldexclude:
-            - "schema"
-          tag_keys:
-            - "provider"
-            - "model"
-          tags:
-            device: "daikin-altherma-esp32"
-      - mqtt_consumer:
-          name_override: "daikin_weather_openmeteo_forecast_info"
-          servers: ["tcp://mosquitto:1883"]
-          topics: ["daikin-altherma-esp32/weather/openmeteo/forecast"]
-          topic_tag: "topic"
-          data_format: "json"
-          fieldinclude:
-            - "schema"
-          tag_keys:
-            - "provider"
-            - "model"
-            - "state"
-            - "reason"
-            - "freshness_reason"
-            - "error"
-          tags:
-            device: "daikin-altherma-esp32"
 
   args:
     - --config
     - /etc/telegraf/telegraf.conf
     # ConfigMap volumes update in place. Polling lets Telegraf reload external
-    # Modbus config directories even if a future annotation bump is missed.
+    # Modbus and MQTT config directories even if an annotation bump is missed.
     - --watch-config
     - poll
     - --watch-interval
     - "10s"
     - --config-directory
     - /etc/telegraf/conf.d
-    # Daikin Home Hub EKRHH Modbus input:
-    - --config-directory
-    - /etc/telegraf/daikin.d
-    # Raw Meross MTS200 observations use their publisher-side read_at as the metric timestamp.
-    - --config-directory
-    - /etc/telegraf/meross.d
 
   volumes:
-    - name: telegraf-modbus
+    - name: telegraf-modbus-foxess
       configMap:
-        name: telegraf-modbus
+        name: telegraf-modbus-foxess
     - name: telegraf-modbus-daikin
       configMap:
         name: telegraf-modbus-daikin
     - name: telegraf-meross-mqtt
       configMap:
         name: telegraf-meross-mqtt
+    - name: telegraf-mqtt-integrations
+      configMap:
+        name: telegraf-mqtt-integrations
 
   mountPoints:
-    - name: telegraf-modbus
-      mountPath: /etc/telegraf/conf.d
+    - name: telegraf-modbus-foxess
+      mountPath: /etc/telegraf/conf.d/foxess-modbus.conf
+      subPath: foxess-modbus.conf
     - name: telegraf-modbus-daikin
-      mountPath: /etc/telegraf/daikin.d
+      mountPath: /etc/telegraf/conf.d/daikin-modbus.conf
+      subPath: daikin-modbus.conf
     - name: telegraf-meross-mqtt
-      mountPath: /etc/telegraf/meross.d
+      mountPath: /etc/telegraf/conf.d/meross-mqtt.conf
+      subPath: meross-mqtt.conf
+    - name: telegraf-mqtt-integrations
+      mountPath: /etc/telegraf/conf.d/mqtt-integrations.conf
+      subPath: mqtt-integrations.conf
