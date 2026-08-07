@@ -1,7 +1,7 @@
 # Daikin heat pump (Modbus) — ACTIVE. Home Hub EKRHH reachable at 192.168.1.131:502
 # (slave_id 1); the full §9.2 register map in templates/configmap-daikin.yaml was
 # verified live against the unit. All 59 fields remain enabled across five
-# priority classes (10 s / 30 s / 60 s / 5 min / 1 h); see DAIKIN-MODBUS.md.
+# priority classes (10 s / 30 s / 60 s / 5 min / 1 h).
 # Unsupported equipment can return §9.2.3 sentinel values; filter downstream.
 daikin:
   enabled: true
@@ -35,13 +35,9 @@ telegraf:
       debug: false
       quiet: false
       logfile: ""
-      # STATISCH, nicht "$HOSTNAME": das waere der Pod-Name, der sich bei
-      # jedem Restart aendert. "host" ist Teil der Serien-Identitaet, also
-      # erzeugte jeder Restart einen komplett neuen Satz Zeitreihen und
-      # liess die alten fuer immer enden -> Kardinalitaetswachstum,
-      # Serienbrueche in Grafana, rate()/increase() falsch ueber die Naht.
-      # (2026-07-23: 5 Pod-Namen in 2 Tagen, je ~276 Serien.) Ein fester
-      # Wert haelt das Label erhalten und beendet den Churn.
+      # Static hostname instead of "$HOSTNAME" (which defaults to dynamic pod name).
+      # Using a fixed host label avoids metric series churn and Grafana rate() breaks
+      # across pod restarts.
       hostname: "telegraf"
       omit_hostname: false
 
