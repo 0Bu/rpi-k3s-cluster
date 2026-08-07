@@ -91,12 +91,13 @@ telegraf:
           topic_tag: "topic"
           data_format: "json"
       # ── Daikin Altherma ESP32 (X10A-Bridge) ──────────────────────────────
-      # Firmware daikin-altherma-esp32 publiziert fuenf Metrik-JSON-Topics unter
+      # Firmware daikin-altherma-esp32 publiziert sechs Metrik-JSON-Topics unter
       # <base> = "daikin-altherma-esp32" (CONFIG_DAIKIN_MQTT_BASE_TOPIC):
       #   <base>/x10a      - gruppiertes X10A-JSON, on-change (retained)
       #   <base>/modbus    - HomeHub-Modbus-JSON, on-change (retained)
       #   <base>/heartbeat - flache Board-/Link-Diagnose, fester 10s-Takt
-      #   <base>/heating_curve - gruppierte Raum-/Heizkurven-Diagnose, fester 10s-Takt
+      #   <base>/env3      - ENV-III-Klimamessung, flach, ~10s-Takt (retained)
+      #   <base>/heating_curve - gruppierte Raum-/Heizkurven-Diagnose, 10s-Takt
       #   <base>/weather/openmeteo/forecast - atomarer Prognose-/Provenienz-Snapshot (retained)
       # /status, /modbus/status (Verfügbarkeit) und /crash sind kein Metrik-JSON und
       # werden bewusst nicht abonniert (Parser würde fehlschlagen).
@@ -135,6 +136,35 @@ telegraf:
           data_format: "json"
           tags:
             device: "daikin-altherma-esp32"
+      # ENV III (SHT30 + QMP6988) am Grove-Port des AtomS3 Lite. Der Sensor
+      # sitzt NICHT am Board, sondern über eine lange I2C-Strecke in der
+      # Bosch-Box an der NORDWAND — der Position des Außenfühlers der
+      # abgebauten Gasanlage, vor direkter Sonne und Regen geschützt. Die
+      # Reihe ist damit echte Außenluft am Gebäude, lückenlos und unabhängig
+      # vom Verdichter. Genau das kann X10A nicht: R1T-Outdoor (Seite 0x20)
+      # friert im Stillstand auf dem letzten Laufwert ein. Im Laufbetrieb
+      # stimmen beide überein (2026-08-07: 19,5 °C X10A vs. 19,13 °C ENV III).
+      #
+      # Der `location`-Tag hält den Montageort fest, weil die Firmware ihn
+      # nicht kennen kann und `daikin_env3_temperature_c` sonst nicht von
+      # einer Technikraum-Messung zu unterscheiden wäre. Wird der Sensor
+      # umgesetzt, gehört der Tag mitgeändert — die Reihe forkt dann bewusst,
+      # denn ein verlegter Fühler misst etwas anderes.
+      #
+      # Felder: temperature_c, humidity_pct, pressure_hpa (alle numerisch).
+      # Bei abgelaufener Frische oder unplausibler Messung publiziert die
+      # Firmware `{}` — kein numerisches Feld, also kein Sample. Die Lücke in
+      # der Reihe ist die richtige Darstellung von "keine gültige Messung" und
+      # entspricht der fail-closed-Regel der Firmware; ein letzter Wert darf
+      # nicht fortgeschrieben werden.
+      - mqtt_consumer:
+          name_override: "daikin_env3"
+          servers: ["tcp://mosquitto:1883"]
+          topics: ["daikin-altherma-esp32/env3"]
+          data_format: "json"
+          tags:
+            device: "daikin-altherma-esp32"
+            location: "outdoor-wall"
       # Telegraf-Empfangszeit bleibt der Sample-Zeitpunkt in VictoriaMetrics. Die
       # Payload-Zeitstempel bleiben gleichzeitig numerische Felder: so ist sowohl
       # rekonstruierbar, wann der Snapshot archiviert wurde, als auch wann die
