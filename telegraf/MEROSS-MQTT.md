@@ -18,9 +18,9 @@ host address, preset, HVAC mode, and mutable display labels are not tags, keepin
 cardinality bounded. Missing current or target values reject the whole raw metric
 because both JSON-v2 fields are required.
 
-The firmware-accepted view remains on the existing
-`daikin-altherma-esp32/heartbeat` input and appears under measurement
-`daikin_heartbeat` as:
+The firmware-accepted view is archived from the dedicated
+`daikin-altherma-esp32/heating_curve` input and appears under measurement
+`daikin_heating_curve` as:
 
 - `room_temperature_c`, `room_setpoint_c`, `room_error_k`
 - `room_temperature_valid`, `room_setpoint_valid`, `room_control_eligible`
@@ -28,8 +28,12 @@ The firmware-accepted view remains on the existing
 - `room_calibration_k` (fixed `0`)
 
 This intentionally gives two queryable histories: raw `meross_thermostat_*` says
-what the local poller emitted; `daikin_heartbeat_room_*` says what the firmware
-accepted at heartbeat time.
+what the local poller emitted; `daikin_heating_curve_room_*` says what the firmware
+accepted at heating-curve snapshot time. The technical heartbeat deliberately no
+longer carries room or heating-curve fields.
+
+The complete nested-field and null-handling contract is documented in
+[`DAIKIN-HEATING-CURVE-MQTT.md`](DAIKIN-HEATING-CURVE-MQTT.md).
 
 ## Verification
 
@@ -53,6 +57,6 @@ After Argo CD reports `Synced` and `Healthy`, verify both views in VictoriaMetri
 ```promql
 meross_thermostat_current_temperature_c{device_id="<uuid>"}
 meross_thermostat_target_temperature_c{device_id="<uuid>"}
-daikin_heartbeat_room_control_eligible{device="daikin-altherma-esp32"}
-daikin_heartbeat_room_reason_code{device="daikin-altherma-esp32"}
+daikin_heating_curve_room_control_eligible{device="daikin-altherma-esp32"}
+daikin_heating_curve_room_reason_code{device="daikin-altherma-esp32"}
 ```

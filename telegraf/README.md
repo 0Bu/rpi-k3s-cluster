@@ -36,7 +36,14 @@ carry the last figures for forensic comparison and must not be interpreted as a 
 
 [MEROSS-MQTT.md](MEROSS-MQTT.md) documents the bounded MTS200 MQTT input, source-time extraction,
 stable series identity, parser fixture, and the distinction between raw Meross observations and the
-firmware-accepted `daikin_heartbeat_room_*` view.
+firmware-accepted `daikin_heating_curve_room_*` view.
+
+## Daikin heating-curve diagnosis history
+
+[DAIKIN-HEATING-CURVE-MQTT.md](DAIKIN-HEATING-CURVE-MQTT.md) documents the dedicated
+`daikin-altherma-esp32/heating_curve` input, its `daikin_heating_curve` measurement, nested-field
+flattening, null semantics, bounded tag set, parser fixture, and live VictoriaMetrics checks. The
+technical `daikin_heartbeat` measurement remains limited to board and link health.
 
 ## Helm install
 ```
