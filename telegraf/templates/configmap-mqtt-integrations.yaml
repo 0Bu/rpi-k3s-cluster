@@ -81,6 +81,14 @@ data:
         device = "daikin-altherma-esp32"
         location = "outdoor-wall"
 
+    # ── Daikin Forecast History (OpenMeteo) ──────────────────────────────
+    # Stores the retained daikin-altherma-esp32/weather/openmeteo/forecast document
+    # as measurement daikin_weather_openmeteo_forecast in VictoriaMetrics.
+    # Numeric payload keys become series tagged by provider and model.
+    # Categorical context (state, reason, freshness_reason, error) is stored separately
+    # on daikin_weather_openmeteo_forecast_info to avoid label churn.
+    # Analysis requires available == 1 and fresh == 1.
+    # ─────────────────────────────────────────────────────────────────────
     [[inputs.mqtt_consumer]]
       name_override = "daikin_weather_openmeteo_forecast"
       servers = ["tcp://mosquitto:1883"]
