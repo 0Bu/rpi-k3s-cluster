@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "room": {
+    "source_id": "living_room",
+    "calibration_k": 0,
+    "temperature_valid": 1,
+    "setpoint_valid": 1,
+    "control_eligible": 1,
+    "temperature_c": 22.6,
+    "setpoint_c": 22.0,
+    "error_k": -0.6,
+    "source_unix_s": 1786062003,
+    "age_s": 0,
+    "reason_code": 0,
+    "counters": {
+      "messages": 6,
+      "errors": 0,
+      "rejections": 1
+    }
+  },
+  "diagnosis": {
+    "method_version": 2,
+    "armed": 1,
+    "state": 2,
+    "reason": 9,
+    "sample_eligible": 0,
+    "forecast_available": 1,
+    "gates": {
+      "plant_known": 1,
+      "plant_active": 0,
+      "heating_mode_known": 1,
+      "heating_mode_active": 1
+    },
+    "room_evidence": {
+      "current_error_k": null,
+      "source_unix_s": 1786062003,
+      "age_s": 0
+    },
+    "last_sample": {
+      "room_error_k": null,
+      "unix_s": null,
+      "sequence": 0
+    },
+    "counters": {
+      "evaluations": 75,
+      "samples": 0,
+      "holds": 74,
+      "blocks": 1
+    }
+  }
+}
