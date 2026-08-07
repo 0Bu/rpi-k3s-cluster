@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telegraf-mqtt-integrations
+  labels:
+    app.kubernetes.io/name: telegraf
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  mqtt-integrations.conf: |-
+    # EMS-ESP Thermostat & Boiler metrics
+    [[inputs.mqtt_consumer]]
+      name_override = "ems-esp"
+      servers = ["tcp://mosquitto:1883"]
+      topics = ["ems-esp/thermostat_data", "ems-esp/boiler_data"]
+      data_format = "json"
+
+    # Shelly Smart Devices
+    [[inputs.mqtt_consumer]]
+      name_override = "shelly"
+      servers = ["tcp://mosquitto:1883"]
+      topics = [
+        "shellypro3em-2cbcbbb2ddb8/status/#",
+        "shellypro3em63-3c8a1fd182e0/status/#",
+        "shellyplugsg3-8cbfea9fd6c8/status/#",
+        "shellyplus1pm-a8032ab9d8e4/status/#",
+        "shellypmmini-543204b695cc/status/#",
+        "shelly1pmminig4-ccba97c4e854/status/#",
+        "shelly1pmminig4-ccba97c65f18/status/#",
+        "shellypill-d885ac1a6284/status/#",
+        "shelly3em63g3-e4b063f32e48/status/#",
+        "shellyplugsg3-d0cf13d87ed8/status/#",
+        "shellyplugsg3-d0cf13c856a0/status/#"
+      ]
+      data_format = "json"
+
+    # Tibber Pulse
+    [[inputs.mqtt_consumer]]
+      name_override = "tibber_pulse"
+      servers = ["tcp://mosquitto:1883"]
+      topics = ["tibber/#"]
+      topic_tag = "topic"
+      data_format = "json"
+
+    # ── Daikin Altherma ESP32 (X10A-Bridge) ──────────────────────────────
+    [[inputs.mqtt_consumer]]
+      name_override = "daikin_altherma"
+      servers = ["tcp://mosquitto:1883"]
+      topics = ["daikin-altherma-esp32/x10a"]
+      data_format = "json"
+      [inputs.mqtt_consumer.tags]
+        device = "daikin-altherma-esp32"
+
+    [[inputs.mqtt_consumer]]
+      name_override = "daikin_heartbeat"
+      servers = ["tcp://mosquitto:1883"]
+      topics = ["daikin-altherma-esp32/heartbeat"]
+      data_format = "json"
+      [inputs.mqtt_consumer.tags]
+        device = "daikin-altherma-esp32"
+
+    [[inputs.mqtt_consumer]]
+      name_override = "daikin_heating_curve"
+      servers = ["tcp://mosquitto:1883"]
+      topics = ["daikin-altherma-esp32/heating_curve"]
+      data_format = "json"
+      [inputs.mqtt_consumer.tags]
+        device = "daikin-altherma-esp32"
+
+    [[inputs.mqtt_consumer]]
+      name_override = "daikin_env3"
+      servers = ["tcp://mosquitto:1883"]
+      topics = ["daikin-altherma-esp32/env3"]
+      data_format = "json"
+      [inputs.mqtt_consumer.tags]
+        device = "daikin-altherma-esp32"
+        location = "outdoor-wall"
+
+    [[inputs.mqtt_consumer]]
+      name_override = "daikin_weather_openmeteo_forecast"
+      servers = ["tcp://mosquitto:1883"]
+      topics = ["daikin-altherma-esp32/weather/openmeteo/forecast"]
+      topic_tag = "topic"
+      data_format = "json"
+      fieldexclude = ["schema"]
+      tag_keys = ["provider", "model"]
+      [inputs.mqtt_consumer.tags]
+        device = "daikin-altherma-esp32"
+
+    [[inputs.mqtt_consumer]]
+      name_override = "daikin_weather_openmeteo_forecast_info"
+      servers = ["tcp://mosquitto:1883"]
+      topics = ["daikin-altherma-esp32/weather/openmeteo/forecast"]
+      topic_tag = "topic"
+      data_format = "json"
+      fieldinclude = ["schema"]
+      tag_keys = ["provider", "model", "state", "reason", "freshness_reason", "error"]
+      [inputs.mqtt_consumer.tags]
+        device = "daikin-altherma-esp32"

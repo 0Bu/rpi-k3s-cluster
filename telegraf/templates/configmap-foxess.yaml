@@ -1,11 +1,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: telegraf-modbus
+  name: telegraf-modbus-foxess
   labels:
     app.kubernetes.io/name: telegraf
+    app.kubernetes.io/instance: {{ .Release.Name }}
 data:
-  modbus.conf: |
+  foxess-modbus.conf: |
     # FoxESS H3 Smart via Modbus TCP. All registers below are documented RO
     # registers from FoxESS Modbus definition V1.05.04.00. Telegraf only uses
     # FC03 reads; it has no Modbus write configuration.

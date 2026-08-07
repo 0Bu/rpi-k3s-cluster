@@ -14,7 +14,7 @@ Related analysis project: `~/Projects/waermepumpe-vs-gas/`
 ## What exists
 
 - `templates/configmap-daikin.yaml` — ConfigMap `telegraf-modbus-daikin` with
-  `daikin.conf`. Registers mapped from the EKRHH docs, gated by
+  `daikin-modbus.conf`. Registers mapped from the EKRHH docs, gated by
   `{{ if .Values.daikin.enabled }}`. `measurement = "daikin"` → metrics land in
   VictoriaMetrics as `daikin_<field>`.
 - `values.yaml` — `daikin.enabled: true`, controller environment variable,
