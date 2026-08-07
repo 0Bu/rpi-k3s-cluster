@@ -7,8 +7,17 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
 data:
   meross-mqtt.conf: |-
+    # =====================================================================
+    # Meross Thermostat MQTT Archive
+    # =====================================================================
     # Raw observation contract for issue 0Bu/daikin-altherma-esp32#288.
-    # The wildcard is bounded to one model and one state document per stable Meross UUID.
+    # MQTT scope: meross-thermostat-bot/mts200b/+/state
+    # Measurement: meross_thermostat
+    # Stable tags: device_id, model, topic, source
+    # Fields: current_temperature_c, target_temperature_c, enabled, active
+    # Timestamp: original RFC3339 thermostat.read_at
+    # State encoding: enabled and active converted to integer 1/0
+    # =====================================================================
     [[inputs.mqtt_consumer]]
       servers = ["tcp://mosquitto:1883"]
       topics = ["meross-thermostat-bot/mts200b/+/state"]

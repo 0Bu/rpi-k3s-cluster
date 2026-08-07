@@ -5,9 +5,9 @@
 
 ## Modbus integrations
 
-- [FoxESS H3 Smart](FOXESS-MODBUS.md) — prioritized read-only polling of power,
+- **FoxESS H3 Smart** (`templates/configmap-foxess.yaml`) — prioritized read-only polling of power,
   grid/BMS health, energy totals and inventory registers.
-- [Daikin Home Hub](DAIKIN-MODBUS.md) — prioritized read-only heat-pump polling.
+- **Daikin Home Hub** (`templates/configmap-daikin.yaml`) — prioritized read-only heat-pump polling.
 
 ## Daikin forecast history
 
@@ -34,13 +34,13 @@ carry the last figures for forensic comparison and must not be interpreted as a 
 
 ## Meross room history
 
-[MEROSS-MQTT.md](MEROSS-MQTT.md) documents the bounded MTS200 MQTT input, source-time extraction,
+`templates/configmap-meross.yaml` documents the bounded MTS200 MQTT input, source-time extraction,
 stable series identity, parser fixture, and the distinction between raw Meross observations and the
 firmware-accepted `daikin_heating_curve_room_*` view.
 
 ## Daikin heating-curve diagnosis history
 
-[DAIKIN-HEATING-CURVE-MQTT.md](DAIKIN-HEATING-CURVE-MQTT.md) documents the dedicated
+`templates/configmap-mqtt-integrations.yaml` documents the dedicated
 `daikin-altherma-esp32/heating_curve` input, its `daikin_heating_curve` measurement, nested-field
 flattening, null semantics, bounded tag set, parser fixture, and live VictoriaMetrics checks. The
 technical `daikin_heartbeat` measurement remains limited to board and link health.

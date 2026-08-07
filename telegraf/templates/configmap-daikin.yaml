@@ -25,7 +25,7 @@
     reading them is safe; filter the special values downstream (drop > 300 for
     Temp16/Pow16, and 32765..32767 for Int16).
 
-  Activation: see telegraf/DAIKIN-MODBUS.md.
+  Activation: enabled via .Values.daikin.enabled.
 */ -}}
 apiVersion: v1
 kind: ConfigMap
