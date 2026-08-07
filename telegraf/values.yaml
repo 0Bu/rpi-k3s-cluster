@@ -16,7 +16,7 @@ telegraf:
       value: "http://vmsingle-vm:8428"
     # The five tiers use fixed offsets and close after every gather, so only one
     # Telegraf connection occupies the FoxESS TCP-client budget at a time.
-    - name: MODBUS_CONTROLLER
+    - name: FOXESS_MODBUS_CONTROLLER
       value: "tcp://192.168.107.186:502"
     # Daikin Home Hub EKRHH (TCP port 502 plain / 802 TLS, or RTU serial file://):
     - name: DAIKIN_MODBUS_CONTROLLER
@@ -65,7 +65,11 @@ telegraf:
     - --config-directory
     - /etc/telegraf/conf.d/meross
     - --config-directory
-    - /etc/telegraf/conf.d/mqtt
+    - /etc/telegraf/conf.d/shelly
+    - --config-directory
+    - /etc/telegraf/conf.d/tibber
+    - --config-directory
+    - /etc/telegraf/conf.d/daikin-esp32
 
   volumes:
     - name: telegraf-modbus-foxess
@@ -77,9 +81,15 @@ telegraf:
     - name: telegraf-meross-mqtt
       configMap:
         name: telegraf-meross-mqtt
-    - name: telegraf-mqtt-integrations
+    - name: telegraf-shelly-mqtt
       configMap:
-        name: telegraf-mqtt-integrations
+        name: telegraf-shelly-mqtt
+    - name: telegraf-tibber-mqtt
+      configMap:
+        name: telegraf-tibber-mqtt
+    - name: telegraf-daikin-esp32-mqtt
+      configMap:
+        name: telegraf-daikin-esp32-mqtt
 
   mountPoints:
     - name: telegraf-modbus-foxess
@@ -88,5 +98,9 @@ telegraf:
       mountPath: /etc/telegraf/conf.d/daikin
     - name: telegraf-meross-mqtt
       mountPath: /etc/telegraf/conf.d/meross
-    - name: telegraf-mqtt-integrations
-      mountPath: /etc/telegraf/conf.d/mqtt
+    - name: telegraf-shelly-mqtt
+      mountPath: /etc/telegraf/conf.d/shelly
+    - name: telegraf-tibber-mqtt
+      mountPath: /etc/telegraf/conf.d/tibber
+    - name: telegraf-daikin-esp32-mqtt
+      mountPath: /etc/telegraf/conf.d/daikin-esp32

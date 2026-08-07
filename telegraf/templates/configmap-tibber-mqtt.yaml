@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telegraf-tibber-mqtt
+  labels:
+    app.kubernetes.io/name: telegraf
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  tibber-mqtt.conf: |-
+    # Tibber Pulse via MQTT
+    [[inputs.mqtt_consumer]]
+      name_override = "tibber_pulse"
+      servers = ["tcp://mosquitto:1883"]
+      topics = ["tibber/#"]
+      topic_tag = "topic"
+      data_format = "json"

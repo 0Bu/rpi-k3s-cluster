@@ -1,46 +1,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: telegraf-mqtt-integrations
+  name: telegraf-daikin-esp32-mqtt
   labels:
     app.kubernetes.io/name: telegraf
     app.kubernetes.io/instance: {{ .Release.Name }}
 data:
-  mqtt-integrations.conf: |-
-    # EMS-ESP Thermostat & Boiler metrics
-    [[inputs.mqtt_consumer]]
-      name_override = "ems-esp"
-      servers = ["tcp://mosquitto:1883"]
-      topics = ["ems-esp/thermostat_data", "ems-esp/boiler_data"]
-      data_format = "json"
-
-    # Shelly Smart Devices
-    [[inputs.mqtt_consumer]]
-      name_override = "shelly"
-      servers = ["tcp://mosquitto:1883"]
-      topics = [
-        "shellypro3em-2cbcbbb2ddb8/status/#",
-        "shellypro3em63-3c8a1fd182e0/status/#",
-        "shellyplugsg3-8cbfea9fd6c8/status/#",
-        "shellyplus1pm-a8032ab9d8e4/status/#",
-        "shellypmmini-543204b695cc/status/#",
-        "shelly1pmminig4-ccba97c4e854/status/#",
-        "shelly1pmminig4-ccba97c65f18/status/#",
-        "shellypill-d885ac1a6284/status/#",
-        "shelly3em63g3-e4b063f32e48/status/#",
-        "shellyplugsg3-d0cf13d87ed8/status/#",
-        "shellyplugsg3-d0cf13c856a0/status/#"
-      ]
-      data_format = "json"
-
-    # Tibber Pulse
-    [[inputs.mqtt_consumer]]
-      name_override = "tibber_pulse"
-      servers = ["tcp://mosquitto:1883"]
-      topics = ["tibber/#"]
-      topic_tag = "topic"
-      data_format = "json"
-
+  daikin-esp32-mqtt.conf: |-
     # ── Daikin Altherma ESP32 (X10A-Bridge) ──────────────────────────────
     # Topic: daikin-altherma-esp32/heating_curve
     # Measurement: daikin_heating_curve (device="daikin-altherma-esp32")
