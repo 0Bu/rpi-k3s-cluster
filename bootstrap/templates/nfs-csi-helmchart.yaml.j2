@@ -1,0 +1,15 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: nfs-csi
+  namespace: kube-system
+spec:
+  chart: csi-driver-nfs
+  repo: {{ nfs_csi_chart_repo }}
+  version: "{{ nfs_csi_chart_version }}"
+  targetNamespace: kube-system
+  valuesContent: |-
+    controller:
+      replicas: 1
+    feature:
+      enableFSGroupPolicy: true
