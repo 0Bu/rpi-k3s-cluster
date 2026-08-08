@@ -23,6 +23,7 @@ data:
         "shelly3em63g3-e4b063f32e48/status/#",
         "shellyplugsg3-d0cf13d87ed8/status/#",
         "shellyplugsg3-d0cf13c856a0/status/#",
-        "shellyplugpmg3-907069519650/status/#"
+        "shellyplugpmg3-907069519650/status/#",
+        "shellyplugpmg3-9070695c1d18/status/#"
       ]
       data_format = "json"
