@@ -22,6 +22,7 @@ data:
         "shellypill-d885ac1a6284/status/#",
         "shelly3em63g3-e4b063f32e48/status/#",
         "shellyplugsg3-d0cf13d87ed8/status/#",
-        "shellyplugsg3-d0cf13c856a0/status/#"
+        "shellyplugsg3-d0cf13c856a0/status/#",
+        "shellyplugpmg3-907069519650/status/#"
       ]
       data_format = "json"
