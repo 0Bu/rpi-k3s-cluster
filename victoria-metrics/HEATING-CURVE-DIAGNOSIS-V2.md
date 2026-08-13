@@ -37,7 +37,7 @@ evidence, while the comparable room-error sampling method remains v2.
 | `daikin:heating_curve:clipped_at_35c` | D2 0/1 sample during eligible heating; 35 C is this installation's current main-zone minimum |
 | `daikin:heating_curve:samples_24h` | D3 recorded diagnosis samples in the rolling day |
 | `daikin:heating_curve:expected_eligible_windows_24h` | D3 eligible time expressed as expected half-hour windows |
-| `daikin:heating_curve:room_degree_hours_outside_0_5k_24h` | D4 integrated absolute room error beyond +/-0.5 K, excluding unavailable input |
+| `daikin:heating_curve:room_degree_hours_outside_0_5k_24h` | D4 integrated absolute room error beyond +/-0.5 K during positively confirmed space heating, excluding unavailable input |
 
 The three raw Meross `meross_thermostat_active` series remain the D4 zone-demand
 witness. Preserve `device_id`; do not average the three zones into a single
@@ -95,6 +95,8 @@ avg_over_time(meross_thermostat_active[24h])
 
 The duty cycle is corroborating evidence: low room error with valves rarely
 requesting heat can indicate that the inner loop is masking a high curve.
+No eligible heating in the rolling window yields no comfort verdict; room
+deviation while the plant is idle or cooling must not accumulate degree-hours.
 
 ## Alerts
 
