@@ -1,7 +1,7 @@
 apiVersion: v2
 name: argocd
 type: application
-version: 1.0.513
+version: 1.0.514
 # renovate: image=quay.io/argoproj/argocd
 appVersion: "v3.5.1"
 dependencies: 

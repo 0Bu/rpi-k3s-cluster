@@ -1,7 +1,7 @@
 apiVersion: v2
 name: victoria-metrics
 type: application
-version: 1.1.75
+version: 1.1.76
 # renovate: image=victoriametrics/victoria-metrics
 appVersion: "v1.149.0"
 dependencies:

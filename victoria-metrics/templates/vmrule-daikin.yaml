@@ -98,8 +98,9 @@ spec:
             ) * 48
 
         # D4 input. This integrates only real, eligible room-error samples;
-        # missing/stale input contributes no synthetic zero. One subquery point
-        # per minute divided by 60 yields K h outside the +/-0.5 K comfort band.
+        # missing/stale input and non-heating operation contribute no synthetic
+        # zero. One subquery point per minute divided by 60 yields K h outside
+        # the +/-0.5 K comfort band.
         - record: daikin:heating_curve:room_degree_hours_outside_0_5k_24h
           expr: |
             sum_over_time(
@@ -113,6 +114,7 @@ spec:
                     max by (device) (
                       daikin_heating_curve_room_control_eligible{topic="daikin-altherma-esp32/heating_curve"} == 1
                     )
+                    and on (device) daikin:heating_curve:eligible_heating
                   )
                 ) - 0.5,
                 0
