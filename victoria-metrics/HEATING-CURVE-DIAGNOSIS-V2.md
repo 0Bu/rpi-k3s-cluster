@@ -5,6 +5,10 @@ This is the versioned VictoriaMetrics contract for
 diagnosis method 2; it is not a controller and must not turn room kelvin into a
 leaving-water-temperature correction.
 
+The current domain payload is schema v3. The payload schema and the diagnosis
+method are versioned independently: schema v3 adds source-aware outdoor
+evidence, while the comparable room-error sampling method remains v2.
+
 ## Evidence boundaries
 
 - Select the domain topic `daikin-altherma-esp32/heating_curve` explicitly.
@@ -17,9 +21,12 @@ leaving-water-temperature correction.
 - The reference room has its own thermostat and valves. Its closed inner loop
   can hide an overly high curve, so D1 never stands alone: read D2 clipping and
   D4 thermostat demand beside it.
-- The plant-side outdoor series can freeze while the compressor is off. For
-  the reference installation it may be joined only to confirmed heating
-  evidence. #441 WP4 owns a future source/provenance improvement in firmware.
+- Firmware #441 WP4 supplies two distinct source-aware axes in schema v3:
+  `outdoor_*` is the independent measured/weather context (normally ENV III),
+  while `plant_outdoor_*` is the HomeHub/X10A plant witness. Use the outdoor
+  values stored inside `last_sample`, never a later live reading, when grouping
+  a room-error event. Text source names are dropped by the numeric Telegraf
+  parser; retain the corresponding source codes as provenance.
 
 ## Recorded inputs
 
