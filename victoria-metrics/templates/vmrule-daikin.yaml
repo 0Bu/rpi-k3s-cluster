@@ -105,8 +105,14 @@ spec:
             sum_over_time(
               clamp_min(
                 abs(
-                  max by (device) (
-                    daikin_heating_curve_room_error_k{topic="daikin-altherma-esp32/heating_curve"}
+                  (
+                    max by (device) (
+                      daikin_heating_curve_room_error_k{topic="daikin-altherma-esp32/heating_curve"}
+                    )
+                    and on (device)
+                    max by (device) (
+                      daikin_heating_curve_room_control_eligible{topic="daikin-altherma-esp32/heating_curve"} == 1
+                    )
                   )
                 ) - 0.5,
                 0
