@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "room": {
     "source_id": "living_room",
     "calibration_k": 0,
@@ -25,6 +25,7 @@
     "reason": 9,
     "sample_eligible": 0,
     "forecast_available": 1,
+    "outdoor_available": 1,
     "gates": {
       "plant_known": 1,
       "plant_active": 0,
@@ -37,9 +38,10 @@
       "age_s": 0
     },
     "last_sample": {
-      "room_error_k": null,
-      "unix_s": null,
-      "sequence": 0
+      "room_error_k": 0.4,
+      "outdoor_temperature_c": -4.25,
+      "unix_s": 1786060200,
+      "sequence": 1
     },
     "counters": {
       "evaluations": 75,

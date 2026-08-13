@@ -13,6 +13,12 @@ helm uninstall victoria-metrics
 
 ## Alerting
 
+The write-free heating-curve diagnosis has a separate evidence and reporting
+contract in [HEATING-CURVE-DIAGNOSIS-V2.md](HEATING-CURVE-DIAGNOSIS-V2.md).
+Its VMRule recording series normalize volatile Telegraf labels and preserve
+the distinction between absence, normal HOLD states and actionable BLOCKED
+states.
+
 ```
 VMRule (templates/vmrule-*.yaml)
   -> vmalert          evaluates the PromQL against VictoriaMetrics
@@ -75,4 +81,3 @@ The payload is the standard Alertmanager webhook format: `status`
 kubectl port-forward -n default svc/vmalert-vm 8080:8080          # rule status
 kubectl port-forward -n default svc/vmalertmanager-vm 9093:9093   # active alerts
 ```
-

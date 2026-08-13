@@ -15,6 +15,104 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   groups:
+    # Stable, device-level inputs for the write-free heating-curve diagnosis v2.
+    # Drop Telegraf's volatile host/db/topic labels here so dashboards and alerts
+    # cannot double-count a pod restart or the retired /state ingestion path.
+    # These rules do not form a verdict; they preserve absence and positive gates.
+    - name: daikin-heating-curve-diagnosis-v2
+      interval: 1m
+      rules:
+        # Positive eligibility witness: absent outside confirmed space heating.
+        - record: daikin:heating_curve:eligible_heating
+          expr: |
+            max by (device) (
+              daikin_heating_curve_diagnosis_armed{topic="daikin-altherma-esp32/heating_curve"} == 1
+            )
+            and on (device)
+            max by (device) (
+              daikin_heating_curve_diagnosis_gates_plant_known{topic="daikin-altherma-esp32/heating_curve"} == 1
+            )
+            and on (device)
+            max by (device) (
+              daikin_heating_curve_diagnosis_gates_plant_active{topic="daikin-altherma-esp32/heating_curve"} == 1
+            )
+            and on (device)
+            max by (device) (
+              daikin_heating_curve_diagnosis_gates_heating_mode_known{topic="daikin-altherma-esp32/heating_curve"} == 1
+            )
+            and on (device)
+            max by (device) (
+              daikin_heating_curve_diagnosis_gates_heating_mode_active{topic="daikin-altherma-esp32/heating_curve"} == 1
+            )
+
+        # D1 input. The firmware repeats the last event in every domain snapshot.
+        # Bound it to the event's 30-minute cadence so a later HOLD/BLOCK cannot
+        # give one old room-error sample days of statistical weight.
+        - record: daikin:heating_curve:sample_room_error_k
+          expr: |
+            max by (device) (
+              daikin_heating_curve_diagnosis_last_sample_room_error_k{topic="daikin-altherma-esp32/heating_curve"}
+            )
+            and on (device)
+            (
+              max by (device) (
+                time() - daikin_heating_curve_diagnosis_last_sample_unix_s{topic="daikin-altherma-esp32/heating_curve"}
+              ) >= 0
+            )
+            and on (device)
+            (
+              max by (device) (
+                time() - daikin_heating_curve_diagnosis_last_sample_unix_s{topic="daikin-altherma-esp32/heating_curve"}
+              ) < 1800
+            )
+
+        # D2 input. Exactly 35 C is the installed main-zone minimum established
+        # by #294. The series exists only during positively confirmed heating;
+        # averaging it therefore yields clipping share of active-heating time.
+        - record: daikin:heating_curve:clipped_at_35c
+          expr: |
+            max by (device) (
+              daikin_altherma_hydronic_lw_setpoint_main{topic="daikin-altherma-esp32/x10a"} == bool 35
+            )
+            and on (device) daikin:heating_curve:eligible_heating
+
+        # D3 inputs. Samples are a monotonic firmware counter; expected windows
+        # are the positively eligible share of a day times 48 half-hour slots.
+        - record: daikin:heating_curve:samples_24h
+          expr: |
+            clamp_min(
+              increase(
+                max by (device) (
+                  daikin_heating_curve_diagnosis_counters_samples{topic="daikin-altherma-esp32/heating_curve"}
+                )[24h:1m]
+              ),
+              0
+            )
+
+        - record: daikin:heating_curve:expected_eligible_windows_24h
+          expr: |
+            avg_over_time(
+              max by (device) (
+                daikin_heating_curve_diagnosis_sample_eligible{topic="daikin-altherma-esp32/heating_curve"}
+              )[24h:1m]
+            ) * 48
+
+        # D4 input. This integrates only real, eligible room-error samples;
+        # missing/stale input contributes no synthetic zero. One subquery point
+        # per minute divided by 60 yields K h outside the +/-0.5 K comfort band.
+        - record: daikin:heating_curve:room_degree_hours_outside_0_5k_24h
+          expr: |
+            sum_over_time(
+              clamp_min(
+                abs(
+                  max by (device) (
+                    daikin_heating_curve_room_error_k{topic="daikin-altherma-esp32/heating_curve"}
+                  )
+                ) - 0.5,
+                0
+              )[24h:1m]
+            ) / 60
+
     - name: daikin-altherma
       interval: 1m
       rules:
@@ -84,3 +182,42 @@ spec:
           annotations:
             summary: {{ `"daikin-altherma-esp32 low on heap: {{ $value }} bytes"` }}
             description: "Free heap dropped far below the usual ~179 KB. The ESP32 will likely reboot soon."
+
+        # #294 diagnosis v2: room evidence matters only while every plant-side
+        # gate positively says SPACE HEATING. Summer idle and Cooling are HOLD,
+        # never alert states. The 15-minute delay exceeds the default 10-minute
+        # source freshness window without turning one delayed poll into noise.
+        - alert: DaikinHeatingCurveRoomInputIneligible
+          expr: |
+            daikin:heating_curve:eligible_heating
+            and on (device)
+            max by (device) (
+              daikin_heating_curve_room_control_eligible{topic="daikin-altherma-esp32/heating_curve"} == 0
+            )
+          for: 15m
+          labels:
+            severity: warning
+            component: heating
+          annotations:
+            summary: "Heating-curve diagnosis has no eligible room input"
+            description: "The plant is positively confirmed active in Heating, but the configured room source has remained stale or ineligible for 15 minutes. Check its MQTT publisher, source timestamp and mapping. Idle and Cooling holds do not trigger this alert."
+
+        # BLOCKED is the evaluator's fail-closed state for missing required
+        # evidence. Keep this separate from the source-specific alert: HomeHub,
+        # plant/mode witnesses, X10A and clock can block the method as well.
+        - alert: DaikinHeatingCurveDiagnosisBlocked
+          expr: |
+            max by (device) (
+              daikin_heating_curve_diagnosis_state{topic="daikin-altherma-esp32/heating_curve"} == 4
+            )
+            and on (device)
+            max by (device) (
+              daikin_heating_curve_diagnosis_armed{topic="daikin-altherma-esp32/heating_curve"} == 1
+            )
+          for: 15m
+          labels:
+            severity: warning
+            component: heating
+          annotations:
+            summary: "Heating-curve diagnosis is blocked"
+            description: "Diagnosis method v2 has lacked required evidence for 15 minutes. Inspect diagnosis_reason and the HomeHub, plant/mode, room, X10A and clock witnesses. Normal plant_inactive and Cooling states are HOLD and do not trigger this alert."
