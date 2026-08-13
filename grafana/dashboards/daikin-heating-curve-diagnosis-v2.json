@@ -1,0 +1,399 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Read-only heating-curve diagnosis v2 for issue #294. It reports evidence and coverage; it never converts room error into a leaving-water-temperature command.",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Issue #294",
+      "type": "link",
+      "url": "https://github.com/0Bu/daikin-altherma-esp32/issues/294"
+    }
+  ],
+  "panels": [
+    {
+      "datasource": { "type": "datasource", "uid": "grafana" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 5, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+        "content": "# Diagnose v2: Belege, kein Stellbefehl\n\nDieses Dashboard ersetzt das alte Offset-/Sättigungsverdikt. D1 zeigt den **rohen Raumfehler** nur aus versionierten Diagnoseereignissen, D2 die reale 35-°C-Begrenzung, D3 die Abdeckung und D4 Komfort plus Ventilanforderung. **Keine Heizfenster oder zu geringe Saisonabdeckung bedeuten _insufficient coverage_, niemals _balanced_.** Raumwerte bei Stillstand oder Kühlung werden nicht als Komfort-Gradstunden gezählt.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "13.1.3",
+      "title": "Methodische Grenze",
+      "type": "text"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "0=off, 1=recording, 2=hold, 3=degraded, 4=blocked. Hold bei stillstehender Anlage oder Kühlung ist neutral.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "dark-gray", "text": "Aus" }, "1": { "color": "green", "text": "Aufzeichnung" }, "2": { "color": "blue", "text": "Warten" }, "3": { "color": "orange", "text": "Degradiert" }, "4": { "color": "red", "text": "Blockiert" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "dark-gray", "value": null } ] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 5, "x": 0, "y": 5 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "13.1.3",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "max by (device) (daikin_heating_curve_diagnosis_state{device=~\"$device\",topic=\"daikin-altherma-esp32/heating_curve\"})", "instant": true, "legendFormat": "{{device}}", "range": false, "refId": "A" }
+      ],
+      "title": "Aktueller Diagnosezustand",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Zählerzuwachs real aufgezeichneter Ereignisse in den letzten 24 Stunden.",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 0, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "yellow", "value": 1 }, { "color": "green", "value": 12 } ] }, "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 5, "x": 5, "y": 5 },
+      "id": 3,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "13.1.3",
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "daikin:heating_curve:samples_24h{device=~\"$device\"}", "instant": true, "legendFormat": "{{device}}", "range": false, "refId": "A" } ],
+      "title": "D3 · Samples / 24 h",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Aus positiv eligible Heizzeit abgeleitete 30-Minuten-Fenster. Null ist im Sommer korrekt und verbietet eine Abdeckungsquote.",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 1, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "blue", "value": null } ] }, "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 5, "x": 10, "y": 5 },
+      "id": 4,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "13.1.3",
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "daikin:heating_curve:expected_eligible_windows_24h{device=~\"$device\"}", "instant": true, "legendFormat": "{{device}}", "range": false, "refId": "A" } ],
+      "title": "D3 · Erwartete Fenster / 24 h",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Nur definiert, wenn erwartete Heizfenster > 0 sind. No data ist dann die richtige Sommeraussage.",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 0, "max": 100, "min": 0, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "yellow", "value": 50 }, { "color": "green", "value": 80 } ] }, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 5, "x": 15, "y": 5 },
+      "id": 5,
+      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "13.1.3",
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "100 * daikin:heating_curve:samples_24h{device=~\"$device\"} / daikin:heating_curve:expected_eligible_windows_24h{device=~\"$device\"} and on (device) daikin:heating_curve:expected_eligible_windows_24h{device=~\"$device\"} > 0", "instant": true, "legendFormat": "{{device}}", "range": false, "refId": "A" } ],
+      "title": "D3 · Abdeckung / 24 h",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Alter des zuletzt archivierten Diagnoseereignisses. Abwesenheit bedeutet: noch kein Ereignis in der Aufbewahrung.",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 1, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 86400 }, { "color": "red", "value": 604800 } ] }, "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 4, "x": 20, "y": 5 },
+      "id": 6,
+      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "13.1.3",
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "time() - max by (device) (daikin_heating_curve_diagnosis_last_sample_unix_s{device=~\"$device\",topic=\"daikin-altherma-esp32/heating_curve\"})", "instant": true, "legendFormat": "{{device}}", "range": false, "refId": "A" } ],
+      "title": "Letztes Ereignis vor",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 10 },
+      "id": 10,
+      "panels": [],
+      "title": "D1 · Richtungsbias der Heizkurve",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Median der rohen Soll-minus-Ist-Raumabweichung aus Diagnoseereignissen. Positiv = zu kalt, negativ = zu warm. Ohne mindestens 48 Ereignisse über sieben Tage ist dies kein Saisonverdikt.",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 2, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "blue", "value": null }, { "color": "green", "value": -0.25 }, { "color": "red", "value": 0.25 } ] }, "unit": "kelvin" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 11 },
+      "id": 11,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "13.1.3",
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "quantile_over_time(0.5, daikin:heating_curve:sample_room_error_k{device=~\"$device\"}[$__range])", "instant": true, "legendFormat": "{{device}}", "range": false, "refId": "A" } ],
+      "title": "D1 · Median Raumfehler",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Zählerzuwachs im gewählten Zeitraum. Die formale Mindestabdeckung ist 48 Ereignisse über mindestens sieben verschiedene lokale Daten.",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 0, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "yellow", "value": 24 }, { "color": "green", "value": 48 } ] }, "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 11 },
+      "id": 12,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "13.1.3",
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "clamp_min(increase(max by (device) (daikin_heating_curve_diagnosis_counters_samples{device=~\"$device\",topic=\"daikin-altherma-esp32/heating_curve\"})[$__range:1m]), 0)", "instant": true, "legendFormat": "{{device}}", "range": false, "refId": "A" } ],
+      "title": "D1 · Ereignisse im Zeitraum",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Provenienzcode des unabhängigen Outdoor-Kontexts und des plant-seitigen Zeugen am letzten Ereignis. 3=ENV III, 2=HomeHub. Abwesenheit bleibt No data.",
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "text" }, "mappings": [ { "options": { "0": { "text": "keine Quelle" }, "2": { "color": "blue", "text": "HomeHub" }, "3": { "color": "green", "text": "ENV III" } }, "type": "value" } ], "thresholds": { "mode": "absolute", "steps": [ { "color": "dark-gray", "value": null } ] } }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 11 },
+      "id": 13,
+      "options": { "displayMode": "basic", "maxVizHeight": 300, "minVizHeight": 16, "minVizWidth": 8, "namePlacement": "auto", "orientation": "horizontal", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showUnfilled": true, "sizing": "auto", "valueMode": "color" },
+      "pluginVersion": "13.1.3",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "max by (device) (daikin_heating_curve_diagnosis_last_sample_outdoor_source_code{device=~\"$device\",topic=\"daikin-altherma-esp32/heating_curve\"})", "instant": true, "legendFormat": "{{device}} · unabhängiger Kontext", "range": false, "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "max by (device) (daikin_heating_curve_diagnosis_last_sample_plant_outdoor_source_code{device=~\"$device\",topic=\"daikin-altherma-esp32/heating_curve\"})", "instant": true, "legendFormat": "{{device}} · Plant-Zeuge", "range": false, "refId": "B" }
+      ],
+      "title": "D1 · Quellen am letzten Ereignis",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Der Raumfehler und beide archivierten Kontextachsen werden zeitgleich gezeigt. Die Außentemperatur ist der plant-seitige HomeHub/X10A-Zeuge am Ereignis; Solar ist die archivierte 2-h-Prognose. Eine spätere Live-Temperatur wird nicht an ein altes Ereignis geheftet.",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "barWidthFactor": 0.6, "drawStyle": "line", "fillOpacity": 12, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "showValues": false, "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] } }, "overrides": [ { "matcher": { "id": "byName", "options": "Solar 2 h" }, "properties": [ { "id": "unit", "value": "suffix: Wh/m²" }, { "id": "custom.axisPlacement", "value": "right" } ] }, { "matcher": { "id": "byRegexp", "options": "/Raumfehler.*/" }, "properties": [ { "id": "unit", "value": "kelvin" } ] }, { "matcher": { "id": "byRegexp", "options": "/Plant-Außen.*/" }, "properties": [ { "id": "unit", "value": "celsius" } ] } ] },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 16 },
+      "id": 14,
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "hideZeros": false, "mode": "multi", "sort": "none" } },
+      "pluginVersion": "13.1.3",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "daikin:heating_curve:sample_room_error_k{device=~\"$device\"}", "instant": false, "legendFormat": "Raumfehler · {{device}}", "range": true, "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "max by (device) (daikin_heating_curve_diagnosis_last_sample_plant_outdoor_temperature_c{device=~\"$device\",topic=\"daikin-altherma-esp32/heating_curve\"}) and on (device) daikin:heating_curve:sample_room_error_k{device=~\"$device\"}", "instant": false, "legendFormat": "Plant-Außen · {{device}}", "range": true, "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "max by (device) (daikin_weather_openmeteo_forecast_solar_energy_2h_wh_m2{device=~\"$device\"}) and on (device) daikin:heating_curve:sample_room_error_k{device=~\"$device\"}", "instant": false, "legendFormat": "Solar 2 h", "range": true, "refId": "C" }
+      ],
+      "title": "D1 · Ereignisse mit archiviertem Kontext",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
+      "id": 20,
+      "panels": [],
+      "title": "D2 · Begrenzung am installierten 35-°C-Minimum",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Anteil der positiv bestätigten Raumheizzeit am 35-°C-Minimum. Ohne eligible Heizzeit bleibt die Anzeige leer.",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 1, "max": 100, "min": 0, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 30 }, { "color": "red", "value": 70 } ] }, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 26 },
+      "id": 21,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "13.1.3",
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "100 * avg_over_time(daikin:heating_curve:clipped_at_35c{device=~\"$device\"}[$__range])", "instant": true, "legendFormat": "{{device}}", "range": false, "refId": "A" } ],
+      "title": "D2 · Clipping-Anteil",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Beobachtete Stunden mit positiv bestätigtem Raumheizbetrieb im gewählten Zeitraum. Muss neben dem Clipping-Anteil angegeben werden.",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 1, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "blue", "value": null } ] }, "unit": "h" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 26 },
+      "id": 22,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "13.1.3",
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "sum_over_time(daikin:heating_curve:eligible_heating{device=~\"$device\"}[$__range:1m]) / 60", "instant": true, "legendFormat": "{{device}}", "range": false, "refId": "A" } ],
+      "title": "D2 · Eligible Heizstunden",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Der reale Hauptzonen-Sollwert; 35 °C ist das derzeit installierte Minimum. Werte werden durch die eligible-Heizkurve ergänzt, nicht durch eine Kühlheuristik.",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "barWidthFactor": 0.6, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "showValues": false, "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "line" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "transparent", "value": null }, { "color": "red", "value": 35 } ] }, "unit": "celsius" }, "overrides": [ { "matcher": { "id": "byName", "options": "eligible" }, "properties": [ { "id": "unit", "value": "bool" }, { "id": "custom.axisPlacement", "value": "right" } ] } ] },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 26 },
+      "id": 23,
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "hideZeros": false, "mode": "multi", "sort": "none" } },
+      "pluginVersion": "13.1.3",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "max by (device) (daikin_altherma_hydronic_lw_setpoint_main{device=~\"$device\",topic=\"daikin-altherma-esp32/x10a\"})", "instant": false, "legendFormat": "Vorlauf-Soll · {{device}}", "range": true, "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "daikin:heating_curve:eligible_heating{device=~\"$device\"}", "instant": false, "legendFormat": "eligible", "range": true, "refId": "B" }
+      ],
+      "title": "D2 · Vorlauf-Sollwert und Heiz-Gate",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 34 },
+      "id": 30,
+      "panels": [],
+      "title": "D3 · Abdeckung, Holds und Blocks",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Rolling-24-h-Samples gegen erwartete 30-Minuten-Fenster. Kein erwartetes Fenster ist normal in Idle/Cooling und keine 0-%-Abdeckung.",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "Fenster", "axisPlacement": "auto", "barAlignment": 0, "barWidthFactor": 0.6, "drawStyle": "line", "fillOpacity": 12, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "showValues": false, "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }, "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 35 },
+      "id": 31,
+      "options": { "legend": { "calcs": [ "lastNotNull" ], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "hideZeros": false, "mode": "multi", "sort": "none" } },
+      "pluginVersion": "13.1.3",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "daikin:heating_curve:samples_24h{device=~\"$device\"}", "instant": false, "legendFormat": "Samples · {{device}}", "range": true, "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "daikin:heating_curve:expected_eligible_windows_24h{device=~\"$device\"}", "instant": false, "legendFormat": "erwartet · {{device}}", "range": true, "refId": "B" }
+      ],
+      "title": "D3 · Rolling Coverage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Warum der Sampler aufzeichnet, wartet oder blockiert. 9=plant_inactive und 13=non_heating_mode sind normale Holds.",
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "text" }, "custom": { "fillOpacity": 70, "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineWidth": 0, "spanNulls": false }, "mappings": [ { "options": { "0": { "text": "disabled" }, "1": { "color": "green", "text": "sample_recorded" }, "2": { "color": "blue", "text": "sampling_interval" }, "5": { "color": "red", "text": "room_unavailable" }, "6": { "color": "red", "text": "x10a_unavailable" }, "7": { "color": "red", "text": "homehub_unavailable" }, "8": { "color": "red", "text": "plant_gate_unknown" }, "9": { "color": "blue", "text": "plant_inactive" }, "10": { "color": "yellow", "text": "forecast_unavailable" }, "11": { "color": "red", "text": "clock_invalid" }, "12": { "color": "red", "text": "heating_mode_unknown" }, "13": { "color": "blue", "text": "non_heating_mode" }, "14": { "color": "red", "text": "sampler_inactive" } }, "type": "value" } ], "thresholds": { "mode": "absolute", "steps": [ { "color": "dark-gray", "value": null } ] } }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 35 },
+      "id": 32,
+      "options": { "alignValue": "left", "legend": { "displayMode": "list", "placement": "bottom", "showLegend": false }, "mergeValues": true, "rowHeight": 0.9, "showValue": "auto", "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" } },
+      "pluginVersion": "13.1.3",
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "max by (device) (daikin_heating_curve_diagnosis_reason{device=~\"$device\",topic=\"daikin-altherma-esp32/heating_curve\"})", "instant": false, "legendFormat": "{{device}}", "range": true, "refId": "A" } ],
+      "title": "D3 · Diagnosegrund",
+      "type": "state-timeline"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Zählerzuwachs im gewählten Zeitraum. Holds sind erwartbar; Blocks bedeuten fehlende Pflichtbelege.",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "decimals": 0, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }, "unit": "short" }, "overrides": [ { "matcher": { "id": "byName", "options": "Blocks" }, "properties": [ { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } } ] } ] },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 43 },
+      "id": 33,
+      "options": { "displayMode": "gradient", "maxVizHeight": 300, "minVizHeight": 16, "minVizWidth": 8, "namePlacement": "auto", "orientation": "horizontal", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showUnfilled": true, "sizing": "auto", "valueMode": "color" },
+      "pluginVersion": "13.1.3",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "clamp_min(increase(max by (device) (daikin_heating_curve_diagnosis_counters_holds{device=~\"$device\",topic=\"daikin-altherma-esp32/heating_curve\"})[$__range:1m]), 0)", "instant": true, "legendFormat": "Holds", "range": false, "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "clamp_min(increase(max by (device) (daikin_heating_curve_diagnosis_counters_blocks{device=~\"$device\",topic=\"daikin-altherma-esp32/heating_curve\"})[$__range:1m]), 0)", "instant": true, "legendFormat": "Blocks", "range": false, "refId": "B" }
+      ],
+      "title": "D3 · Holds / Blocks",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Positive Belege für Plant bekannt/aktiv und Modus bekannt/Heating. Null ist kein positives Gate.",
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "text" }, "custom": { "fillOpacity": 70, "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineWidth": 0, "spanNulls": false }, "mappings": [ { "options": { "0": { "color": "red", "text": "nein" }, "1": { "color": "green", "text": "ja" } }, "type": "value" } ], "thresholds": { "mode": "absolute", "steps": [ { "color": "dark-gray", "value": null } ] } }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 16, "x": 8, "y": 43 },
+      "id": 34,
+      "options": { "alignValue": "left", "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "mergeValues": true, "rowHeight": 0.9, "showValue": "auto", "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" } },
+      "pluginVersion": "13.1.3",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "max by (device) (daikin_heating_curve_diagnosis_gates_plant_known{device=~\"$device\",topic=\"daikin-altherma-esp32/heating_curve\"})", "instant": false, "legendFormat": "Plant bekannt", "range": true, "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "max by (device) (daikin_heating_curve_diagnosis_gates_plant_active{device=~\"$device\",topic=\"daikin-altherma-esp32/heating_curve\"})", "instant": false, "legendFormat": "Plant aktiv", "range": true, "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "max by (device) (daikin_heating_curve_diagnosis_gates_heating_mode_known{device=~\"$device\",topic=\"daikin-altherma-esp32/heating_curve\"})", "instant": false, "legendFormat": "Modus bekannt", "range": true, "refId": "C" },
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "max by (device) (daikin_heating_curve_diagnosis_gates_heating_mode_active{device=~\"$device\",topic=\"daikin-altherma-esp32/heating_curve\"})", "instant": false, "legendFormat": "Heating aktiv", "range": true, "refId": "D" }
+      ],
+      "title": "D3 · Plant-/Modus-Gates",
+      "type": "state-timeline"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 49 },
+      "id": 40,
+      "panels": [],
+      "title": "D4 · Komfort und unabhängige Ventilanforderung",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Rolling 24 h: Integral von |Raumfehler|-0,5 K ausschließlich während positiv bestätigtem Raumheizbetrieb. Kein Heizbetrieb ergibt No data, nicht 0 K·h.",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 2, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 2 }, { "color": "red", "value": 6 } ] }, "unit": "suffix: K·h" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 50 },
+      "id": 41,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "13.1.3",
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "daikin:heating_curve:room_degree_hours_outside_0_5k_24h{device=~\"$device\"}", "instant": true, "legendFormat": "{{device}}", "range": false, "refId": "A" } ],
+      "title": "D4 · Komfort-Gradstunden / 24 h",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Anteil aktiver Anforderung je Meross-Zone im gewählten Zeitraum. Jede Zone bleibt getrennt; kein Mittelwert über device_id.",
+      "fieldConfig": { "defaults": { "color": { "mode": "continuous-GrYlRd" }, "decimals": 1, "max": 100, "min": 0, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 50 },
+      "id": 42,
+      "options": { "displayMode": "gradient", "maxVizHeight": 300, "minVizHeight": 16, "minVizWidth": 8, "namePlacement": "auto", "orientation": "horizontal", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showUnfilled": true, "sizing": "auto", "valueMode": "color" },
+      "pluginVersion": "13.1.3",
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "100 * avg_over_time(meross_thermostat_active[$__range])", "instant": true, "legendFormat": "{{device_id}}", "range": false, "refId": "A" } ],
+      "title": "D4 · Zonen-Einschaltdauer",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Frische Raumtemperatur und Sollwert sind Kontext. Das Dashboard leitet daraus weder direkt noch indirekt einen LWT-Offset ab.",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "barWidthFactor": 0.6, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "showValues": false, "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }, "unit": "celsius" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 50 },
+      "id": 43,
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "hideZeros": false, "mode": "multi", "sort": "none" } },
+      "pluginVersion": "13.1.3",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "max by (device) (daikin_heating_curve_room_temperature_c{device=~\"$device\",topic=\"daikin-altherma-esp32/heating_curve\"})", "instant": false, "legendFormat": "Raum Ist · {{device}}", "range": true, "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${datasource}" }, "editorMode": "code", "expr": "max by (device) (daikin_heating_curve_room_setpoint_c{device=~\"$device\",topic=\"daikin-altherma-esp32/heating_curve\"})", "instant": false, "legendFormat": "Raum Soll · {{device}}", "range": true, "refId": "B" }
+      ],
+      "title": "D4 · Referenzraum Ist / Soll",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "datasource", "uid": "grafana" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 5, "w": 24, "x": 0, "y": 58 },
+      "id": 50,
+      "options": {
+        "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+        "content": "## Saisonverdikt bleibt offen\n\nFür D1 gilt je Außen-/Solarzelle: mindestens 24 Ereignisse über drei lokale Tage. Ein Außenband erhält erst ab 48 Ereignissen über sieben Tage und ohne gegensinnige Solarzelle ein Richtungsverdikt. D2 muss mit eligible Heizstunden, D3 mit Holds/Blocks und D4 mit Zonenanforderung berichtet werden. Bis dahin lautet das Ergebnis ausdrücklich **insufficient coverage**. Das optionale Heizkörperraum-Signal bleibt eine spätere unabhängige Referenz.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "13.1.3",
+      "title": "Abnahmeregeln",
+      "type": "text"
+    }
+  ],
+  "preload": false,
+  "refresh": "1m",
+  "schemaVersion": 42,
+  "tags": [ "daikin", "heizung", "diagnose-v2", "issue-294", "provisioned" ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "label": "VictoriaMetrics datasource",
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "/Victoria Metrics|Prometheus/",
+        "type": "datasource"
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "definition": "label_values(daikin_heating_curve_schema_version, device)",
+        "includeAll": true,
+        "label": "Device",
+        "multi": true,
+        "name": "device",
+        "options": [],
+        "query": { "query": "label_values(daikin_heating_curve_schema_version, device)", "refId": "StandardVariableQuery" },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-30d", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Daikin · Heizkurven-Diagnose v2 (#294)",
+  "uid": "daikin-lwt-diag",
+  "version": 3,
+  "weekStart": "monday"
+}

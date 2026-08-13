@@ -22,6 +22,17 @@ spec:
       - RespectIgnoreDifferences=true
       - ServerSideApply=true
   ignoreDifferences:
+    # The VictoriaMetrics operator defaults both union fields on every VMRule
+    # rule. Recording rules receive alert: "" and alerting rules receive
+    # record: "" in the live object. Kubernetes' server-side diff already
+    # normalizes this to no change, but Argo CD otherwise reports every VMRule
+    # as OutOfSync forever. Select only the empty defaults so real alert and
+    # recording-rule names remain part of the diff.
+    - group: operator.victoriametrics.com
+      kind: VMRule
+      jqPathExpressions:
+        - '.spec.groups[]?.rules[]? | select(.alert == "") | .alert'
+        - '.spec.groups[]?.rules[]? | select(.record == "") | .record'
     - group: ""
       kind: Secret
       name: victoria-metrics-victoria-metrics-operator-validation

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: daikin-heating-curve-diagnosis-v2
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: dashboard
+data:
+  daikin-heating-curve-diagnosis-v2.json: |-
+{{ .Files.Get "dashboards/daikin-heating-curve-diagnosis-v2.json" | indent 4 }}
