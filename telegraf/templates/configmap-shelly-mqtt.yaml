@@ -18,17 +18,17 @@ data:
 
     # Parse Shelly payloads after MQTT ingestion. Reading every candidate as a
     # string first prevents unrelated */status/# payloads from reaching the JSON
-    # parser; the remaining shelly_raw measurements are dropped by the output.
+    # parser. Merge into the tracked parent metric so MQTT delivery is confirmed
+    # exactly once; remaining shelly_raw metrics go to the discard output.
     [[processors.parser]]
       order = 1
       tagpass = { topic = ["shelly*/status", "shelly*/status/*"] }
       parse_fields = ["value"]
-      drop_original = true
-      merge = "parent"
+      merge = "override"
       data_format = "json"
 
-    # The parent merge preserves the MQTT topic tag. Remove its temporary raw
-    # string field and restore the stable shelly measurement name afterward.
+    # Remove the temporary raw string field and restore the stable shelly
+    # measurement name after parsing.
     [[processors.override]]
       order = 2
       tagpass = { topic = ["shelly*/status", "shelly*/status/*"] }
