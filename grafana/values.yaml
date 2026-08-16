@@ -52,9 +52,9 @@ grafana:
             implementation: prometheus
             handleGrafanaManagedAlerts: false
           isDefault: false
-  # Git-provisioned diagnosis dashboards. A mounted ConfigMap plus Grafana's
-  # file watcher is cheaper than a permanently running Kubernetes sidecar and
-  # makes the dashboard definition reviewable and versioned in this chart.
+  # Dashboards are maintained directly in the external ConfigMap below via kubectl
+  # server-side apply. The chart owns only the stable file-provider/mount contract;
+  # it deliberately carries no dashboard JSON and creates no dashboard ConfigMap.
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1
@@ -69,7 +69,7 @@ grafana:
           options:
             path: /var/lib/grafana/dashboards/daikin
   extraConfigmapMounts:
-    - name: daikin-heating-curve-diagnosis-v2
+    - name: grafana-daikin-dashboards-manual
       mountPath: /var/lib/grafana/dashboards/daikin
-      configMap: daikin-heating-curve-diagnosis-v2
+      configMap: grafana-daikin-dashboards-manual
       readOnly: true
