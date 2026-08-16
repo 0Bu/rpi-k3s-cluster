@@ -9,9 +9,28 @@ data:
   shelly-mqtt.conf: |-
     # Shelly Smart Devices via MQTT
     [[inputs.mqtt_consumer]]
-      name_override = "shelly"
+      name_override = "shelly_raw"
       servers = ["tcp://mosquitto:1883"]
       topics = ["+/status/#"]
       topic_tag = "topic"
+      data_format = "value"
+      data_type = "string"
+
+    # Parse Shelly payloads after MQTT ingestion. Reading every candidate as a
+    # string first prevents unrelated */status/# payloads from reaching the JSON
+    # parser; the remaining shelly_raw measurements are dropped by the output.
+    [[processors.parser]]
+      order = 1
       tagpass = { topic = ["shelly*/status", "shelly*/status/*"] }
+      parse_fields = ["value"]
+      drop_original = true
+      merge = "parent"
       data_format = "json"
+
+    # The parent merge preserves the MQTT topic tag. Remove its temporary raw
+    # string field and restore the stable shelly measurement name afterward.
+    [[processors.override]]
+      order = 2
+      tagpass = { topic = ["shelly*/status", "shelly*/status/*"] }
+      name_override = "shelly"
+      fieldexclude = ["value"]

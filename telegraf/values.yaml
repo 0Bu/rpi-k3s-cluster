@@ -47,6 +47,7 @@ telegraf:
           database: "victoriametrics"
           skip_database_creation: true
           exclude_retention_policy_tag: true
+          namedrop: ["shelly_raw"]
           content_encoding: "gzip"
 
   args:
