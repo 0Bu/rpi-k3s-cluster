@@ -1,11 +1,11 @@
 apiVersion: v2
 name: argocd
 type: application
-version: 1.0.514
+version: 1.0.516
 # renovate: image=quay.io/argoproj/argocd
 appVersion: "v3.5.1"
 dependencies: 
   - name: argo-cd
     alias: argocd
-    version: "10.3.3"
+    version: "10.4.0"
     repository: https://argoproj.github.io/argo-helm
