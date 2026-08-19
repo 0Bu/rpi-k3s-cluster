@@ -1,6 +1,6 @@
 dependencies:
 - name: telegraf
   repository: https://helm.influxdata.com
-  version: 1.8.73
-digest: sha256:dc95e4cd20f8f42d394f75415c5d72e951b56529056965441727e5fe83cbb623
-generated: "2026-06-30T11:07:21.552776495Z"
+  version: 1.8.74
+digest: sha256:d0a75b2262ac83f7e1f02cc12b41686c6d02e04d031b01db34bb5d692d5c7474
+generated: "2026-08-19T09:35:52.632143406Z"
