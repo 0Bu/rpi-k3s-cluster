@@ -1,0 +1,1655 @@
+---
+- name: Prepare every Raspberry Pi for the dual-stack k3s cluster
+  hosts: all
+  become: true
+  gather_facts: true
+  vars_files:
+    - ../vars/common.yml
+
+  pre_tasks:
+    - name: Validate the intended one-server topology
+      ansible.builtin.assert:
+        that:
+          - groups['k3s_servers'] | length == 1
+          - groups['k3s_servers'][0] == cluster_server_host
+          - cluster_expected_nodes | sort == groups['all'] | sort
+          - storage_backend in ['local-path', 'nfs']
+          - storage_backend != 'nfs' or nfs_server_host in cluster_expected_nodes
+          - storage_backend != 'nfs' or nfs_export_path == '/nfs'
+        fail_msg: >-
+          Safety stop: this playbook requires exactly one declared server, zero
+          or more declared agents, NFS on an explicitly declared node at /nfs,
+          or an explicitly selected local-path backend.
+      run_once: true
+      tags: [preflight]
+
+    - name: Refuse any target except an explicitly approved cluster member
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname == expected_hostname
+          - inventory_hostname in cluster_expected_nodes
+          - ansible_host == expected_ipv4
+          - ansible_host not in protected_ipv4_addresses
+          - ansible_facts.hostname == expected_hostname
+          - ansible_facts.default_ipv4.address == expected_ipv4
+          - expected_ipv6 in (ansible_facts.all_ipv6_addresses | default([]))
+          - >-
+            (k3s_role == 'server' and inventory_hostname in groups['k3s_servers']) or
+            (k3s_role == 'agent' and inventory_hostname in groups['k3s_agents'])
+        fail_msg: >-
+          Safety stop: inventory, SSH address, discovered hostname, IPv4, IPv6,
+          and k3s role must all identify {{ inventory_hostname }} exactly.
+      tags: [preflight]
+
+    - name: Refuse unsafe Raspberry Pi 6.18 kernels
+      ansible.builtin.assert:
+        that:
+          - >-
+            not ansible_facts.kernel.startswith('6.18.') or
+            (ansible_facts.kernel.split('+')[0] is version('6.18.38', '>='))
+        fail_msg: >-
+          Kernel {{ ansible_facts.kernel }} is within the known NVMe silent-corruption
+          window. Boot a known-good 6.12 kernel or a validated >=6.18.38 kernel.
+      tags: [preflight]
+
+    - name: Confirm the declared IPv6 LAN route exists
+      ansible.builtin.command:
+        argv:
+          - ip
+          - -6
+          - route
+          - show
+          - match
+          - "{{ k3s_lan_ipv6_cidr }}"
+      register: ipv6_lan_route
+      changed_when: false
+      failed_when: ipv6_lan_route.stdout | trim == ''
+      check_mode: false
+      tags: [preflight]
+
+    - name: Confirm IPv6 connectivity to every peer
+      ansible.builtin.command:
+        argv:
+          - ping
+          - -6
+          - -c
+          - '2'
+          - -W
+          - '3'
+          - "{{ hostvars[item].expected_ipv6 }}"
+      loop: "{{ cluster_expected_nodes | reject('equalto', inventory_hostname) | list }}"
+      changed_when: false
+      check_mode: false
+      tags: [preflight]
+
+    - name: Detect NFS mounts
+      ansible.builtin.command:
+        argv:
+          - findmnt
+          - --raw
+          - --noheadings
+          - --types
+          - nfs,nfs4
+          - --output
+          - SOURCE,TARGET
+      register: nfs_mounts
+      changed_when: false
+      failed_when: nfs_mounts.rc not in [0, 1]
+      check_mode: false
+      tags: [preflight]
+
+    - name: Refuse undeclared NFS mounts
+      ansible.builtin.assert:
+        that:
+          - >-
+            storage_backend == 'nfs' or
+            nfs_mounts.stdout | trim == ''
+          - >-
+            storage_backend != 'nfs' or
+            (nfs_mounts.stdout_lines |
+            reject('match', '^' +
+              (hostvars[nfs_server_host].expected_ipv4 | regex_escape) + ':' +
+              (nfs_export_path | regex_escape) + '.*\\s+/var/lib/kubelet/') |
+            list | length == 0)
+        fail_msg: >-
+          Safety stop: {{ inventory_hostname }} has an NFS mount that does not
+          belong to the selected cluster backend: {{ nfs_mounts.stdout }}
+      tags: [preflight]
+
+    - name: Inventory installed packages before applying kernel holds
+      ansible.builtin.package_facts:
+        manager: auto
+      tags: [preflight]
+
+    - name: Read existing package holds
+      ansible.builtin.command:
+        argv:
+          - apt-mark
+          - showhold
+      register: apt_holds_before
+      changed_when: false
+      check_mode: false
+      tags: [preflight]
+
+    - name: Hold every installed Raspberry Pi kernel package
+      ansible.builtin.command:
+        argv:
+          - apt-mark
+          - hold
+          - "{{ item }}"
+      loop: "{{ kernel_hold_packages }}"
+      when:
+        - item in ansible_facts.packages
+        - item not in apt_holds_before.stdout_lines
+      changed_when: true
+      tags: [preflight]
+
+    - name: Verify effective package holds
+      ansible.builtin.command:
+        argv:
+          - apt-mark
+          - showhold
+      register: apt_holds_after
+      changed_when: false
+      check_mode: false
+      tags: [preflight]
+
+    - name: Refuse to continue unless all installed kernel packages are held
+      ansible.builtin.assert:
+        that:
+          - item not in ansible_facts.packages or item in apt_holds_after.stdout_lines
+        fail_msg: "Safety stop: installed kernel package {{ item }} is not held."
+      loop: "{{ kernel_hold_packages }}"
+      when: not ansible_check_mode
+      tags: [preflight]
+
+  tasks:
+    - name: Preserve the validated hostname across cloud-init runs
+      ansible.builtin.copy:
+        dest: /etc/cloud/cloud.cfg.d/99-k3s-bootstrap-hostname.cfg
+        content: |-
+          preserve_hostname: true
+          manage_etc_hosts: true
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Keep the local hostname immediately resolvable
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1\s+'
+        line: "127.0.1.1 {{ expected_hostname }} {{ expected_hostname }}"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Install persistent dual-stack forwarding settings
+      ansible.builtin.copy:
+        dest: /etc/sysctl.d/90-k3s-dual-stack.conf
+        content: |-
+          # Managed by rpi-k3s-cluster. Forward both families and continue to
+          # accept the router-advertised IPv6 default route while forwarding.
+          net.ipv4.ip_forward = 1
+          net.ipv6.conf.all.forwarding = 1
+          net.ipv6.conf.default.forwarding = 1
+          net.ipv6.conf.all.accept_ra = 2
+          net.ipv6.conf.default.accept_ra = 2
+          net.ipv6.conf.{{ k3s_flannel_interface }}.accept_ra = 2
+        owner: root
+        group: root
+        mode: "0644"
+      register: dual_stack_sysctl_file
+
+    - name: Apply changed dual-stack forwarding settings
+      ansible.builtin.command:
+        argv:
+          - sysctl
+          - --system
+      when:
+        - dual_stack_sysctl_file.changed
+        - not ansible_check_mode
+      changed_when: true
+
+    - name: Read effective IPv6 forwarding
+      ansible.builtin.command:
+        argv:
+          - sysctl
+          - -n
+          - net.ipv6.conf.all.forwarding
+      register: ipv6_forwarding
+      changed_when: false
+      check_mode: false
+
+    - name: Read effective IPv6 router-advertisement policy
+      ansible.builtin.command:
+        argv:
+          - sysctl
+          - -n
+          - "net.ipv6.conf.{{ k3s_flannel_interface }}.accept_ra"
+      register: ipv6_accept_ra
+      changed_when: false
+      check_mode: false
+
+    - name: Require forwarding without losing the IPv6 default route
+      ansible.builtin.assert:
+        that:
+          - ipv6_forwarding.stdout | trim == '1'
+          - ipv6_accept_ra.stdout | trim == '2'
+        fail_msg: >-
+          Dual-stack sysctls are not effective on {{ inventory_hostname }}.
+
+    - name: Verify the IPv6 default route survived forwarding
+      ansible.builtin.command:
+        argv:
+          - ip
+          - -6
+          - route
+          - show
+          - default
+      register: ipv6_default_route
+      changed_when: false
+      failed_when: ipv6_default_route.stdout | trim == ''
+      check_mode: false
+
+    - name: Create the local k3s administrator group
+      ansible.builtin.group:
+        name: "{{ k3s_admin_group }}"
+        system: true
+        state: present
+
+    - name: Grant the SSH operator local cluster administration
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        groups:
+          - "{{ k3s_admin_group }}"
+        append: true
+
+    - name: Create the protected k3s configuration directory
+      ansible.builtin.file:
+        path: /etc/rancher/k3s
+        state: directory
+        owner: root
+        group: "{{ k3s_admin_group }}"
+        mode: "0750"
+
+    - name: Create pinned installer directory
+      ansible.builtin.file:
+        path: /usr/local/src/k3s-bootstrap
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Download the version-bound k3s installer with checksum verification
+      ansible.builtin.get_url:
+        url: "{{ k3s_install_script_url }}"
+        dest: "/usr/local/src/k3s-bootstrap/install-{{ k3s_version }}.sh"
+        checksum: "sha256:{{ k3s_install_script_sha256 }}"
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Download the pinned standalone ARM64 kubectl with checksum verification
+      ansible.builtin.get_url:
+        url: "{{ kubectl_arm64_url }}"
+        dest: "/usr/local/src/k3s-bootstrap/kubectl-{{ kubectl_version }}-linux-arm64"
+        checksum: "sha256:{{ kubectl_arm64_sha256 }}"
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Download the pinned ARM64 k9s package with checksum verification
+      ansible.builtin.get_url:
+        url: "{{ k9s_deb_url }}"
+        dest: "/usr/local/src/k3s-bootstrap/k9s-{{ k9s_version }}-linux-arm64.deb"
+        checksum: "sha256:{{ k9s_deb_sha256 }}"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Install the pinned k9s package
+      ansible.builtin.apt:
+        deb: "/usr/local/src/k3s-bootstrap/k9s-{{ k9s_version }}-linux-arm64.deb"
+        state: present
+
+    - name: Install NFS client support on every cluster member
+      ansible.builtin.apt:
+        name: nfs-common
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+      when: storage_backend == 'nfs'
+
+    - name: Create the base Debian NFS exports file if absent
+      ansible.builtin.copy:
+        dest: /etc/exports
+        content: "# Managed exports are stored in /etc/exports.d.\n"
+        owner: root
+        group: root
+        mode: "0644"
+        force: false
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
+    - name: Create the Debian NFS export configuration directory
+      ansible.builtin.file:
+        path: /etc/exports.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
+    - name: Install the NFS server only on the selected host
+      ansible.builtin.apt:
+        name: nfs-kernel-server
+        state: present
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
+    - name: Create the fixed NFS export directory on the selected host
+      ansible.builtin.file:
+        path: "{{ nfs_export_path }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0770"
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
+    - name: Export NFS only to declared cluster nodes
+      ansible.builtin.template:
+        src: ../templates/k3s-nfs.exports.j2
+        dest: /etc/exports.d/k3s.exports
+        owner: root
+        group: root
+        mode: "0644"
+      register: nfs_exports_file
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
+    - name: Ensure the selected NFS server is running
+      ansible.builtin.systemd_service:
+        name: nfs-kernel-server
+        state: started
+        enabled: true
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
+    - name: Reconcile NFS exports without restarting kernel NFS threads
+      ansible.builtin.command:
+        argv:
+          - exportfs
+          - -ra
+      changed_when: nfs_exports_file.changed
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
+    - name: Verify the declared export is active
+      ansible.builtin.command:
+        argv:
+          - exportfs
+          - -v
+      register: active_nfs_exports
+      changed_when: false
+      failed_when: nfs_export_path not in active_nfs_exports.stdout
+      when:
+        - storage_backend == 'nfs'
+        - inventory_hostname == nfs_server_host
+
+    - name: Create the temporary NFS probe mountpoint
+      ansible.builtin.file:
+        path: /var/tmp/k3s-nfs-probe
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+      when: storage_backend == 'nfs'
+
+    - name: Verify read-write NFS access from every declared node
+      when:
+        - storage_backend == 'nfs'
+        - not ansible_check_mode
+      block:
+        - name: Clear a stale NFS probe mount
+          ansible.builtin.command:
+            argv:
+              - umount
+              - /var/tmp/k3s-nfs-probe
+          changed_when: false
+          failed_when: false
+
+        - name: Mount the selected share for the NFS probe
+          ansible.builtin.command:
+            argv:
+              - mount
+              - --types
+              - nfs4
+              - --options
+              - "{{ nfs_mount_options | join(',') }}"
+              - "{{ hostvars[nfs_server_host].expected_ipv4 }}:{{ nfs_export_path }}"
+              - /var/tmp/k3s-nfs-probe
+          changed_when: false
+
+        - name: Write a node-specific NFS probe
+          ansible.builtin.command:
+            argv:
+              - touch
+              - "/var/tmp/k3s-nfs-probe/.bootstrap-{{ inventory_hostname }}"
+          changed_when: false
+
+        - name: Read the node-specific NFS probe back
+          ansible.builtin.stat:
+            path: "/var/tmp/k3s-nfs-probe/.bootstrap-{{ inventory_hostname }}"
+          register: nfs_probe_file
+
+        - name: Require a successful NFS roundtrip
+          ansible.builtin.assert:
+            that:
+              - nfs_probe_file.stat.exists
+
+        - name: Remove the node-specific NFS probe
+          ansible.builtin.file:
+            path: "/var/tmp/k3s-nfs-probe/.bootstrap-{{ inventory_hostname }}"
+            state: absent
+          changed_when: false
+      always:
+        - name: Unmount the temporary NFS probe
+          ansible.builtin.command:
+            argv:
+              - umount
+              - /var/tmp/k3s-nfs-probe
+          changed_when: false
+          failed_when: false
+
+    - name: Create the operator kubeconfig directory
+      ansible.builtin.file:
+        path: "/home/{{ ansible_user }}/.kube"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0700"
+
+- name: Install the first and only declared k3s server
+  hosts: k3s_servers
+  become: true
+  gather_facts: false
+  vars_files:
+    - ../vars/common.yml
+
+  tasks:
+    - name: Install the dual-stack server configuration
+      ansible.builtin.template:
+        src: ../templates/k3s-server-config.yaml.j2
+        dest: /etc/rancher/k3s/config.yaml
+        owner: root
+        group: root
+        mode: "0600"
+      register: k3s_server_config
+
+    - name: Read the installed server version
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - --version
+      register: installed_k3s_server_version
+      changed_when: false
+      failed_when: false
+
+    - name: Inspect the k3s server service
+      ansible.builtin.stat:
+        path: /etc/systemd/system/k3s.service
+      register: k3s_server_service
+
+    - name: Install or upgrade the pinned k3s server
+      ansible.builtin.command:
+        argv:
+          - "/usr/local/src/k3s-bootstrap/install-{{ k3s_version }}.sh"
+      environment:
+        INSTALL_K3S_VERSION: "{{ k3s_version }}"
+        INSTALL_K3S_EXEC: server
+      when:
+        - not ansible_check_mode
+        - >-
+          k3s_version not in installed_k3s_server_version.stdout or
+          not k3s_server_service.stat.exists
+      register: k3s_server_install
+      changed_when: true
+
+    - name: Restart an existing server after configuration changes
+      ansible.builtin.systemd_service:
+        name: k3s
+        state: restarted
+        enabled: true
+      when:
+        - not ansible_check_mode
+        - k3s_server_config.changed
+        - not (k3s_server_install.changed | default(false))
+
+    - name: Ensure the k3s server is running
+      ansible.builtin.systemd_service:
+        name: k3s
+        state: started
+        enabled: true
+      when: not ansible_check_mode
+
+    - name: Ensure the generated server kubeconfig has operator access
+      ansible.builtin.file:
+        path: /etc/rancher/k3s/k3s.yaml
+        state: file
+        owner: root
+        group: "{{ k3s_admin_group }}"
+        mode: "0640"
+      when: not ansible_check_mode
+
+    - name: Wait for the server node to be ready
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - wait
+          - --for=condition=Ready
+          - "node/{{ inventory_hostname }}"
+          - --timeout=300s
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Read the protected node join token
+      ansible.builtin.slurp:
+        src: /var/lib/rancher/k3s/server/node-token
+      register: k3s_node_token
+      no_log: true
+      when: not ansible_check_mode
+
+- name: Join every declared k3s agent
+  hosts: k3s_agents
+  become: true
+  gather_facts: false
+  vars_files:
+    - ../vars/common.yml
+  vars:
+    k3s_join_token: >-
+      {{ (hostvars[cluster_server_host].k3s_node_token.content | b64decode) | trim }}
+
+  tasks:
+    - name: Wait for the server API before joining
+      ansible.builtin.wait_for:
+        host: "{{ cluster_server_ipv4 }}"
+        port: 6443
+        connect_timeout: 3
+        timeout: 120
+      when: not ansible_check_mode
+
+    - name: Install the protected agent configuration
+      ansible.builtin.template:
+        src: ../templates/k3s-agent-config.yaml.j2
+        dest: /etc/rancher/k3s/config.yaml
+        owner: root
+        group: root
+        mode: "0600"
+      register: k3s_agent_config
+      no_log: true
+
+    - name: Read the installed agent version
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - --version
+      register: installed_k3s_agent_version
+      changed_when: false
+      failed_when: false
+
+    - name: Inspect the k3s agent service
+      ansible.builtin.stat:
+        path: /etc/systemd/system/k3s-agent.service
+      register: k3s_agent_service
+
+    - name: Install or upgrade the pinned k3s agent
+      ansible.builtin.command:
+        argv:
+          - "/usr/local/src/k3s-bootstrap/install-{{ k3s_version }}.sh"
+      environment:
+        INSTALL_K3S_VERSION: "{{ k3s_version }}"
+        INSTALL_K3S_EXEC: agent
+      when:
+        - not ansible_check_mode
+        - >-
+          k3s_version not in installed_k3s_agent_version.stdout or
+          not k3s_agent_service.stat.exists
+      register: k3s_agent_install
+      changed_when: true
+      no_log: true
+
+    - name: Restart an existing agent after configuration changes
+      ansible.builtin.systemd_service:
+        name: k3s-agent
+        state: restarted
+        enabled: true
+      when:
+        - not ansible_check_mode
+        - k3s_agent_config.changed
+        - not (k3s_agent_install.changed | default(false))
+
+    - name: Ensure the k3s agent is running
+      ansible.builtin.systemd_service:
+        name: k3s-agent
+        state: started
+        enabled: true
+      when: not ansible_check_mode
+
+- name: Install GitOps on the joined cluster and distribute operator access
+  hosts: k3s_servers
+  become: true
+  gather_facts: false
+  vars_files:
+    - ../vars/common.yml
+
+  tasks:
+    - name: Wait for every declared cluster node
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - wait
+          - --for=condition=Ready
+          - "node/{{ item }}"
+          - --timeout=300s
+      loop: "{{ cluster_expected_nodes }}"
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Wait for every node to register both address families
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - get
+          - "node/{{ item }}"
+          - --output=json
+      loop: "{{ cluster_expected_nodes }}"
+      register: registered_nodes
+      changed_when: false
+      until:
+        - >-
+          hostvars[item].expected_ipv4 in
+          ((registered_nodes.stdout | from_json).status.addresses |
+          map(attribute='address') | list)
+        - >-
+          hostvars[item].expected_ipv6 in
+          ((registered_nodes.stdout | from_json).status.addresses |
+          map(attribute='address') | list)
+      retries: 30
+      delay: 2
+      when: not ansible_check_mode
+
+    - name: Require both declared address families on every node
+      ansible.builtin.assert:
+        that:
+          - >-
+            hostvars[item.item].expected_ipv4 in
+            ((item.stdout | from_json).status.addresses | map(attribute='address') | list)
+          - >-
+            hostvars[item.item].expected_ipv6 in
+            ((item.stdout | from_json).status.addresses | map(attribute='address') | list)
+        fail_msg: >-
+          Node {{ item.item }} did not register both declared IP families.
+      loop: "{{ registered_nodes.results | default([]) }}"
+      when: not ansible_check_mode
+
+    - name: Label the selected NFS server node
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - label
+          - node
+          - "{{ nfs_server_host }}"
+          - homelab.burau.dev/nfs-server=true
+          - --overwrite
+      register: nfs_server_label
+      changed_when: "'not labeled' not in nfs_server_label.stdout"
+      when:
+        - not ansible_check_mode
+        - storage_backend == 'nfs'
+
+    - name: Install the pinned NFS CSI driver through the k3s Helm controller
+      ansible.builtin.template:
+        src: ../templates/nfs-csi-helmchart.yaml.j2
+        dest: /var/lib/rancher/k3s/server/manifests/nfs-csi.yaml
+        owner: root
+        group: root
+        mode: "0600"
+      when: storage_backend == 'nfs'
+
+    - name: Remove the managed NFS CSI manifest for local-path clusters
+      ansible.builtin.file:
+        path: /var/lib/rancher/k3s/server/manifests/nfs-csi.yaml
+        state: absent
+      when: storage_backend == 'local-path'
+
+    - name: Wait for the NFS CSI controller deployment to exist
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - kube-system
+          - get
+          - deployment/csi-nfs-controller
+      register: nfs_csi_controller
+      changed_when: false
+      until: nfs_csi_controller.rc == 0
+      retries: 60
+      delay: 10
+      when:
+        - not ansible_check_mode
+        - storage_backend == 'nfs'
+
+    - name: Wait for the NFS CSI controller
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - kube-system
+          - rollout
+          - status
+          - deployment/csi-nfs-controller
+          - --timeout=600s
+      changed_when: false
+      when:
+        - not ansible_check_mode
+        - storage_backend == 'nfs'
+
+    - name: Wait for the NFS CSI node plugin on every node
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - kube-system
+          - rollout
+          - status
+          - daemonset/csi-nfs-node
+          - --timeout=600s
+      changed_when: false
+      when:
+        - not ansible_check_mode
+        - storage_backend == 'nfs'
+
+    - name: Read an existing stable persistent StorageClass
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - get
+          - "storageclass/{{ persistent_storage_class }}"
+          - --output=json
+      register: persistent_storage_class_existing
+      changed_when: false
+      failed_when: persistent_storage_class_existing.rc not in [0, 1]
+      when: not ansible_check_mode
+
+    - name: Refuse an implicit storage backend migration
+      ansible.builtin.assert:
+        that:
+          - >-
+            persistent_storage_class_existing.rc != 0 or
+            (persistent_storage_class_existing.stdout | from_json).provisioner ==
+            ('nfs.csi.k8s.io' if storage_backend == 'nfs' else 'rancher.io/local-path')
+        fail_msg: >-
+          StorageClass {{ persistent_storage_class }} already belongs to another
+          backend. Back up and migrate its PVC data explicitly before switching.
+      when: not ansible_check_mode
+
+    - name: Apply the selected stable persistent StorageClass
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - apply
+          - --server-side
+          - "--field-manager={{ cluster_name }}-bootstrap"
+          - -f
+          - '-'
+        stdin: "{{ lookup('ansible.builtin.template', '../templates/persistent-storageclass.yaml.j2') }}"
+      register: persistent_storage_class_apply
+      changed_when: >-
+        'configured' in persistent_storage_class_apply.stdout or
+        'created' in persistent_storage_class_apply.stdout
+      when: not ansible_check_mode
+
+    - name: Install Argo CD through the k3s Helm controller
+      ansible.builtin.template:
+        src: ../templates/argocd-helmchart.yaml.j2
+        dest: /var/lib/rancher/k3s/server/manifests/argocd.yaml
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Wait for the Argo CD Application CRD to exist
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - get
+          - crd/applications.argoproj.io
+      register: argocd_application_crd
+      changed_when: false
+      until: argocd_application_crd.rc == 0
+      retries: 60
+      delay: 10
+      when: not ansible_check_mode
+
+    - name: Wait for the Argo CD Application CRD to be established
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - wait
+          - --for=condition=Established
+          - crd/applications.argoproj.io
+          - --timeout=600s
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Wait for the Argo CD server deployment to exist
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - get
+          - deployment/argocd-server
+      register: argocd_server_deployment
+      changed_when: false
+      until: argocd_server_deployment.rc == 0
+      retries: 60
+      delay: 10
+      when: not ansible_check_mode
+
+    - name: Wait for the Argo CD server deployment
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - rollout
+          - status
+          - deployment/argocd-server
+          - --timeout=600s
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Ensure the application namespace exists
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - create
+          - namespace
+          - monitoring
+      register: monitoring_namespace
+      changed_when: monitoring_namespace.rc == 0
+      failed_when:
+        - monitoring_namespace.rc != 0
+        - "'AlreadyExists' not in monitoring_namespace.stderr"
+      when: not ansible_check_mode
+
+    - name: Ensure the Authentik namespace exists
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - create
+          - namespace
+          - authentik
+      register: authentik_namespace
+      changed_when: authentik_namespace.rc == 0
+      failed_when:
+        - authentik_namespace.rc != 0
+        - "'AlreadyExists' not in authentik_namespace.stderr"
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
+    - name: Create local controller state directory
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/../../.state/{{ cluster_name }}"
+        state: directory
+        mode: "0700"
+      become: false
+      delegate_to: localhost
+      when: not ansible_check_mode
+
+    - name: Define the private GitOps deploy-key paths
+      ansible.builtin.set_fact:
+        gitops_repo_private_key_path: >-
+          {{ playbook_dir }}/../../.state/{{ cluster_name }}/gitops-repo-ssh-key
+      when: not ansible_check_mode
+
+    - name: Locate private GitOps controller prerequisites
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/which
+          - "{{ item }}"
+      loop:
+        - gh
+        - ssh-keygen
+      changed_when: false
+      become: false
+      delegate_to: localhost
+      when: not ansible_check_mode
+
+    - name: Verify the desired-state repository is private
+      ansible.builtin.command:
+        argv:
+          - gh
+          - repo
+          - view
+          - "{{ gitops_repo_github_slug }}"
+          - --json
+          - visibility
+          - --jq
+          - .visibility
+      register: gitops_repo_visibility
+      changed_when: false
+      become: false
+      delegate_to: localhost
+      when: not ansible_check_mode
+
+    - name: Refuse a public desired-state repository
+      ansible.builtin.assert:
+        that:
+          - gitops_repo_visibility.stdout == 'PRIVATE'
+        fail_msg: >-
+          {{ gitops_repo_github_slug }} must be private before bootstrap can
+          install real Argo CD Applications.
+      when: not ansible_check_mode
+
+    - name: Inspect the private GitOps deploy-key pair
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "{{ gitops_repo_private_key_path }}"
+        - "{{ gitops_repo_private_key_path }}.pub"
+      register: gitops_repo_key_files
+      become: false
+      delegate_to: localhost
+      when: not ansible_check_mode
+
+    - name: Refuse a partial private GitOps deploy-key pair
+      ansible.builtin.assert:
+        that:
+          - >-
+            gitops_repo_key_files.results[0].stat.exists ==
+            gitops_repo_key_files.results[1].stat.exists
+        fail_msg: >-
+          Refusing to overwrite a partial GitOps deploy-key pair below
+          .state/{{ cluster_name }}; restore or remove the exact orphaned file.
+      when: not ansible_check_mode
+
+    - name: Generate a cluster-scoped read-only GitOps deploy key
+      ansible.builtin.command:
+        argv:
+          - ssh-keygen
+          - -q
+          - -t
+          - ed25519
+          - -N
+          - ''
+          - -C
+          - "argocd-{{ cluster_name }}@{{ gitops_repo_github_slug }}"
+          - -f
+          - "{{ gitops_repo_private_key_path }}"
+      changed_when: true
+      no_log: true
+      become: false
+      delegate_to: localhost
+      when:
+        - not ansible_check_mode
+        - not gitops_repo_key_files.results[0].stat.exists
+
+    - name: Protect the private GitOps deploy key
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - path: "{{ gitops_repo_private_key_path }}"
+          mode: "0600"
+        - path: "{{ gitops_repo_private_key_path }}.pub"
+          mode: "0644"
+      become: false
+      delegate_to: localhost
+      when: not ansible_check_mode
+
+    - name: Read registered private-repository deploy keys
+      ansible.builtin.command:
+        argv:
+          - gh
+          - api
+          - "repos/{{ gitops_repo_github_slug }}/keys"
+      register: gitops_repo_registered_keys
+      changed_when: false
+      become: false
+      delegate_to: localhost
+      when: not ansible_check_mode
+
+    - name: Resolve the local and registered deploy-key identities
+      ansible.builtin.set_fact:
+        gitops_repo_public_key: >-
+          {{ (lookup('ansible.builtin.file', gitops_repo_private_key_path + '.pub').split())[0:2] | join(' ') }}
+        gitops_repo_matching_keys: >-
+          {{ (gitops_repo_registered_keys.stdout | from_json) |
+             selectattr('title', 'equalto', gitops_repo_deploy_key_title) | list }}
+      when: not ansible_check_mode
+
+    - name: Refuse a mismatched registered deploy key
+      ansible.builtin.assert:
+        that:
+          - gitops_repo_matching_keys | length <= 1
+          - >-
+            gitops_repo_matching_keys | length == 0 or
+            gitops_repo_matching_keys[0].key == gitops_repo_public_key
+        fail_msg: >-
+          GitHub already has a deploy key named {{ gitops_repo_deploy_key_title }}
+          whose public key does not match local controller state.
+      when: not ansible_check_mode
+
+    - name: Register the cluster-scoped read-only GitOps deploy key
+      ansible.builtin.command:
+        argv:
+          - gh
+          - repo
+          - deploy-key
+          - add
+          - "{{ gitops_repo_private_key_path }}.pub"
+          - --repo
+          - "{{ gitops_repo_github_slug }}"
+          - --title
+          - "{{ gitops_repo_deploy_key_title }}"
+      changed_when: true
+      no_log: true
+      become: false
+      delegate_to: localhost
+      when:
+        - not ansible_check_mode
+        - gitops_repo_matching_keys | length == 0
+
+    - name: Detect changes to the private GitOps repository credential
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - diff
+          - --server-side
+          - "--field-manager={{ cluster_name }}-bootstrap"
+          - -f
+          - '-'
+        stdin: "{{ lookup('ansible.builtin.template', '../templates/argocd-repository-secret.yaml.j2') }}"
+      register: gitops_repo_secret_diff
+      changed_when: gitops_repo_secret_diff.rc == 1
+      failed_when: gitops_repo_secret_diff.rc not in [0, 1]
+      no_log: true
+      when: not ansible_check_mode
+
+    - name: Apply the private GitOps repository credential
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - apply
+          - --server-side
+          - "--field-manager={{ cluster_name }}-bootstrap"
+          - -f
+          - '-'
+        stdin: "{{ lookup('ansible.builtin.template', '../templates/argocd-repository-secret.yaml.j2') }}"
+      changed_when: false
+      no_log: true
+      when: not ansible_check_mode
+
+    - name: Read the existing Authentik configuration secret if present
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - authentik
+          - get
+          - "secret/{{ authentik_config_secret_name }}"
+          - --output=json
+      register: authentik_config_secret
+      changed_when: false
+      failed_when: authentik_config_secret.rc not in [0, 1]
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
+    - name: Generate or reuse Authentik configuration credentials
+      ansible.builtin.set_fact:
+        authentik_secret_key: >-
+          {{ lookup('ansible.builtin.password',
+          playbook_dir + '/../../.state/' + cluster_name +
+          '/authentik-secret-key length=64 chars=ascii_letters,digits') }}
+        authentik_postgresql_password: >-
+          {{ lookup('ansible.builtin.password',
+          playbook_dir + '/../../.state/' + cluster_name +
+          '/authentik-postgresql-password length=48 chars=ascii_letters,digits') }}
+        authentik_bootstrap_password: >-
+          {{ lookup('ansible.builtin.password',
+          playbook_dir + '/../../.state/' + cluster_name +
+          '/authentik-akadmin-password length=32 chars=ascii_letters,digits') }}
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+        - authentik_config_secret.rc != 0
+
+    - name: Recover existing Authentik configuration credentials
+      ansible.builtin.set_fact:
+        authentik_secret_key: >-
+          {{ ((authentik_config_secret.stdout | from_json).data['AUTHENTIK_SECRET_KEY']) |
+          b64decode }}
+        authentik_postgresql_password: >-
+          {{ ((authentik_config_secret.stdout | from_json).data['AUTHENTIK_POSTGRESQL__PASSWORD']) |
+          b64decode }}
+        authentik_bootstrap_password: >-
+          {{ ((authentik_config_secret.stdout | from_json).data['AUTHENTIK_BOOTSTRAP_PASSWORD']) |
+          b64decode }}
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+        - authentik_config_secret.rc == 0
+
+    - name: Persist private Authentik configuration credentials on the controller
+      ansible.builtin.copy:
+        content: "{{ item.value }}\n"
+        dest: "{{ playbook_dir }}/../../.state/{{ cluster_name }}/{{ item.name }}"
+        mode: "0600"
+      loop:
+        - name: authentik-secret-key
+          value: "{{ authentik_secret_key }}"
+        - name: authentik-postgresql-password
+          value: "{{ authentik_postgresql_password }}"
+        - name: authentik-akadmin-password
+          value: "{{ authentik_bootstrap_password }}"
+      become: false
+      delegate_to: localhost
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
+    - name: Read the existing Authentik blueprint secret if present
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - authentik
+          - get
+          - "secret/{{ authentik_blueprint_secret_name }}"
+          - --output=json
+      register: authentik_blueprint_secret
+      changed_when: false
+      failed_when: authentik_blueprint_secret.rc not in [0, 1]
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
+    - name: Generate or reuse Authentik application credentials
+      ansible.builtin.set_fact:
+        grafana_oauth_client_secret: >-
+          {{ lookup('ansible.builtin.password',
+          playbook_dir + '/../../.state/' + cluster_name +
+          '/grafana-oauth-client-secret length=64 chars=ascii_letters,digits') }}
+        authentik_oleg_password: >-
+          {{ lookup('ansible.builtin.password',
+          playbook_dir + '/../../.state/' + cluster_name +
+          '/authentik-oleg-password length=32 chars=ascii_letters,digits') }}
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+        - authentik_blueprint_secret.rc != 0
+
+    - name: Recover existing Authentik application credentials
+      ansible.builtin.set_fact:
+        grafana_oauth_client_secret: >-
+          {{ ((authentik_blueprint_secret.stdout | from_json).data['HOMELAB_GRAFANA_CLIENT_SECRET']) |
+          b64decode }}
+        authentik_oleg_password: >-
+          {{ ((authentik_blueprint_secret.stdout | from_json).data['HOMELAB_OLEG_PASSWORD']) |
+          b64decode }}
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+        - authentik_blueprint_secret.rc == 0
+
+    - name: Persist private Authentik application credentials on the controller
+      ansible.builtin.copy:
+        content: "{{ item.value }}\n"
+        dest: "{{ playbook_dir }}/../../.state/{{ cluster_name }}/{{ item.name }}"
+        mode: "0600"
+      loop:
+        - name: grafana-oauth-client-secret
+          value: "{{ grafana_oauth_client_secret }}"
+        - name: authentik-oleg-password
+          value: "{{ authentik_oleg_password }}"
+      become: false
+      delegate_to: localhost
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
+    - name: Detect Authentik and Grafana OAuth secret changes without logging plaintext
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - diff
+          - --server-side
+          - "--field-manager={{ cluster_name }}-bootstrap"
+          - -f
+          - '-'
+        stdin: "{{ lookup('ansible.builtin.template', item) }}"
+      loop:
+        - ../templates/authentik-config-secret.yaml.j2
+        - ../templates/authentik-postgresql-secret.yaml.j2
+        - ../templates/authentik-blueprint-secrets.yaml.j2
+        - ../templates/grafana-oauth-secret.yaml.j2
+      register: identity_secret_diff
+      changed_when: identity_secret_diff.rc == 1
+      failed_when: identity_secret_diff.rc not in [0, 1]
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
+    - name: Apply Authentik and Grafana OAuth secrets without writing plaintext remotely
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - apply
+          - --server-side
+          - "--field-manager={{ cluster_name }}-bootstrap"
+          - -f
+          - '-'
+        stdin: "{{ lookup('ansible.builtin.template', item) }}"
+      loop:
+        - ../templates/authentik-config-secret.yaml.j2
+        - ../templates/authentik-postgresql-secret.yaml.j2
+        - ../templates/authentik-blueprint-secrets.yaml.j2
+        - ../templates/grafana-oauth-secret.yaml.j2
+      changed_when: false
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
+    - name: Inspect existing Authentik runtime deployments
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - authentik
+          - get
+          - deployment/authentik-server
+          - deployment/authentik-worker
+      register: authentik_runtime_deployments
+      changed_when: false
+      failed_when: authentik_runtime_deployments.rc not in [0, 1]
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
+    - name: Restart Authentik after an external Secret change
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - authentik
+          - rollout
+          - restart
+          - deployment/authentik-server
+          - deployment/authentik-worker
+      changed_when: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+        - identity_secret_diff is changed
+        - authentik_runtime_deployments.rc == 0
+
+    - name: Inspect the existing Grafana deployment
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - monitoring
+          - get
+          - deployment/grafana
+      register: grafana_runtime_deployment
+      changed_when: false
+      failed_when: grafana_runtime_deployment.rc not in [0, 1]
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
+    - name: Restart Grafana after an external OAuth Secret change
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - monitoring
+          - rollout
+          - restart
+          - deployment/grafana
+      changed_when: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+        - identity_secret_diff is changed
+        - grafana_runtime_deployment.rc == 0
+
+    - name: Read the existing Grafana admin secret if present
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - monitoring
+          - get
+          - "secret/{{ grafana_admin_secret_name }}"
+          - --output=json
+      register: grafana_admin_secret
+      changed_when: false
+      failed_when: grafana_admin_secret.rc not in [0, 1]
+      no_log: true
+      when: not ansible_check_mode
+
+    - name: Generate or reuse the test-cluster Grafana password
+      ansible.builtin.set_fact:
+        grafana_admin_password: >-
+          {{ lookup('ansible.builtin.password',
+          playbook_dir + '/../../.state/' + cluster_name +
+          '/grafana-admin-password length=32 chars=ascii_letters,digits') }}
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - grafana_admin_secret.rc != 0
+
+    - name: Recover the existing Grafana password into controller state
+      ansible.builtin.set_fact:
+        grafana_admin_password: >-
+          {{ ((grafana_admin_secret.stdout | from_json).data['admin-password']) |
+          b64decode }}
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - grafana_admin_secret.rc == 0
+
+    - name: Persist the private Grafana password on the controller
+      ansible.builtin.copy:
+        content: "{{ grafana_admin_password }}\n"
+        dest: "{{ playbook_dir }}/../../.state/{{ cluster_name }}/grafana-admin-password"
+        mode: "0600"
+      become: false
+      delegate_to: localhost
+      no_log: true
+      when: not ansible_check_mode
+
+    - name: Apply the Grafana admin secret without writing plaintext remotely
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - apply
+          - --server-side
+          - "--field-manager={{ cluster_name }}-bootstrap"
+          - -f
+          - '-'
+        stdin: "{{ lookup('ansible.builtin.template', '../templates/grafana-admin-secret.yaml.j2') }}"
+      changed_when: true
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - grafana_admin_secret.rc != 0
+
+    - name: Apply the cluster-scoped GitOps root
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - apply
+          - "--field-manager={{ cluster_name }}-bootstrap"
+          - -f
+          - '-'
+        stdin: "{{ lookup('ansible.builtin.template', '../templates/gitops-root.yaml.j2') }}"
+      register: gitops_root_apply
+      changed_when: >-
+        'configured' in gitops_root_apply.stdout or
+        'created' in gitops_root_apply.stdout
+      when: not ansible_check_mode
+
+    - name: Wait for the GitOps root to become healthy
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - wait
+          - --for=jsonpath={.status.health.status}=Healthy
+          - "application/{{ cluster_name }}-root"
+          - --timeout=600s
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Wait for the GitOps root to be synced from the private repository
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - wait
+          - --for=jsonpath={.status.sync.status}=Synced
+          - "application/{{ cluster_name }}-root"
+          - --timeout=600s
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Wait for the Grafana Application to exist
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - get
+          - application/grafana
+      register: grafana_application
+      changed_when: false
+      until: grafana_application.rc == 0
+      retries: 60
+      delay: 10
+      when: not ansible_check_mode
+
+    - name: Wait for the Authentik Application to exist
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - get
+          - application/authentik
+      register: authentik_application
+      changed_when: false
+      until: authentik_application.rc == 0
+      retries: 60
+      delay: 10
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
+    - name: Wait for Authentik to become healthy
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - wait
+          - --for=jsonpath={.status.health.status}=Healthy
+          - application/authentik
+          - --timeout=1200s
+      changed_when: false
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
+    - name: Wait for Grafana to become healthy
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - wait
+          - --for=jsonpath={.status.health.status}=Healthy
+          - application/grafana
+          - --timeout=900s
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Read the protected server kubeconfig
+      ansible.builtin.slurp:
+        src: /etc/rancher/k3s/k3s.yaml
+      register: cluster_kubeconfig
+      no_log: true
+      when: not ansible_check_mode
+
+    - name: Store a private controller kubeconfig for validation
+      ansible.builtin.copy:
+        content: >-
+          {{ (cluster_kubeconfig.content | b64decode) |
+          regex_replace('https://127.0.0.1:6443', cluster_api_url) }}
+        dest: "{{ playbook_dir }}/../../.state/{{ cluster_name }}/kubeconfig"
+        mode: "0600"
+      become: false
+      delegate_to: localhost
+      no_log: true
+      when: not ansible_check_mode
+
+    - name: Distribute the protected operator kubeconfig to every agent
+      ansible.builtin.copy:
+        content: >-
+          {{ (cluster_kubeconfig.content | b64decode) |
+          regex_replace('https://127.0.0.1:6443', cluster_api_url) }}
+        dest: /etc/rancher/k3s/k3s.yaml
+        owner: root
+        group: "{{ k3s_admin_group }}"
+        mode: "0640"
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['k3s_agents'] }}"
+      no_log: true
+      when: not ansible_check_mode
+
+- name: Activate operator access on every cluster member
+  hosts: all
+  become: true
+  gather_facts: false
+  vars_files:
+    - ../vars/common.yml
+
+  tasks:
+    - name: Inspect the installed kubectl command
+      ansible.builtin.stat:
+        path: /usr/local/bin/kubectl
+        follow: false
+      register: kubectl_command
+
+    - name: Refuse to replace an unexpected kubectl symlink
+      ansible.builtin.assert:
+        that:
+          - >-
+            not (kubectl_command.stat.islnk | default(false)) or
+            kubectl_command.stat.lnk_source in ['k3s', '/usr/local/bin/k3s']
+        fail_msg: >-
+          Safety stop: /usr/local/bin/kubectl is an unexpected symlink to
+          {{ kubectl_command.stat.lnk_source | default('unknown') }}.
+
+    - name: Remove only the k3s-managed kubectl symlink
+      ansible.builtin.file:
+        path: /usr/local/bin/kubectl
+        state: absent
+      when: kubectl_command.stat.islnk | default(false)
+
+    - name: Install the pinned standalone kubectl
+      ansible.builtin.copy:
+        src: "/usr/local/src/k3s-bootstrap/kubectl-{{ kubectl_version }}-linux-arm64"
+        dest: /usr/local/bin/kubectl
+        remote_src: true
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Inspect an existing operator kubeconfig
+      ansible.builtin.stat:
+        path: "/home/{{ ansible_user }}/.kube/config"
+        follow: false
+      register: operator_kubeconfig
+
+    - name: Preserve a pre-bootstrap operator kubeconfig
+      ansible.builtin.copy:
+        src: "/home/{{ ansible_user }}/.kube/config"
+        dest: "/home/{{ ansible_user }}/.kube/config.pre-{{ cluster_name }}-bootstrap"
+        remote_src: true
+        force: false
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0600"
+      when:
+        - operator_kubeconfig.stat.exists
+        - not operator_kubeconfig.stat.islnk
+
+    - name: Link the operator to the current protected cluster kubeconfig
+      ansible.builtin.file:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: "/home/{{ ansible_user }}/.kube/config"
+        state: link
+        force: true
+
+    - name: Verify kubectl access as the unprivileged operator
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - get
+          - nodes
+          - --request-timeout=15s
+      become_user: "{{ ansible_user }}"
+      environment:
+        KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
+      changed_when: false
+      when: not ansible_check_mode

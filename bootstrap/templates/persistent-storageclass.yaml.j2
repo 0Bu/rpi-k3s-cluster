@@ -1,0 +1,22 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ persistent_storage_class }}
+  labels:
+    app.kubernetes.io/managed-by: rpi-k3s-bootstrap
+provisioner: {{ 'nfs.csi.k8s.io' if storage_backend == 'nfs' else 'rancher.io/local-path' }}
+reclaimPolicy: {{ 'Retain' if storage_backend == 'nfs' else 'Delete' }}
+volumeBindingMode: {{ 'Immediate' if storage_backend == 'nfs' else 'WaitForFirstConsumer' }}
+allowVolumeExpansion: {{ 'true' if storage_backend == 'nfs' else 'false' }}
+{% if storage_backend == 'nfs' %}
+parameters:
+  server: {{ hostvars[nfs_server_host].expected_ipv4 }}
+  share: {{ nfs_export_path }}
+  subDir: ${pvc.metadata.namespace}/${pvc.metadata.name}
+  mountPermissions: "0770"
+  onDelete: retain
+mountOptions:
+{% for option in nfs_mount_options %}
+  - {{ option }}
+{% endfor %}
+{% endif %}

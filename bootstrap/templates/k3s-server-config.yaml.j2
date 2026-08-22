@@ -1,0 +1,35 @@
+write-kubeconfig-mode: "0640"
+write-kubeconfig-group: "{{ k3s_admin_group }}"
+node-name: "{{ expected_hostname }}"
+node-ip:
+  - "{{ expected_ipv4 }}"
+  - "{{ expected_ipv6 }}"
+advertise-address: "{{ expected_ipv4 }}"
+tls-san:
+  - "{{ expected_ipv4 }}"
+  - "{{ expected_ipv6 }}"
+  - "{{ expected_hostname }}"
+cluster-cidr:
+{% for cidr in k3s_cluster_cidrs %}
+  - "{{ cidr }}"
+{% endfor %}
+service-cidr:
+{% for cidr in k3s_service_cidrs %}
+  - "{{ cidr }}"
+{% endfor %}
+cluster-dns:
+{% for address in k3s_cluster_dns %}
+  - "{{ address }}"
+{% endfor %}
+kube-controller-manager-arg:
+  - "node-cidr-mask-size-ipv4={{ k3s_node_cidr_mask_size_ipv4 }}"
+  - "node-cidr-mask-size-ipv6={{ k3s_node_cidr_mask_size_ipv6 }}"
+kubelet-arg:
+  - "node-ip=0.0.0.0"
+flannel-iface: "{{ k3s_flannel_interface }}"
+flannel-ipv6-masq: true
+secrets-encryption: true
+{% if storage_backend == 'nfs' %}
+disable:
+  - local-storage
+{% endif %}

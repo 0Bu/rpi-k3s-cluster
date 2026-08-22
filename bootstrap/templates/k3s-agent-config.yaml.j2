@@ -1,0 +1,9 @@
+server: "{{ cluster_api_url }}"
+token: "{{ k3s_join_token }}"
+node-name: "{{ expected_hostname }}"
+node-ip:
+  - "{{ expected_ipv4 }}"
+  - "{{ expected_ipv6 }}"
+kubelet-arg:
+  - "node-ip=0.0.0.0"
+flannel-iface: "{{ k3s_flannel_interface }}"
