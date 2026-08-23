@@ -52,24 +52,3 @@ grafana:
             implementation: prometheus
             handleGrafanaManagedAlerts: false
           isDefault: false
-  # Dashboards are maintained directly in the external ConfigMap below via kubectl
-  # server-side apply. The chart owns only the stable file-provider/mount contract;
-  # it deliberately carries no dashboard JSON and creates no dashboard ConfigMap.
-  dashboardProviders:
-    dashboardproviders.yaml:
-      apiVersion: 1
-      providers:
-        - name: daikin
-          orgId: 1
-          folder: Daikin
-          type: file
-          disableDeletion: false
-          editable: false
-          updateIntervalSeconds: 30
-          options:
-            path: /var/lib/grafana/dashboards/daikin
-  extraConfigmapMounts:
-    - name: grafana-daikin-dashboards-manual
-      mountPath: /var/lib/grafana/dashboards/daikin
-      configMap: grafana-daikin-dashboards-manual
-      readOnly: true
