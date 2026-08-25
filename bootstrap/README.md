@@ -65,7 +65,7 @@ create a replacement; a mismatched key is rejected rather than overwritten.
 ## Grafana authentication on pi5c
 
 The private pi5c overlay deploys the pinned official Authentik chart as a separate
-Argo CD Application at `http://auth.pi5c.burau.dev`. Its mounted blueprint creates
+Argo CD Application at `https://auth.pi5c.burau.dev`. Its mounted blueprint creates
 the Grafana OIDC provider, the `oleg` user, and application-scoped `Grafana
 Admins`, `Grafana Editors`, and `Grafana Viewers` entitlements. Only users with
 one of those entitlements can sign in; `oleg` receives `Grafana Admins` during
@@ -82,13 +82,16 @@ are available only on the controller:
 
 Grafana starts the Authentik flow automatically. Its local admin remains a
 break-glass account and can be reached with
-`http://grafana.pi5c.burau.dev/login?disableAutoLogin=true`.
+`https://grafana.pi5c.burau.dev/login?disableAutoLogin=true`.
 
-This test slice intentionally remains HTTP-only because the independent test
-DNS/ACME credential is not available yet. Do not reuse this transport contract
-for production: passwords, authorization codes, and tokens require TLS outside
-the isolated test LAN. The bundled PostgreSQL chart is likewise for the test
-cluster; production should use a separately managed PostgreSQL deployment.
+The private overlay also owns a cluster-specific cert-manager Application and a
+Cloudflare token encrypted for that cluster's Sealed Secrets controller. One
+wildcard certificate (`*.pi5c.burau.dev`) terminates at the shared Traefik
+Gateway; cross-namespace HTTPRoutes expose Authentik and Grafana without copying
+the private key into application namespaces. Another disposable cluster uses
+the same pattern with its own SealedSecret and wildcard, for example
+`*.pi5b.burau.dev`. The bundled PostgreSQL chart remains test-only; production
+should use a separately managed PostgreSQL deployment.
 
 On the server, `~/.kube/config` points to the current k3s-generated kubeconfig.
 The bootstrap distributes the same protected operator kubeconfig to the agent;
@@ -161,7 +164,8 @@ provisioner.
   `*.pi5c.burau.dev` to `192.168.1.25`. DNS remains router/AdGuard-owned and is
   validated but never modified by this bootstrap. AAAA records are likewise a
   router/DNS responsibility.
-- TLS is deferred until an independent test DNS/ACME credential is available.
+- TLS credentials are cluster-bound SealedSecrets in the private GitOps overlay;
+  no plaintext Cloudflare token or certificate private key is committed.
 - The selected local-path or dedicated test-cluster NFS share never references
   the production NFS service.
 - Production `192.168.1.5` is protected by the inventory and rejected as an
