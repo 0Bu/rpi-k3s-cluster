@@ -86,8 +86,10 @@ def validate_authentik(path: pathlib.Path, values: dict, resources: list[dict]) 
         raise RuntimeError(f"{path}: expected one Authentik blueprint ConfigMap")
     blueprint = blueprint_objects[0].get("data", {}).get("grafana.yaml", "")
     for marker in (
+        "!Env HOMELAB_ARGOCD_CLIENT_SECRET",
         "!Env HOMELAB_GRAFANA_CLIENT_SECRET",
         "!Env HOMELAB_OLEG_PASSWORD",
+        "Argo CD Admins",
         "authentik_core.applicationentitlement",
     ):
         if marker not in blueprint:

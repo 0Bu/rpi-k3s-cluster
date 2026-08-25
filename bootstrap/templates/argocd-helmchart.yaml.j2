@@ -19,6 +19,26 @@ spec:
     commitServer:
       enabled: false
     configs:
+{% if authentik_enabled | default(false) %}
+      cm:
+        url: https://argocd.{{ cluster_name }}.burau.dev
+        oidc.config: |-
+          name: authentik
+          issuer: https://auth.{{ cluster_name }}.burau.dev/application/o/argocd/
+          clientID: {{ argocd_oidc_client_id }}
+          clientSecret: ${{ argocd_oidc_secret_name }}:clientSecret
+          requestedScopes:
+            - openid
+            - profile
+            - email
+            - entitlements
+      rbac:
+        policy.default: ""
+        policy.csv: |-
+          g, Argo CD Admins, role:admin
+          g, Argo CD Viewers, role:readonly
+        scopes: "[entitlements]"
+{% endif %}
       params:
         server.insecure: true
     server:

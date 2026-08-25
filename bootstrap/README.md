@@ -84,6 +84,13 @@ Grafana starts the Authentik flow automatically. Its local admin remains a
 break-glass account and can be reached with
 `https://grafana.pi5c.burau.dev/login?disableAutoLogin=true`.
 
+Argo CD is exposed at `https://argocd.pi5c.burau.dev` and uses Authentik as a
+direct OIDC provider. The `Argo CD Admins` application entitlement maps to
+Argo CD's built-in `role:admin`; users without an explicit entitlement receive
+no default permissions. The local Argo CD admin remains enabled only as a
+break-glass account. Its OIDC client secret is generated or recovered by the
+bootstrap and exists only in `.state/<cluster>` and labeled Kubernetes Secrets.
+
 The private overlay also owns a cluster-specific cert-manager Application and a
 Cloudflare token encrypted for that cluster's Sealed Secrets controller. One
 wildcard certificate (`*.pi5c.burau.dev`) terminates at the shared Traefik

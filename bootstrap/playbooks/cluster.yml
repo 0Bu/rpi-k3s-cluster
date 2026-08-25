@@ -1240,12 +1240,55 @@
         - (authentik_enabled | default(false)) | bool
         - authentik_blueprint_secret.rc == 0
 
+    - name: Read the existing Argo CD OIDC secret if present
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - get
+          - "secret/{{ argocd_oidc_secret_name }}"
+          - --output=json
+      register: argocd_oidc_secret
+      changed_when: false
+      failed_when: argocd_oidc_secret.rc not in [0, 1]
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
+    - name: Generate or reuse the Argo CD OIDC client secret
+      ansible.builtin.set_fact:
+        argocd_oauth_client_secret: >-
+          {{ lookup('ansible.builtin.password',
+          playbook_dir + '/../../.state/' + cluster_name +
+          '/argocd-oauth-client-secret length=64 chars=ascii_letters,digits') }}
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+        - argocd_oidc_secret.rc != 0
+
+    - name: Recover the existing Argo CD OIDC client secret
+      ansible.builtin.set_fact:
+        argocd_oauth_client_secret: >-
+          {{ ((argocd_oidc_secret.stdout | from_json).data['clientSecret']) |
+          b64decode }}
+      no_log: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+        - argocd_oidc_secret.rc == 0
+
     - name: Persist private Authentik application credentials on the controller
       ansible.builtin.copy:
         content: "{{ item.value }}\n"
         dest: "{{ playbook_dir }}/../../.state/{{ cluster_name }}/{{ item.name }}"
         mode: "0600"
       loop:
+        - name: argocd-oauth-client-secret
+          value: "{{ argocd_oauth_client_secret }}"
         - name: grafana-oauth-client-secret
           value: "{{ grafana_oauth_client_secret }}"
         - name: authentik-oleg-password
@@ -1257,7 +1300,7 @@
         - not ansible_check_mode
         - (authentik_enabled | default(false)) | bool
 
-    - name: Detect Authentik and Grafana OAuth secret changes without logging plaintext
+    - name: Detect identity-provider secret changes without logging plaintext
       ansible.builtin.command:
         argv:
           - /usr/local/bin/k3s
@@ -1269,6 +1312,7 @@
           - '-'
         stdin: "{{ lookup('ansible.builtin.template', item) }}"
       loop:
+        - ../templates/argocd-oidc-secret.yaml.j2
         - ../templates/authentik-config-secret.yaml.j2
         - ../templates/authentik-postgresql-secret.yaml.j2
         - ../templates/authentik-blueprint-secrets.yaml.j2
@@ -1281,7 +1325,7 @@
         - not ansible_check_mode
         - (authentik_enabled | default(false)) | bool
 
-    - name: Apply Authentik and Grafana OAuth secrets without writing plaintext remotely
+    - name: Apply identity-provider secrets without writing plaintext remotely
       ansible.builtin.command:
         argv:
           - /usr/local/bin/k3s
@@ -1293,6 +1337,7 @@
           - '-'
         stdin: "{{ lookup('ansible.builtin.template', item) }}"
       loop:
+        - ../templates/argocd-oidc-secret.yaml.j2
         - ../templates/authentik-config-secret.yaml.j2
         - ../templates/authentik-postgresql-secret.yaml.j2
         - ../templates/authentik-blueprint-secrets.yaml.j2
@@ -1370,6 +1415,42 @@
         - (authentik_enabled | default(false)) | bool
         - identity_secret_diff is changed
         - grafana_runtime_deployment.rc == 0
+
+    - name: Inspect the existing Argo CD server deployment
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - get
+          - deployment/argocd-server
+      register: argocd_runtime_deployment
+      changed_when: false
+      failed_when: argocd_runtime_deployment.rc not in [0, 1]
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+
+    - name: Restart Argo CD after an external OIDC Secret change
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace
+          - argocd
+          - rollout
+          - restart
+          - deployment/argocd-server
+      changed_when: true
+      when:
+        - not ansible_check_mode
+        - (authentik_enabled | default(false)) | bool
+        - >-
+          identity_secret_diff.results |
+          selectattr('item', 'equalto', '../templates/argocd-oidc-secret.yaml.j2') |
+          selectattr('changed') | list | length > 0
+        - argocd_runtime_deployment.rc == 0
 
     - name: Read the existing Grafana admin secret if present
       ansible.builtin.command:
