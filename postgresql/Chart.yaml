@@ -1,9 +1,9 @@
 apiVersion: v2
 name: postgresql
 type: application
-version: 1.0.112
+version: 1.0.113
 # renovate: image=bitnamicharts/postgresql
-appVersion: "18.8.16"
+appVersion: "18.8.17"
 dependencies:
   - name: postgresql
     version: "18.8.16"
