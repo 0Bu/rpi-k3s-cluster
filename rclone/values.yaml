@@ -5,7 +5,7 @@ schedule: "0 2 * * *"
 
 rclone:
   # renovate: image=rclone/rclone
-  image: rclone/rclone:1.75.0@sha256:b06aed988cf5967de7c25be5925240983981c757f4ed1ac9d2fa659d51d60548
+  image: rclone/rclone:1.75.1@sha256:45401ad7410db1d67ffdb58e19059ad20b0d8e0285a60e38bbec55cc1019c7a5
   configSecret: rclone-config
   destination: "google-drive-crypt:"
   # Abort the sync if more than this many files would be deleted at the
