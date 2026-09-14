@@ -63,13 +63,13 @@ kubectl exec -i postgresql-0 -n default -- sh -c '
 BACKUP_FILE="pg_dump_homeassistant_20260506-0000.sql.gz"
 
 kubectl run pg-restore --rm -i --restart=Never -n default \
-  --image=bitnami/postgresql:latest \
+  --image=bitnami/postgresql:latest@sha256:a3139319c5f3840c118c217839b2dc70f50504625e6651432aa9d0d1fc0d7844 \
   --overrides='{
     "spec": {
       "volumes": [{"name":"b","persistentVolumeClaim":{"claimName":"postgresql-backup"}}],
       "containers": [{
         "name": "pg-restore",
-        "image": "bitnami/postgresql:latest",
+        "image": "bitnami/postgresql:latest@sha256:a3139319c5f3840c118c217839b2dc70f50504625e6651432aa9d0d1fc0d7844",
         "command": ["bash","-c","gunzip -c /backup/'"$BACKUP_FILE"' | psql -h postgresql -U postgres homeassistant"],
         "env": [{"name":"PGPASSWORD","valueFrom":{"secretKeyRef":{"name":"postgresql-credentials","key":"postgres-password"}}}],
         "volumeMounts": [{"name":"b","mountPath":"/backup"}]

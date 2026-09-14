@@ -4,3 +4,7 @@ image:
 nfs:
   server: 192.168.1.5
   path: /nfs/home-assistant
+
+backup:
+  # renovate: image=bitnami/postgresql
+  image: bitnami/postgresql:latest@sha256:a3139319c5f3840c118c217839b2dc70f50504625e6651432aa9d0d1fc0d7844
