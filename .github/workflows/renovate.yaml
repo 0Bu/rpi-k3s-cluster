@@ -5,6 +5,9 @@ on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
+concurrency:
+  group: renovate
+  cancel-in-progress: false
 permissions:
   contents: read
   pull-requests: write
@@ -18,6 +21,7 @@ jobs:
         env:
           RENOVATE_PLATFORM: github
           RENOVATE_PLATFORM_COMMIT: true
+          RENOVATE_GIT_AUTHOR: "Oleg Burau <4757856+0Bu@users.noreply.github.com>"
           RENOVATE_EXTENDS: config:best-practices,customManagers:dockerfileVersions,customManagers:helmChartYamlAppVersions,helpers:pinGitHubActionDigests
           RENOVATE_AUTODISCOVER: true
           RENOVATE_AUTODISCOVER_FILTER: ${{ github.repository }},${{ github.repository_owner }}/rpi-*
@@ -27,7 +31,7 @@ jobs:
           RENOVATE_HOST_RULES: >-
             [{"matchHost":"ghcr.io","hostType":"docker","username":"0Bu","password":"${{ secrets.RENOVATE_GHCR_TOKEN }}"}]
           RENOVATE_IGNORE_TESTS: true
-          RENOVATE_REBASE_WHEN: never
+          RENOVATE_REBASE_WHEN: auto
           RENOVATE_SEMANTIC_COMMITS: disabled
 #         LOG_LEVEL: debug
 #         RENOVATE_DRY_RUN: full
