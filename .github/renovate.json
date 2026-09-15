@@ -1,5 +1,6 @@
 {
   "baseBranchPatterns": ["main"],
+  "gitIgnoredAuthors": ["4757856+0Bu@users.noreply.github.com", "0Bu"],
   "argocd": {
     "managerFilePatterns": ["/^argocd/templates/meross-thermostat-bot\\.yaml$/"]
   },
