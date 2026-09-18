@@ -7,4 +7,4 @@ nfs:
 
 backup:
   # renovate: image=bitnami/postgresql
-  image: bitnami/postgresql:latest@sha256:b69d1fca390fb131639e86e820f248acfc5d911339dc884796f8009260c598d7
+  image: bitnami/postgresql:latest@sha256:b74b23f091dcc87041bcae557d840c36458af46b955279cb13aedec4c32d7f71
