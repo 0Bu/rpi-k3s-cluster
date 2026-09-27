@@ -4,7 +4,7 @@ nfs:
 
 backup:
   # renovate: image=bitnami/postgresql
-  image: bitnami/postgresql:latest@sha256:7045d816bdf7e704f0f662fabf243f3c0a975aa380e73e4e881ee94740f60d4f
+  image: bitnami/postgresql:latest@sha256:720413b8e463ee8ae3bad7d3ac99a17eb66b7d448738c6256cba91e2388dcde8
   schedule: "0 0 * * *"
   # Retained dumps per database, not in total.
   retentionCount: 10
