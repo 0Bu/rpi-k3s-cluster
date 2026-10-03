@@ -1,6 +1,6 @@
 dependencies:
 - name: victoria-logs-single
   repository: https://victoriametrics.github.io/helm-charts/
-  version: 0.13.9
-digest: sha256:a0c3375dcbd55d5534d79838815c46c3e7781729568598e588551035d7dd5c34
-generated: "2026-07-16T03:07:59.149679438Z"
+  version: 0.13.10
+digest: sha256:4530e6f7df574036cb276eaa11e26570e133e12d2e70ac3520f690b7ec9915ea
+generated: "2026-10-03T20:43:18.634245942Z"
