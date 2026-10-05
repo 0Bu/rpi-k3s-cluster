@@ -82,6 +82,9 @@ node-ip: "192.168.1.5,fd7c:3b4a:5f1d::5a"
 cluster-cidr: "10.42.0.0/16,fd00:10:42::/56"
 service-cidr: "10.43.0.0/16,fd00:10:43::/112"
 flannel-ipv6-masq: true
+kubelet-arg:
+  - "image-gc-high-threshold=70"
+  - "image-gc-low-threshold=60"
 ```
 
 ```
@@ -102,6 +105,9 @@ server: "https://192.168.1.5:6443"
 token: "TOKEN"
 write-kubeconfig-mode: "644"
 node-ip: "192.168.1.5,fd7c:3b4a:5f1d::5a"
+kubelet-arg:
+  - "image-gc-high-threshold=70"
+  - "image-gc-low-threshold=60"
 ```
 
 ```
@@ -125,6 +131,9 @@ node-ip: "192.168.1.5,fd7c:3b4a:5f1d::5a"
 cluster-cidr: "10.42.0.0/16,fd00:10:42::/56"
 service-cidr: "10.43.0.0/16,fd00:10:43::/112"
 flannel-ipv6-masq: true
+kubelet-arg:
+  - "image-gc-high-threshold=70"
+  - "image-gc-low-threshold=60"
 ```
 
 ```
@@ -147,6 +156,9 @@ node-ip: "192.168.1.15,fd7c:3b4a:5f1d::5b"
 cluster-cidr: "10.42.0.0/16,fd00:10:42::/56"
 service-cidr: "10.43.0.0/16,fd00:10:43::/112"
 flannel-ipv6-masq: true
+kubelet-arg:
+  - "image-gc-high-threshold=70"
+  - "image-gc-low-threshold=60"
 ```
 
 ```
@@ -158,7 +170,7 @@ k3s docs: <https://docs.k3s.io/installation>
 ```
 export K3S_KUBECONFIG_MODE="644"
 export INSTALL_K3S_VERSION="v1.37.1+k3s1"
-export INSTALL_K3S_EXEC="--disable servicelb"
+export INSTALL_K3S_EXEC="--disable servicelb --kubelet-arg image-gc-high-threshold=70 --kubelet-arg image-gc-low-threshold=60"
 curl -sfL https://get.k3s.io | sh -
 ```
 
@@ -171,6 +183,7 @@ sudo cat /var/lib/rancher/k3s/server/node-token
 ```
 export K3S_KUBECONFIG_MODE="644"
 export INSTALL_K3S_VERSION="v1.37.1+k3s1"
+export INSTALL_K3S_EXEC="--kubelet-arg image-gc-high-threshold=70 --kubelet-arg image-gc-low-threshold=60"
 export K3S_URL="https://192.168.1.5:6443"
 export K3S_TOKEN="TOKEN"
 curl -sfL https://get.k3s.io | sh -
