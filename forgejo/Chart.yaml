@@ -2,9 +2,9 @@ apiVersion: v2
 name: forgejo
 description: https://forgejo.org
 type: application
-version: 1.0.15
+version: 1.0.16
 # renovate: image=code.forgejo.org/forgejo/forgejo
-appVersion: "16.0.5"
+appVersion: "16.0.6"
 dependencies:
   - name: forgejo
     version: "17.2.0"
