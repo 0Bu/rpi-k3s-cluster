@@ -2,10 +2,10 @@ apiVersion: v2
 name: forgejo
 description: https://forgejo.org
 type: application
-version: 1.0.16
+version: 1.0.18
 # renovate: image=code.forgejo.org/forgejo/forgejo
 appVersion: "16.0.6"
 dependencies:
   - name: forgejo
-    version: "17.2.0"
+    version: "17.3.0"
     repository: oci://code.forgejo.org/forgejo-helm
