@@ -305,4 +305,13 @@ data:
           {name = "set_dhw_reheat_onoff",  address = 11, type = "INT16", scale = 1.0},  # off 12: 0/1
           {name = "set_dhw_booster_onoff", address = 12, type = "INT16", scale = 1.0}   # off 13: 0/1
         ]
+
+    # =====================================================================
+    # Filter Daikin sentinel return values (§9.2.3: 32765 wait, 32766 unavailable, 32767 unsupported).
+    # When scaled by 0.01: 327.65, 327.66, 327.67.
+    # Exclude abnormality_sub where 32766 is the expected "no sub code" value.
+    # =====================================================================
+    [[processors.starlark]]
+      namepass = ["daikin"]
+      source = "def apply(metric):\n    for k, v in list(metric.fields.items()):\n        if k == 'abnormality_sub':\n            continue\n        if type(v) == 'float' and (v >= 327.65 or (k == 'power_consumption' and v > 20.0)):\n            metric.fields.pop(k)\n        elif type(v) == 'int' and v >= 32765:\n            metric.fields.pop(k)\n    return metric\n"
 {{- end }}
