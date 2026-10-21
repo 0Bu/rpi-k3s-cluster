@@ -13,7 +13,7 @@ runner:
   dind:
     image:
       repository: docker
-      tag: "29.9.2-dind@sha256:eb37f58646a901dc7727cf448cae36daaefaba79de33b5058dab79aa4c04aefb"
+      tag: "29.9.2-dind@sha256:ba3d67c44952ffc448696659a36ef91dd813f03a9c70a2bc0ad1d286d542f4fb"
   # The daemon declares these on every start and overwrites whatever the server
   # has, so this is the only place labels are defined. `ubuntu-latest` is mapped
   # so workflows written for GitHub find a matching runner.
