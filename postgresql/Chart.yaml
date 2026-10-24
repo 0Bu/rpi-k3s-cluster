@@ -1,10 +1,10 @@
 apiVersion: v2
 name: postgresql
 type: application
-version: 1.0.149
+version: 1.0.151
 # renovate: image=bitnamicharts/postgresql
 appVersion: "18.12.15"
 dependencies:
   - name: postgresql
-    version: "18.12.14"
+    version: "18.12.15"
     repository: oci://registry-1.docker.io/bitnamicharts
