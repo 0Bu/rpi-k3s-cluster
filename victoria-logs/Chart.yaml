@@ -1,7 +1,7 @@
 apiVersion: v2
 name: victoria-logs
 type: application
-version: 1.0.4
+version: 1.0.5
 appVersion: "v1.51.0"
 dependencies:
   - name: victoria-logs-single

@@ -192,7 +192,7 @@ victoria-metrics:
       enabled: true
       ingressClassName: traefik
       annotations:
-        traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
+        traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd,default-victoria-metrics-vmui-redirect@kubernetescrd
       hosts:
         - victoria-metrics.burau.dev
         - vm.burau.dev
