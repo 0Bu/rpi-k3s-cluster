@@ -1,0 +1,13 @@
+{{- if and (index .Values "victoria-metrics").vmsingle.enabled (index .Values "victoria-metrics").vmsingle.ingress.enabled }}
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: victoria-metrics-vmui-redirect
+  namespace: {{ .Release.Namespace }}
+spec:
+  redirectRegex:
+    # Match only the landing page; preserve query parameters for the UI.
+    regex: '^https?://vm\.burau\.dev/?(\?.*)?$'
+    replacement: 'https://vm.burau.dev/vmui/${1}'
+    permanent: false
+{{- end }}

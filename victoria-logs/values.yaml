@@ -23,7 +23,7 @@ victoria-logs:
       enabled: true
       ingressClassName: traefik
       annotations:
-        traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
+        traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd,default-victoria-logs-vmui-redirect@kubernetescrd
       hosts:
         - name: victoria-logs.burau.dev
           path:
