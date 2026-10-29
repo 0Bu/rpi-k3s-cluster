@@ -5,7 +5,7 @@ nfs:
 victoria-logs:
   server:
     fullnameOverride: vlogs
-    retentionPeriod: 1 # 1 month retention
+    retentionPeriod: 3 # 3 months retention
 
     persistentVolume:
       enabled: true
