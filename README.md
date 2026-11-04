@@ -88,7 +88,7 @@ kubelet-arg:
 ```
 
 ```
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.37.1+k3s1" sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.37.2+k3s1" sh -
 ```
 
 ### Node installation
@@ -111,7 +111,7 @@ kubelet-arg:
 ```
 
 ```
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.37.1+k3s1" sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.37.2+k3s1" sh -
 ```
 
 ## High availability cluster installation
@@ -137,7 +137,7 @@ kubelet-arg:
 ```
 
 ```
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.37.1+k3s1" sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.37.2+k3s1" sh -
 ```
 
 ### High availability node installation
@@ -162,14 +162,14 @@ kubelet-arg:
 ```
 
 ```
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.37.1+k3s1" sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.37.2+k3s1" sh -
 ```
 
 ## Single stack installation
 k3s docs: <https://docs.k3s.io/installation>
 ```
 export K3S_KUBECONFIG_MODE="644"
-export INSTALL_K3S_VERSION="v1.37.1+k3s1"
+export INSTALL_K3S_VERSION="v1.37.2+k3s1"
 export INSTALL_K3S_EXEC="--disable servicelb --kubelet-arg image-gc-high-threshold=70 --kubelet-arg image-gc-low-threshold=60"
 curl -sfL https://get.k3s.io | sh -
 ```
@@ -182,7 +182,7 @@ sudo cat /var/lib/rancher/k3s/server/node-token
 
 ```
 export K3S_KUBECONFIG_MODE="644"
-export INSTALL_K3S_VERSION="v1.37.1+k3s1"
+export INSTALL_K3S_VERSION="v1.37.2+k3s1"
 export INSTALL_K3S_EXEC="--kubelet-arg image-gc-high-threshold=70 --kubelet-arg image-gc-low-threshold=60"
 export K3S_URL="https://192.168.1.5:6443"
 export K3S_TOKEN="TOKEN"
