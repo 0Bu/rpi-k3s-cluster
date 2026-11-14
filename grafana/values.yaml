@@ -16,16 +16,9 @@ grafana:
   # ".nfs...: device or resource busy" und der Rollout bleibt haengen.
   deploymentStrategy:
     type: Recreate
+  # Traefik routes through the KEDA interceptor in argocd/templates/keda.yaml.
   ingress:
-    enabled: true
-    annotations:
-      traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
-    hosts:
-      - grafana.burau.dev
-    tls:
-      - hosts:
-          - grafana.burau.dev
-        secretName: cloudflare-tls
+    enabled: false
   persistence:
     enabled: true
     existingClaim: grafana
