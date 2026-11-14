@@ -187,6 +187,8 @@ victoria-metrics:
         memory.allowedBytes: "600MiB"
         search.maxConcurrentRequests: "2"
         search.maxMemoryPerQuery: "192MiB"
+        # Bisherigen Grenzwert beibehalten, damit der Node-RAM ihn nicht anhebt.
+        search.maxUniqueTimeseries: "1572864"
       # Wiederverwendung des bestehenden NFS-PV `victoria-metrics`.
       # Voraussetzung beim Cutover: alte PVC gelöscht und PV-claimRef bereinigt.
       storage:
