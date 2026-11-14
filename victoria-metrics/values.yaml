@@ -176,18 +176,20 @@ victoria-metrics:
       priorityClassName: victoria-metrics-storage
       resources:
         requests:
-          cpu: "1"
-          memory: 1536Mi
+          cpu: 1200m
+          memory: 1500Mi
+        limits:
+          cpu: 1200m
+          memory: 1500Mi
       # Deduplizierung: kollabiert exakt gleiche Zeitstempel pro Serie auf einen
       # Wert (verlustfrei für Scrapes ≥1s). Nötig, damit Re-Imports der
       # historischen InfluxDB-ems-esp-Daten idempotent sind (kein Doppelzählen).
       extraArgs:
         dedup.minScrapeInterval: "1ms"
-        # Ohne Containerlimit würde sich der Standard-Cache am RAM des Nodes orientieren.
+        # Bei 1500 MiB Containerlimit Speicher für Abfragen und Ingestion freihalten.
         memory.allowedBytes: "600MiB"
         search.maxConcurrentRequests: "2"
         search.maxMemoryPerQuery: "192MiB"
-        # Bisherigen Grenzwert beibehalten, damit der Node-RAM ihn nicht anhebt.
         search.maxUniqueTimeseries: "1572864"
       # Wiederverwendung des bestehenden NFS-PV `victoria-metrics`.
       # Voraussetzung beim Cutover: alte PVC gelöscht und PV-claimRef bereinigt.
