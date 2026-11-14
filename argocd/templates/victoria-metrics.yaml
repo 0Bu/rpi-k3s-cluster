@@ -21,6 +21,10 @@ spec:
     syncOptions:
       - RespectIgnoreDifferences=true
       - ServerSideApply=true
+      - PruneLast=true
+      - SkipDryRunOnMissingResource=true
+    retry:
+      limit: 5
   ignoreDifferences:
     # The VictoriaMetrics operator defaults both union fields on every VMRule
     # rule. Recording rules receive alert: "" and alerting rules receive
