@@ -103,7 +103,7 @@ Grafana keeps dashboards and settings on its existing NFS claim. It uses a
 single pod with the `Recreate` strategy. The upstream Helm release, data
 sources, NFS volume and claim, and sealed admin credentials are defined in
 [argocd/templates/grafana.yaml](argocd/templates/grafana.yaml). Renovate tracks
-the Helm versions in the Grafana and KEDA Argo CD Applications. Keep alert
+the Helm versions in the Grafana, KEDA, and Sealed Secrets Argo CD Applications. Keep alert
 evaluation in `vmalert` and delivery in Alertmanager so alerts continue while
 Grafana is idle. The VictoriaMetrics and VictoriaLogs databases and their
 ingestion paths run independently of the MCP pods. MCP clients may need to
@@ -138,6 +138,15 @@ Forgejo and its Actions runner were retired from the production Argo CD root.
 The Forgejo chart remains available for recovery. The retained NFS volume holds
 the repository and package files, and the shared PostgreSQL instance retains
 the Forgejo database. [Forgejo deployment and restore notes](forgejo/README.md)
+
+### Sealed Secrets
+
+The [Sealed Secrets Application](argocd/templates/sealed-secrets.yaml) installs
+the upstream Helm chart in `kube-system`. Its controller is named
+`sealed-secrets-controller`, which is the default name expected by `kubeseal`.
+The controller stores its sealing keys as Secrets in that namespace. Back up
+all keys to protected storage and restore them before starting the controller
+on a replacement cluster. [Sealed Secrets installation and key recovery](https://github.com/bitnami/sealed-secrets#how-can-i-do-a-backup-of-my-sealedsecrets)
 
 ### Enable cgroups
 - append `cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory` to `/boot/firmware/cmdline.txt`

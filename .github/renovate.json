@@ -8,7 +8,7 @@
   "argocd": {
     "managerFilePatterns": [
       "/^argocd/templates/meross-thermostat-bot\\.yaml$/",
-      "/^argocd/templates/(grafana|keda)\\.yaml$/"
+      "/^argocd/templates/(grafana|keda|sealed-secrets)\\.yaml$/"
     ]
   },
   "customManagers": [
