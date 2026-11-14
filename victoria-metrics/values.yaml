@@ -5,36 +5,33 @@ nfs:
 victoria-metrics:
   fullnameOverride: vm
 
-  # Operator + CRDs werden vom Stack installiert.
-  # crds.cleanup deaktiviert: Pre-Delete-Hook würde sonst bei einer
-  # versehentlichen Application-Löschung (z.B. Helm-Hook-Race) alle
-  # VictoriaMetrics-CRs (vmsingle, vmagent, scrapes…) wegräumen.
+  # The stack installs the operator and CRDs. Keep the pre-delete cleanup hook
+  # disabled so accidental Application deletion preserves VMSingle, VMAgent,
+  # and the scrape resources.
   victoria-metrics-operator:
     enabled: true
     crds:
       plain: true
       cleanup:
         enabled: false
-    # prometheus-operator CRDs (ServiceMonitor, PodMonitor, Probe,
-    # AlertmanagerConfig, ScrapeConfig) sind im Cluster nicht installiert.
-    # Ohne disable bleibt der Operator beim Cache-Sync hängen → CrashLoop.
+    # Disable conversion of Prometheus Operator resources. Their CRDs are
+    # absent, so enabling the converter would stall cache sync and restart the
+    # operator.
     operator:
       disable_prometheus_converter: true
 
-  # Eigener Grafana-Chart bleibt bestehen → Dashboards/DS hier deaktivieren
+  # The standalone Grafana Application manages dashboards and data sources.
   grafana:
     enabled: false
   defaultDashboards:
     enabled: false
-  # Mitgelieferte Regeln: bewusst kuratiert statt alles-oder-nichts. Der Node ist
-  # gut ausgelastet, jede Gruppe kostet Auswertungen gegen vmsingle.
-  # Deaktiviert wird, was in diesem Cluster nichts überwachen kann.
+  # Enable bundled rules for the components monitored on this node.
+  # Each rule group adds query load to VMSingle.
   defaultRules:
     create: true
     groups:
-      # k3s: kein externes etcd, Scheduler/Controller-Manager werden nicht
-      # gescrapt (siehe kubeScheduler/kubeControllerManager unten). Regeln
-      # darauf wären dauerhaft blind oder falsch-positiv.
+      # This k3s deployment has no external etcd. Scraping is disabled for the
+      # scheduler and controller manager, so skip their rules as well.
       etcd:
         enabled: false
       kube-scheduler.rules:
@@ -43,21 +40,19 @@ victoria-metrics:
         enabled: false
       kubernetes-system-controller-manager:
         enabled: false
-      # API-Server-SLO/Burnrate: ~30 Regeln für Fehlerbudget-Betrachtungen.
-      # Sinnvoll im Produktivbetrieb mit SLOs, Overkill für einen Heimcluster.
+      # Skip the roughly 30 API server error-budget rules for this home cluster.
       kube-apiserver-burnrate.rules:
         enabled: false
       kube-apiserver-histogram.rules:
         enabled: false
       kube-apiserver-slos:
         enabled: false
-      # vmsingle im Einsatz, nicht vmcluster.
+      # This cluster uses VMSingle.
       vmcluster:
         enabled: false
-      # Recording-Rules, die ausschließlich die mitgelieferten Dashboards
-      # füttern — und die sind via defaultDashboards deaktiviert.
-      # Achtung: node.rules, node-exporter.rules und kubelet.rules bleiben an,
-      # deren Serien werden von aktiven Alert-Regeln verwendet.
+      # Skip recording rules used only by the disabled bundled dashboards.
+      # Keep node.rules, node-exporter.rules, and kubelet.rules active because
+      # alert rules use their series.
       k8s.rules.container_cpu_limits:
         enabled: false
       k8s.rules.container_cpu_requests:
@@ -83,9 +78,9 @@ victoria-metrics:
       kube-prometheus-node-recording.rules:
         enabled: false
 
-  # Alerting: vmalert wertet die VMRule-Objekte aus templates/vmrule-*.yaml aus
-  # und meldet an den Alertmanager, der an Home Assistant zustellt.
-  # Ressourcen bewusst eng — der Node liegt bei ~70 % Speicherauslastung.
+  # vmalert evaluates the VMRule objects in templates/vmrule-*.yaml.
+  # Alertmanager delivers the alerts to Home Assistant. Keep the resource
+  # budget small on this memory-constrained node.
   vmalert:
     enabled: true
     spec:
@@ -105,29 +100,26 @@ victoria-metrics:
           memory: 48Mi
         limits:
           memory: 96Mi
-      # Wird vom VM-Operator nach /etc/vm/secrets/<name>/ gemountet (nicht der
-      # Prometheus-Pfad /etc/alertmanager/secrets/). Enthält die
-      # HA-Webhook-URL, deren ID nicht ins öffentliche Repo darf.
+      # The operator mounts this secret under /etc/vm/secrets/<name>/.
+      # Keep the Home Assistant webhook URL and ID in the sealed secret.
       secrets:
         - alertmanager-ha-webhook
     config:
       route:
         receiver: home-assistant
-        # component trennt die Domänen (storage, heating, …), damit neue
-        # Alert-Quellen ohne Routing-Umbau dazukommen können.
+        # Group alerts by component so storage, heating, and future sources
+        # can share the same routing configuration.
         group_by: [alertname, component]
         group_wait: 30s
         group_interval: 5m
         repeat_interval: 12h
         routes:
-          # Watchdog und InfoInhibitor feuern konstruktionsbedingt dauerhaft
-          # (Dead-Man-Switch bzw. Hilfsregel). Sie stammen aus den mitgelieferten
-          # Default-Rules und dürfen HA nicht erreichen — sonst geht der erste
-          # echte Alarm im Dauerrauschen unter.
+          # Watchdog and InfoInhibitor fire continuously by design.
+          # Silence these helper alerts before routing to Home Assistant.
           - matchers:
               - alertname =~ "Watchdog|InfoInhibitor"
             receiver: "null"
-          # Kritisches sofort und öfter erinnern.
+          # Send critical alerts immediately and repeat them more often.
           - matchers:
               - severity = "critical"
             receiver: home-assistant
@@ -142,7 +134,7 @@ victoria-metrics:
   vmauth:
     enabled: false
 
-  # k3s exponiert diese Komponenten nicht standardmäßig → Scrapes deaktivieren
+  # Scraping is disabled for components that k3s does not expose by default.
   kubeControllerManager:
     enabled: false
   kubeScheduler:
@@ -154,10 +146,10 @@ victoria-metrics:
 
   prometheus-node-exporter:
     enabled: true
-    # Textfile-Collector: liest .prom-Dateien vom Host ein. Wird vom
-    # storage-roundtrip-Check auf pi5a befüllt, der stille Datenkorruption
-    # aufdeckt (Kernel-6.18-Readahead-Bug, Juli 2026) — SMART, PCIe-AER und
-    # ext4 waren dafür allesamt blind.
+    # The textfile collector reads .prom files written by the storage round-trip
+    # check on pi5a. The check detected silent data corruption from the kernel
+    # 6.18 readahead bug in July 2026, when SMART, PCIe AER, and ext4 reported
+    # no errors.
     extraArgs:
       - --collector.textfile.directory=/host/textfile
     extraHostVolumeMounts:
@@ -181,18 +173,18 @@ victoria-metrics:
         limits:
           cpu: 1200m
           memory: 1500Mi
-      # Deduplizierung: kollabiert exakt gleiche Zeitstempel pro Serie auf einen
-      # Wert (verlustfrei für Scrapes ≥1s). Nötig, damit Re-Imports der
-      # historischen InfluxDB-ems-esp-Daten idempotent sind (kein Doppelzählen).
+      # Deduplicate identical timestamps within each series. This preserves
+      # samples from scrapes at least one second apart and makes historical
+      # InfluxDB EMS-ESP reimports idempotent.
       extraArgs:
         dedup.minScrapeInterval: "1ms"
-        # Bei 1500 MiB Containerlimit Speicher für Abfragen und Ingestion freihalten.
+        # Leave headroom for queries and ingestion within the 1500 MiB limit.
         memory.allowedBytes: "600MiB"
         search.maxConcurrentRequests: "2"
         search.maxMemoryPerQuery: "192MiB"
         search.maxUniqueTimeseries: "1572864"
-      # Wiederverwendung des bestehenden NFS-PV `victoria-metrics`.
-      # Voraussetzung beim Cutover: alte PVC gelöscht und PV-claimRef bereinigt.
+      # Reuse the existing victoria-metrics NFS PV. The initial migration
+      # required removing the old PVC and clearing its claim reference.
       storage:
         accessModes:
           - ReadWriteOnce
@@ -222,11 +214,9 @@ victoria-metrics:
       selectAllByDefault: true
       extraArgs:
         promscrape.streamParse: "true"
-      # Kein CPU-Limit: vmagent braucht im Scrape-Takt kurze Spitzen. Mit dem
-      # Chart-Default (200m) wurde es zu ~31 % vom CFS gedrosselt, obwohl es im
-      # Mittel nur ~77m zieht — das verzögert Scrapes ohne Not. CPU ist
-      # komprimierbar, die Requests reichen zur Priorisierung.
-      # Das Memory-Limit bleibt: Speicher ist nicht komprimierbar (OOM-Schutz).
+      # Allow short CPU bursts during scrapes. The default 200m limit caused
+      # about 31% CFS throttling at an average usage of 77m. Keep a CPU request
+      # for scheduling and a memory limit to contain OOM risk.
       resources:
         requests:
           cpu: 50m

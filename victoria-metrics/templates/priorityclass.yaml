@@ -8,5 +8,5 @@ metadata:
 value: 10000
 globalDefault: false
 preemptionPolicy: Never
-description: "Priorität für den VictoriaMetrics-Datenbank-Pod."
+description: "Scheduling priority for the VictoriaMetrics database pod."
 {{- end }}
