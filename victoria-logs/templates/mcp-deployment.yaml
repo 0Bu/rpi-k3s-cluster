@@ -8,7 +8,9 @@ metadata:
     app.kubernetes.io/name: victoria-logs-mcp
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
+  {{- if not (and .Values.mcp.autoscaling.enabled .Values.mcp.ingress.enabled) }}
   replicas: {{ .Values.mcp.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: victoria-logs-mcp
@@ -43,8 +45,7 @@ spec:
             httpGet:
               path: /health/readiness
               port: http
-            initialDelaySeconds: 30
-            periodSeconds: 10
+            periodSeconds: 2
             failureThreshold: 6
           resources:
             limits:
