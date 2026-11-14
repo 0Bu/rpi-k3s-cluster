@@ -89,4 +89,5 @@ The same four steps apply, with the deployment, database name, owner and backup
 file swapped. For Forgejo that is `kubectl scale deployment forgejo`,
 `CREATE DATABASE forgejo OWNER forgejo;` and `pg_dump_forgejo_<timestamp>.sql.gz`.
 The `forgejo` role itself is not part of the dump — recreate it first if it is
-missing, see [../forgejo/README.md](../forgejo/README.md).
+missing. See the [Forgejo recovery notes](../README.md#forgejo-recovery) for the
+role and credential requirements.
