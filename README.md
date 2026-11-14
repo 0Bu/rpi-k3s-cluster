@@ -134,10 +134,26 @@ cache budget is 600 MiB. It allows two concurrent search requests, with a
 query. `vmagent` uses streaming scrape parsing, a 50m CPU request with no CPU
 limit, and a 500 MiB memory limit. [VictoriaMetrics chart settings](victoria-metrics/values.yaml)
 
-Forgejo and its Actions runner were retired from the production Argo CD root.
-The Forgejo chart remains available for recovery. The retained NFS volume holds
-the repository and package files, and the shared PostgreSQL instance retains
-the Forgejo database. [Forgejo deployment and restore notes](forgejo/README.md)
+### Forgejo recovery
+
+Forgejo and its Actions runner are disabled by default. The
+[Forgejo Application](argocd/templates/forgejo.yaml) defines the OCI Helm chart,
+the runner, and the sealed credentials. To restore the service, set
+`forgejo.enabled: true` in [argocd/values.yaml](argocd/values.yaml) and sync the
+root Application. When the service is enabled, Git and the web UI use HTTPS at
+`https://git.burau.dev`.
+
+The retained NFS volume holds repositories and packages in `/nfs/forgejo`.
+The rootless Forgejo image uses UID and GID `1000`. The shared PostgreSQL
+instance retains the `forgejo` database and role. For a fresh recovery, create
+the `forgejo` role with the password held by the `forgejo-postgresql` Secret
+before restoring the database dump. [PostgreSQL restore procedure](postgresql/README.md#restoring-another-database)
+
+The `forgejo-admin` SealedSecret supplies the initial login and synchronizes
+the admin password on startup. The Actions runner uses the `forgejo-runner`
+SealedSecret to reconstruct its registration. If the shared runner secret
+changes, register the runner again with `forgejo forgejo-cli actions register`.
+The configuration uses a Docker sidecar and a Unix socket inside the runner pod.
 
 ### Sealed Secrets
 

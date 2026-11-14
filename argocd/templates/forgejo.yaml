@@ -1,0 +1,345 @@
+{{- if .Values.forgejo.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: forgejo-helm-repository
+  namespace: default
+  labels:
+    argocd.argoproj.io/secret-type: repository
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+stringData:
+  type: helm
+  url: code.forgejo.org/forgejo-helm
+  enableOCI: "true"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: forgejo
+  namespace: default
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    repoURL: code.forgejo.org/forgejo-helm
+    chart: forgejo
+    targetRevision: "17.3.2"
+    helm:
+      valuesObject:
+        service:
+          http:
+            type: ClusterIP
+            port: 3000
+          # Git over SSH is disabled, see gitea.config.server below. The chart
+          # always renders this Service, so keep it cluster-internal.
+          ssh:
+            type: ClusterIP
+
+        ingress:
+          enabled: true
+          className: traefik
+          annotations:
+            traefik.ingress.kubernetes.io/router.middlewares: default-https-redirect@kubernetescrd
+          hosts:
+            - host: git.burau.dev
+              paths:
+                - path: /
+                  pathType: Prefix
+                  port: http
+          tls:
+            - secretName: cloudflare-tls
+              hosts:
+                - git.burau.dev
+
+        # The extra resources below define the NFS-backed volume and claim.
+        persistence:
+          enabled: true
+          create: false
+          claimName: forgejo
+
+        resources:
+          requests:
+            cpu: 100m
+            memory: 384Mi
+          limits:
+            cpu: "2"
+            memory: 1Gi
+
+        test:
+          enabled: false
+
+        gitea:
+          admin:
+            existingSecret: forgejo-admin
+            email: oleg@burau.dev
+            passwordMode: keepUpdated
+
+          config:
+            APP_NAME: Forgejo
+
+            # HTTPS only — no git over SSH, so the built-in SSH server stays off and
+            # the UI does not advertise SSH clone URLs.
+            server:
+              DOMAIN: git.burau.dev
+              ROOT_URL: https://git.burau.dev/
+              START_SSH_SERVER: false
+              DISABLE_SSH: true
+              LFS_START_SERVER: true
+
+            # The existing PostgreSQL database and role are managed separately.
+            # The password comes from the sealed secret below.
+            database:
+              DB_TYPE: postgres
+              HOST: postgresql.default.svc.cluster.local:5432
+              NAME: forgejo
+              USER: forgejo
+
+            # Private instance: no self-service signup, no anonymous browsing.
+            service:
+              DISABLE_REGISTRATION: true
+              REQUIRE_SIGNIN_VIEW: true
+
+            # Sessions in the database survive pod restarts (default is memory).
+            session:
+              PROVIDER: db
+
+            repository:
+              DEFAULT_BRANCH: main
+
+            # The runner is defined in the extra resources below.
+            actions:
+              ENABLED: true
+
+          additionalConfigFromEnvs:
+            - name: FORGEJO__DATABASE__PASSWD
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-postgresql
+                  key: password
+        extraDeploy:
+          - |
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: forgejo-runner
+              labels:
+                app.kubernetes.io/name: forgejo-runner
+            data:
+              config.yaml: |
+                log:
+                  level: info
+                runner:
+                  file: /data/.runner
+                  capacity: 1
+                  timeout: 1h
+                  # The daemon reports these to the server on every start, overwriting the
+                  # server side. Registering with `--labels` alone is not enough.
+                  labels:
+                    - "docker:docker://node:22-bookworm"
+                    - "ubuntu-latest:docker://node:22-bookworm"
+                container:
+                  # Empty means "take it from DOCKER_HOST".
+                  docker_host: ""
+                  network: bridge
+                  privileged: false
+                  force_pull: false
+          - |
+            apiVersion: v1
+            kind: PersistentVolume
+            metadata:
+              name: forgejo
+              annotations:
+                argocd.argoproj.io/sync-options: Delete=false,Prune=false
+            spec:
+              capacity:
+                storage: 20Gi
+              accessModes:
+                - ReadWriteOnce
+              persistentVolumeReclaimPolicy: Retain
+              nfs:
+                server: 192.168.1.5
+                path: /nfs/forgejo
+          - |
+            apiVersion: v1
+            kind: PersistentVolumeClaim
+            metadata:
+              name: forgejo
+              annotations:
+                argocd.argoproj.io/sync-options: Delete=false,Prune=false
+            spec:
+              storageClassName: ""
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 20Gi
+          - |
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: forgejo-runner
+              labels:
+                app.kubernetes.io/name: forgejo-runner
+            spec:
+              replicas: 1
+              # The dind sidecar owns a single docker state directory.
+              strategy:
+                type: Recreate
+              selector:
+                matchLabels:
+                  app.kubernetes.io/name: forgejo-runner
+              template:
+                metadata:
+                  labels:
+                    app.kubernetes.io/name: forgejo-runner
+                  annotations:
+                    checksum/config: {{ "{{ index .Values.extraDeploy 0 | sha256sum }}" }}
+                spec:
+                  # The runner image runs as uid 1000 and writes .runner into its /data
+                  # workdir, which an emptyDir would otherwise create as root-owned.
+                  securityContext:
+                    fsGroup: 1000
+                  containers:
+                    - name: dind
+                      image: docker:29.9.3-dind@sha256:7bf70dcb85c822e3fa6f2d332143e474b99147b9d7b39102b0cfe8b04a7dd61b
+                      # k3s uses containerd, so there is no host docker socket to share.
+                      # The daemon is reached over a unix socket in a shared emptyDir; a TCP
+                      # listener would be reachable from every pod in the cluster and grants
+                      # unauthenticated root. `dockerd` must be args[0] — the image's
+                      # entrypoint appends --host=tcp://0.0.0.0:2375 to anything that starts
+                      # with a dash.
+                      args:
+                        - dockerd
+                        - --host=unix:///shared/docker.sock
+                        - --group=1000
+                      securityContext:
+                        privileged: true
+                      resources:
+                        limits:
+                          cpu: "2"
+                          memory: 1Gi
+                        requests:
+                          cpu: 100m
+                          memory: 256Mi
+                      volumeMounts:
+                        - name: docker-storage
+                          mountPath: /var/lib/docker
+                        - name: docker-socket
+                          mountPath: /shared
+                      livenessProbe:
+                        exec:
+                          command: ["docker", "-H", "unix:///shared/docker.sock", "info"]
+                        initialDelaySeconds: 30
+                        periodSeconds: 30
+                        timeoutSeconds: 10
+                        failureThreshold: 5
+
+                    - name: runner
+                      image: code.forgejo.org/forgejo/runner:13.2.1@sha256:568cea8c15ddc01fc8f330124892f572af7db37fa28344a2c1914405793bf61d
+                      env:
+                        - name: DOCKER_HOST
+                          value: unix:///shared/docker.sock
+                        - name: FORGEJO_URL
+                          value: "https://git.burau.dev/"
+                        - name: RUNNER_NAME
+                          value: "k3s"
+                        - name: RUNNER_SECRET
+                          valueFrom:
+                            secretKeyRef:
+                              name: forgejo-runner
+                              key: secret
+                      # The runner is registered server-side with the same shared secret,
+                      # so .runner is derived from the secret on every start and needs no
+                      # persistence. Waiting for dind avoids a crash loop on cold start.
+                      command:
+                        - sh
+                        - -c
+                        - |
+                          set -eu
+                          # The runner image ships no docker client; dockerd creates the
+                          # socket once it is ready to serve.
+                          until [ -S /shared/docker.sock ]; do
+                            echo "waiting for dind..."
+                            sleep 2
+                          done
+                          forgejo-runner create-runner-file \
+                            --instance "$FORGEJO_URL" \
+                            --name "$RUNNER_NAME" \
+                            --secret "$RUNNER_SECRET" \
+                            --config /config/config.yaml
+                          exec forgejo-runner daemon --config /config/config.yaml
+                      resources:
+                        limits:
+                          cpu: 500m
+                          memory: 256Mi
+                        requests:
+                          cpu: 50m
+                          memory: 64Mi
+                      volumeMounts:
+                        - name: runner-data
+                          mountPath: /data
+                        - name: docker-socket
+                          mountPath: /shared
+                        - name: config
+                          mountPath: /config
+                          readOnly: true
+                  volumes:
+                    - name: docker-storage
+                      emptyDir: {}
+                    - name: runner-data
+                      emptyDir: {}
+                    - name: docker-socket
+                      emptyDir: {}
+                    - name: config
+                      configMap:
+                        name: forgejo-runner
+          - |
+            apiVersion: bitnami.com/v1alpha1
+            kind: SealedSecret
+            metadata:
+              name: forgejo-postgresql
+              namespace: default
+            spec:
+              encryptedData:
+                password: AgAadONwzMtDM4l5YdCgacnV3KmwT8YdpUh/PfQamVGoPNV9yDwaIjHIlTEYyXw6IgT2S5PhUnF3iGlP5VvP6LyYTykJddBrYH8rLMbmtnbvUmqDs31/dHdQHzXC7xvUP9N11nUMJYN9Yh+N48mWSddRaqjRCjdum+1lhXyMxtUB7cqDkC18KRNeJad7JLa8JJjmAwp/q9A5DTjnsoEZOpiK751zmXMevSZC7ZbQ5J84ux6LjkjAkt3YGigLe5PDHkJyHKhpWFPrNjderzU55KUvoDEdUj1BmqcY4w+dvJkF7Ih4lKt6AFLBFE/2BgDypoyBC3UgEKJT0DTWFR0si/p5YB37W1gaTTHXjCDpUbVeD4nbRBaXTtX4uCW1dnWOUedsjf1Xa2SN87Df3ZvYZFxou/V/hh5oXXLq93uGyLzcSNPv+E7YZs+q3iCTX0IBSa0Xzcl3ZgNrHOTEfBf2Nwc8yAmIcAzcHJOLrYnCwYQSiLfTNkuBenQlkEeSAstM76lSt5zJBMIVKQqmKLROnaoctPXUqnkm9vrSMgrMj4+7vt20vxkBcbE1/0XkdoQFO/tyKMK6j1QUpYNgNS9H/8U5UAfVPAaqAxhP2BAOs+sHgyaFRh1ZO/vXmahIkET6wGzwX8JGWrYhhHLdNPq6ZW27Kaebr4go3k1qk6IQljBTfogzJCF+j5afF1RfGlsN0QjLDbKvS8/9Y5O3LB71WEuP1FMcDuompLFL5+8wCPNY0Q==
+              template:
+                metadata:
+                  name: forgejo-postgresql
+                  namespace: default
+          - |
+            apiVersion: bitnami.com/v1alpha1
+            kind: SealedSecret
+            metadata:
+              name: forgejo-admin
+              namespace: default
+            spec:
+              encryptedData:
+                password: AgDNfmOd9alyOEI/XE6sAGlz/E5MvtaKT2WAfk7XekYjAUhcWnU5cUV75UuLoFa/qbiGyTlvnUArvtpekeicBZGQ3e2QAwBMOVU587BwtkDMBSRv7m2XJ0enwfLLhCdvG/aG8p5LKv71Qsr9n4dOTbLaSf1yjFkJbvgEWf0zqsV2/y5UKg3LFvsSnjwMGNOz6pDaUV24e9enp71HdGvBnry3GuRhPaN3o7sUvWjefBz79NpmkAuP8zYfbGgFpVdNmj1Zl8xXVdPMIMqO8CnewREsNtM3BiH7tDIexm0YNK+or55YimCX6/pyHhuDJJgknQkEpIVp4hOq5K6F+CV2wxE3ie64Aorvg663gCGZIA3NuylhLoWMbL+ERRXMrMJNxWlSE4DN3tLDzrtinxhTpo02yilm1MSaGABxSmOoe5hLyZghSQcJg98mBBBCNdc6tCgHJNt/P4s+VbjkRNcKT0cYx4gV2WoC25xoEwCmXNMLY7OyZh3c3VO6MdR0jdqCf7XKny3x7B77Ps7CpltQ+hdFrOII8cc5guNpBfymFlMpbk/59V7iDO7x1rUw4KAUqIebFjLI1X+GYSsTfG7gA4NJzOD4FhZPhO3yvH/JHYZ36h8WNfOQhlLm9+URdXYONBZWr4BjJVsyR65X9V2OpdvNSoAr9/9S5UhCxvZMUE0jv0PnGwk4RKkJdgP7EX26eE5vVe/ZuNJ4sIETadv4S8GN7/Jp9SyNapQ=
+                username: AgCYc/OYmgbMo1ulvE+OXH/Aw4P5S1rWydRUR0RvMsj4IqezyNmgPPcacRb84iszNOpzUU99ZbOzXLEk7cPh8PJN6VvjIA8QQ5LBFbNzCDKrXdu0qrbvv5qEb7z3VX5eVkW1jV9W/xuDSCOFAyWpTz/5dQmLqBGumsAMSww0X6fIospOJWyl7OsYWa7ZK8AGiIEuQ83qcwbhYGnHM7XsaKxO5gCYo7pYkzRVaiqkRrdRDIhdf3zO/0bX8WyKopgWjGaJPHRJbH6JigjMba+4Sp84LOcNSisAkTrzvnBK0ENQxpOvTQtzUYlUCAvlZxy1cRLMxcVUHJ7iEGi+vq9p167E36+PF12jONRWZ5l8WAMCDEAtSMb/NLdYrSaVAWqBuQJ3KB36NPt167XKv2j5zONFoCe+M/2T0+3k58PmBf6lV18yG8eqWAX6BnZxiTP04MOG7nhGe++PbwMZc61zfWFfrxXQFlJ3PFLXUA2wwyDXwwJCN9Kq0rYoV+ODqgP2iiOTmvxHJNMrjlOUUzySjV7KEMK777byll9YZFqSZ4busjS6SADu4TcnYsVRyf5EDzBDD2ii5/C113oRZBwoH++lcd3XCCvDuYSSBOmols1XpKLuoevylF3TxZjhuFvqlCbRZPTl1XJcDxkWLluxuI2ozW86bORyB5gMhalpVN7lVmrYUuWxDZy1p+qD1MCe5cnR+9Xn
+              template:
+                metadata:
+                  name: forgejo-admin
+                  namespace: default
+          - |
+            apiVersion: bitnami.com/v1alpha1
+            kind: SealedSecret
+            metadata:
+              name: forgejo-runner
+              namespace: default
+            spec:
+              encryptedData:
+                secret: AgCfIun2hkGke+TpVtcMg7rvA9xcrwjc175vv06b3W68ZFmzL4KwwDq+sSOWhf5QitqDmZlVLEXuu1AGjaNaFyLfBRgg+PvuGPw3qhIezZBMQY/iz9UOryfwdy1TrE3TJzkSdZCWLY/8Pb9m7XFElxBwjDQyZllNZXw2K2AtPB7U+gY6S5vesCoja5jDpN5mZ74x6XoKhLpCX2fJaAXaLqP1YWyAVXW6URaunjCI3kOavvrExZHZgWZwkzmR2fWXp2+GTizF/r2cIcsIkxQfh80kWpsvM88VS4wFKyxkO5RJoQy45EmhZhxyhr6Kol2CDpeV1B9KcnOwOnXp4irUBmKMLZklYyRZBaznz0LYx1rxAgNNZ9bNIW8+RmMHHOiA3WoLAtgrX4ZjAZLjvOGqWb1EoM4F4q1GjPKn79+++5lGTh/J6KyVZLseLfpPlbPwCAAnsmUFLP+1V+b1gXYNW2/kRJePbXyp4pt8YuIidmL2zoKXZmUAjIj8QRzuNSMeHHJTY9rLiNJQv0NXNc6Nxt1EoJjDcSv78p1f+5O1qldJxGR6ueI856bjI4hSA7fxQW3MGwYMEO261rd3pRlIoyb5s+uwkv5CbdMHHuV8e7iJn09qpYsdBtC9uAHb1sSqV/GxT3KRSC5MmGak2+pWRPzGg4nhC97ua0wGNj3DoqDupU8kiYrHDW9+cCY0LQ2uXtMKNJ4D6h/4bw3MUM5xvudWts7rlqEdBg3AZu40rKiGG94WzqrDQW1v
+              template:
+                metadata:
+                  name: forgejo-runner
+                  namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+{{- end }}

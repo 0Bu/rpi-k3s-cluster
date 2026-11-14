@@ -1,3 +1,6 @@
+forgejo:
+  enabled: false
+
 argocd:
   global:
     domain: argocd.burau.dev
