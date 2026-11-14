@@ -1,0 +1,12 @@
+{{- if (index .Values "victoria-metrics").vmsingle.enabled }}
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: victoria-metrics-storage
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+value: 10000
+globalDefault: false
+preemptionPolicy: Never
+description: "Priorität für den VictoriaMetrics-Datenbank-Pod."
+{{- end }}
