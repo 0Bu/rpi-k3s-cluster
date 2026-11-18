@@ -1,7 +1,7 @@
 apiVersion: v2
 name: mosquitto
-version: 1.1.0
+version: 1.1.1
 home: https://mosquitto.or
 type: application
 # renovate: image=eclipse-mosquitto
-appVersion: "2.0.22"
+appVersion: "2.0.23"
