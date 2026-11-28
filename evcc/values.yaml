@@ -1,6 +1,6 @@
 image:
   repository: evcc/evcc
-  tag: 0.319.1@sha256:b4fb63cb90710a989d4f491bd81a6505326337a22a95e82c3227fd78ffd5116d
+  tag: 0.320.0@sha256:71b4eacd8c1c859925d36c6b9400fa5cc93d33fb1da918dee1b72b53c1a3f8ad
 nfs:
   server: 192.168.1.5
   path: /nfs/evcc
